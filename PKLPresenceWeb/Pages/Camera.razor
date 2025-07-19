@@ -1,0 +1,18 @@
+﻿@page "/camera"
+@inject IJSRuntime JS
+
+<h3>Ambil Foto dengan Spasi</h3>
+
+<video id="camera" autoplay playsinline width="320" height="240"></video>
+<canvas id="snapshot" style="display:none;"></canvas>
+
+<button @onclick="StartCamera">Buka Kamera</button>
+
+<img id="hasilFoto" style="margin-top:10px;" />
+
+@code {
+    private async Task StartCamera()
+    {
+        await JS.InvokeVoidAsync("startCamera");
+    }
+}

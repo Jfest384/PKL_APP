@@ -1,0 +1,105 @@
+﻿@page "/home/profile"
+@inject HttpClient Http
+@inject IJSRuntime JS
+@inject NavigationManager Navigation
+@using System.Text.Json
+@using PKLPresenceWeb.Model
+
+<div class="profile-page">
+
+    <!-- Back Header -->
+    <div class="header-section d-flex align-items-center">
+        <button class="btn btn-link text-white fw-bold p-0 me-2" @onclick="GoBack">
+            <i class="bi-chevron-left fw-bold"></i>
+        </button>
+        <h5 class="mb-0 fw-bold text-white">Profile</h5>
+    </div>
+
+    <div class="content-section">
+        <!-- Profile Card -->
+        <div class="card mb-4 d-flex flex-row align-items-center justify-content-center mt-4">
+            <img src="@photoUrl" class="profile-photo me-3" />
+            <div class="d-flex flex-column text-start">
+                <div class="fw-bold">@fullName</div>
+                <div class="text-muted">@email</div>
+            </div>
+        </div>
+
+
+        <!-- Menu Section -->
+        <div class="card p-2 mb-4">
+            <MenuItem icon="bi-person" text="My Profile" link="/home/profile/me" />
+            <MenuItem icon="bi-calendar-check" text="Presence" link="/presence" />
+            <MenuItem icon="bi-file-earmark-text" text="Intern Report" link="/report" />
+            <MenuItem icon="bi-info-circle" text="About" link="/about" />
+        </div>
+
+        <!-- Logout Button -->
+        <div class="d-flex justify-content-center">
+            <button class="btn btn-secondary" @onclick="Logout">
+                Log Out
+            </button>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string fullName = "";
+    private string email = "";
+    private string photoUrl = "/images/default_profile.jpg";
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var token = await JS.InvokeAsync<string>("localStorage.getItem", "authToken");
+            if (string.IsNullOrWhiteSpace(token)) return;
+
+            var authHeader = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+            // Get user data
+            var request = new HttpRequestMessage(HttpMethod.Get, APIUrl.Endpoint("me"));
+            request.Headers.Authorization = authHeader;
+            var response = await Http.SendAsync(request);
+
+            if (!response.IsSuccessStatusCode) return;
+
+            var json = await response.Content.ReadAsStringAsync();
+            var root = JsonDocument.Parse(json).RootElement;
+
+            fullName = root.GetProperty("fullname").GetString() ?? "";
+            email = root.GetProperty("email").GetString() ?? ""; // email = username field
+
+            // Get photo if available
+            if (root.TryGetProperty("profile", out var profileProp) &&
+                profileProp.ValueKind != JsonValueKind.Null)
+            {
+                var photoReq = new HttpRequestMessage(HttpMethod.Get, APIUrl.Endpoint("me/photo"));
+                photoReq.Headers.Authorization = authHeader;
+                var photoResp = await Http.SendAsync(photoReq);
+
+                if (photoResp.IsSuccessStatusCode)
+                {
+                    var bytes = await photoResp.Content.ReadAsByteArrayAsync();
+                    var contentType = photoResp.Content.Headers.ContentType?.MediaType ?? "image/jpeg";
+                    var base64 = Convert.ToBase64String(bytes);
+                    photoUrl = $"data:{contentType};base64,{base64}";
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Gagal memuat data profil: " + ex.Message);
+        }
+    }
+
+    private async Task Logout()
+    {
+        await JS.InvokeVoidAsync("localStorage.removeItem", "authToken");
+        Navigation.NavigateTo("/");
+    }
+
+    private void GoBack() => Navigation.NavigateTo("/home");
+
+    public record MenuItemData(string icon, string text, string link);
+}

@@ -1,0 +1,22 @@
+﻿@inherits LayoutComponentBase
+@inject NavigationManager Navigation
+
+<div class="main-content">
+    @Body
+</div>
+
+@if (ShowBottomNav)
+{
+    <BottomNav />
+}
+
+@code {
+    private readonly string[] ExcludedRoutes = new[] { "login" };
+
+    private string CurrentPath =>
+        Navigation.ToBaseRelativePath(Navigation.Uri).Split('?')[0].ToLower();
+
+    private bool ShowBottomNav =>
+        !string.IsNullOrWhiteSpace(CurrentPath) &&
+        !ExcludedRoutes.Any(route => CurrentPath.StartsWith(route));
+}

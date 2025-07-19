@@ -1,0 +1,248 @@
+﻿h5.fw-bold {
+    font-size: 1.2rem;
+    color: #333;
+}
+
+.presence-wrapper {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    background-color: #e1e1e1;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.header-section {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: #0476D9;
+    padding: 1.5rem;
+    height: calc(120px - 20px);
+    box-sizing: border-box;
+}
+
+.content-section {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 2rem;
+    /* Hitung tinggi agar tidak tertutup bottom bar */
+    max-height: calc(100vh - calc(120px - 20px) - 50px); /* 120px header, 70px bottom bar, sesuaikan jika perlu */
+    /* 120px = tinggi header-section, 70px = tinggi bottom bar */
+}
+
+input.form-control,
+select.form-select {
+    font-size: 0.9rem;
+    border-radius: 8px;
+    padding: 6px 12px;
+}
+
+@media (max-width: 768px) {
+    .nav-tabs {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .table th, .table td {
+        font-size: 0.85rem;
+        padding: 8px;
+    }
+
+    input.form-control,
+    select.form-select {
+        font-size: 0.85rem;
+    }
+}
+
+
+body {
+    background: linear-gradient(to bottom, #d3d3d3, #fefefe);
+}
+
+.d-none {
+    display: none !important;
+}
+
+.scrollable-x {
+    overflow-x: auto;
+    overflow-y: hidden;
+    min-height: 1px;
+    scrollbar-width: thin; /* Firefox */
+    scrollbar-color: #C4C4C4 #E0E0E0;
+}
+
+    .scrollable-x::-webkit-scrollbar {
+        height: 12px;
+        background: #E0E0E0; /* Track color */
+        border-radius: 6px;
+    }
+
+    .scrollable-x::-webkit-scrollbar-thumb {
+        background-color: #C4C4C4;
+        border-radius: 6px;
+    }
+
+    .scrollable-x::-webkit-scrollbar-track {
+        background-color: #E0E0E0;
+    }
+
+    .scrollable-x::-webkit-scrollbar-thumb:hover {
+        background: #888;
+    }
+
+.presence-radio-group .form-check-inline {
+    margin-right: 0.5rem;
+    margin-left: 0;
+}
+
+.presence-radio-label {
+    font-weight: normal;
+    cursor: pointer;
+    transition: font-weight 0.2s;
+}
+
+.presence-radio-input:checked + .presence-radio-label {
+    font-weight: bold;
+}
+
+/* Radio button hijau saat checked */
+/*.presence-radio-input:checked {
+    accent-color: #28a745;*/ /* Bootstrap success green */
+/*}*/
+
+input[type="radio"].presence-radio-input {
+    accent-color: #00BA1E !important;
+}
+
+.page-size-dropdown {
+    width: 150px;
+    min-width: 120px;
+    max-width: 180px;
+}
+
+/* PKLPresenceWeb\Pages\Clients\Presence.razor.css */
+.upload-box {
+    display: inline-block;
+    min-height: 120px;
+    min-width: 120px;
+    background: #f8f8f8;
+    cursor: pointer;
+    text-align: center;
+    vertical-align: middle;
+}
+
+    .upload-box img {
+        display: block;
+        max-height: 150px;
+        max-width: 200px;
+        width: auto;
+        height: auto;
+        margin: auto;
+    }
+
+.modal-scrollable-content {
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.presence-modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0,0,0,0.12);
+    z-index: 1050;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.presence-modal-dialog {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.12);
+    padding: 32px 24px 16px 24px;
+    min-width: 320px;
+    max-width: 400px;
+}
+
+.presence-modal-grid {
+    display: grid;
+    grid-template-columns: 115px 18px 1fr;
+    row-gap: 5px;
+    font-size: 1rem;
+    color: black;
+}
+
+.presence-modal-label {
+    font-weight: 400;
+}
+
+.presence-modal-colon {
+    text-align: center;
+}
+
+.presence-modal-value {
+    font-weight: 500;
+    word-break: break-word;
+}
+
+.presence-modal-link {
+    color: #0d6efd; /* Bootstrap link color */
+    text-decoration: underline;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    display: inline;
+}
+
+.presence-modal-close-btn {
+    width: 100%;
+    background: #dc3545; /* Bootstrap danger color */
+    color: #fff;
+    font-weight: 500;
+    font-size: 1rem;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 0; /* sedikit lebih panjang */
+    margin-top: 18px;
+    transition: background 0.2s;
+    letter-spacing: 0.5px;
+}
+
+    .presence-modal-close-btn:active {
+        background: #b52a37;
+    }
+
+.detail-presence-map {
+    width: 100%;
+    height: 150px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    margin-left: 0;
+    margin-right: 0;
+    display: block;
+}
+
+/* Untuk video WebRTC di modal */
+.webrtc-modal-video {
+    width: 340px;
+    height: 260px;
+    object-fit: cover;
+    border-radius: 8px;
+    background: #222;
+    max-width: 90vw;
+}
+
+/* Jika layar potrait (tinggi > lebar), kecilkan lebar */
+@media (max-width: 600px), (orientation: portrait) {
+    .webrtc-modal-video {
+        width: 95vw;
+        max-width: 220px;
+        height: 300px;
+    }
+}

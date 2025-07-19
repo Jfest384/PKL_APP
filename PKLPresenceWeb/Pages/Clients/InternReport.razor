@@ -1,0 +1,648 @@
+﻿@page "/report"
+@using PKLPresenceWeb.Model
+@inject HttpClient Http
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+@using Microsoft.AspNetCore.Components.Forms
+@using System.Globalization
+
+<div class="report-wrapper">
+    <div class="header-section d-flex align-items-center">
+        <button class="btn btn-link text-white fw-bold p-0 me-2" @onclick="GoBack">
+            <i class="bi-chevron-left fw-bold"></i>
+        </button>
+        <h5 class="mb-0 fw-bold text-white">Intern Report</h5>
+    </div>
+
+    <div class="content-section">
+        @if (UserRole == "Student")
+        {
+            <div class="d-flex justify-content-center gap-2 mb-3 presence-radio-group">
+                <button class="btn btn-primary"
+                        @onclick="ShowAddReport"
+                        disabled="@HasReportToday">
+                    Tambah
+                </button>
+            </div>
+                
+            <div class="scrollable-x">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th class="text-center">No</th>
+                            <th class="text-center">Hari/Tanggal</th>
+                            <th class="text-center">Jam</th>
+                            <th class="text-center">Ringkasan</th>
+                            <th class="text-center">Feedback</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Reports is not null && Reports.Count > 0)
+                        {
+                            var rowIndex = (CurrentPage - 1) * PageSize;
+                            @foreach (var item in Reports)
+                            {
+                                rowIndex++;
+                                <tr>
+                                    <td class="text-center">@rowIndex</td>
+                                    <td>@item.date</td>
+                                    <td>@item.time</td>
+                                    <td>@item.content</td>
+                                    <td>@item.feedback</td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="5" class="text-center text-muted">Tidak ada data laporan PKL.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <select class="form-select page-size-dropdown m-3" @bind="PageSize">
+                <option value="2">Show 2 Entries</option>
+                <option value="10">Show 10 Entries</option>
+                <option value="15">Show 15 Entries</option>
+            </select>
+
+            <nav class="d-flex justify-content-center mt-2">
+                <ul class="pagination">
+                    @if (Reports is null || Reports.Count == 0)
+                    {
+                        <li class="page-item disabled">
+                            <button type="button" class="page-link disabled" disabled style="pointer-events:none;opacity:0.6;">Prev</button>
+                        </li>
+                        <li class="page-item disabled">
+                            <button type="button" class="page-link disabled" disabled style="pointer-events:none;opacity:0.6;">Next</button>
+                        </li>
+                    }
+                    else
+                    {
+                        <li class="page-item @(CurrentPage == 1 ? "disabled" : null)">
+                            <button class="page-link" @onclick="() => ChangePage(CurrentPage - 1)">Previous</button>
+                        </li>
+                        @for (int i = 1; i <= TotalPages; i++)
+                        {
+                            var pageNum = i;
+                            <li class="page-item @(pageNum == CurrentPage ? "active" : null)">
+                                <button class="page-link"
+                                    @onclick="() => ChangePage(pageNum)"
+                                    disabled="@(pageNum == CurrentPage)">
+                                    @pageNum
+                                </button>
+                            </li>
+                        }
+                        <li class="page-item @(CurrentPage == TotalPages ? "disabled" : null)">
+                            <button class="page-link" @onclick="() => ChangePage(CurrentPage + 1)">Next</button>
+                        </li>
+                    }
+                </ul>
+            </nav>
+
+            @if (ShowReportModal)
+            {
+                <Modal IsVisible="true" Title="Submit Report">
+                    <div class="modal-scrollable-content">
+                        <div class="report-modal-label mb-2 mt-3 text-start">
+                            Ringkasan Pekerjaan di Industri
+                        </div>
+                        <div class="mb-3">
+                            <textarea id="ContentInput"
+                                      class="form-control"
+                                      placeholder="Masukkan report..."
+                                      @bind="ContentInput"
+                                      @oninput="e => ContentInput = ((ChangeEventArgs)e).Value?.ToString() ?? string.Empty"
+                                      rows="3"></textarea>
+                        </div>
+                        <div class="d-flex justify-content-around mt-4">
+                            <button class="btn btn-danger px-4" @onclick="CancelReport">Cancel</button>
+                            <button class="btn btn-success px-4"
+                                    @onclick="ConfirmReport"
+                                    disabled="@string.IsNullOrWhiteSpace(ContentInput)">
+                                Confirm
+                            </button>
+                        </div>
+                    </div>
+                </Modal>
+            }
+        }
+        else
+        {
+            <div class="row g-2 mb-3">
+                <div class="col">
+                    <input class="form-control" placeholder="Nama Siswa..." @bind="searchName" @oninput="OnFilterChanged" />
+                </div>
+                <div class="col">
+                    <select class="form-select" @onchange="OnClassChange">
+                        <option value="">All Classes</option>
+                        @foreach (var cls in ClassList)
+                        {
+                            <option value="@cls.id">@cls.name</option>
+                        }
+                    </select>
+                </div>
+            </div>
+
+            @if (isLoading)
+            {
+                <div class="text-center my-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="scrollable-x">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th class="text-center">No</th>
+                                <th class="text-center">NIS</th>
+                                <th class="text-center">Nama Lengkap</th>
+                                <th class="text-center">Kelas</th>
+                                <th class="text-center">Hari/Tanggal</th>
+                                <th class="text-center">Jam</th>
+                                <th class="text-center">Nama PT</th>
+                                <th class="text-center">Ringkasan Pekerjaan</th>
+								<th class="text-center">Feedback</th>
+                                <th class="text-center">Bimbingan</th>
+                                <th class="text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Reports is not null && Reports.Count > 0)
+                            {
+                                var rowIndex = (CurrentPage - 1) * 10;
+                                @foreach (var item in Reports)
+                                {
+                                    rowIndex++;
+                                    <tr>
+                                        <td class="text-center">@rowIndex</td>
+                                        <td>@item.nis</td>
+                                        <td>@item.name</td>
+                                        <td>@item.classroom_name</td>
+                                        <td>@item.date</td>
+                                        <td>@item.time</td>
+                                        <td>@item.company_name</td>
+                                        <td>@item.content</td>
+                                        <td>@item.feedback</td>
+                                        <td class="text-center">
+                                            @if (item.isGuidance == "✔️")
+                                            {
+                                                <span class="bi bi-check text-success" style="font-size: 2rem; font-weight: bold"></span>
+                                            }
+                                            else
+                                            {
+                                                <span class="bi bi-x text-danger" style="font-size: 2rem; font-weight: bold"></span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <div class="d-flex gap-2 justify-content-center">
+                                                <button class="btn btn-sm btn-success" @onclick="() => ShowFeedback(item)">Feedback</button>
+                                                @if (UserRole == "Mentor")
+                                                {
+                                                    <button class="btn btn-sm btn-warning"
+                                                            @onclick="() => ShowGuidance(item.studentId, item.name)"
+                                                            disabled="@(item.isGuidance == "✔️")">
+                                                        Bimbingan
+                                                    </button>
+                                                }
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="11" class="text-center text-muted">Tidak ada data laporan PKL.</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="row justify-content-end mb-2">
+                    <div class="mw-100 mt-3">
+                        <select id="rekapDropdown" class="form-select" @bind="selectedDropdown">
+                            <option value="" disabled selected hidden>Cetak Rekap</option>
+                            <option value="Siswa">Per Siswa</option>
+                            <option value="Pembimbing">Per Pembimbing</option>
+                            <option value="Kelas">Per Kelas</option>
+                        </select>
+                    </div>
+                </div>
+
+                <nav class="d-flex justify-content-center mt-2">
+                    <ul class="pagination">
+                        @if (Reports is null || Reports.Count == 0)
+                        {
+                            <li class="page-item disabled">
+                                <button type="button" class="page-link disabled" disabled style="pointer-events:none;opacity:0.6;">Prev</button>
+                            </li>
+                            <li class="page-item disabled">
+                                <button type="button" class="page-link disabled" disabled style="pointer-events:none;opacity:0.6;">Next</button>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="page-item @(CurrentPage == 1 ? "disabled" : null)">
+                                <button class="page-link" @onclick="() => ChangePage(CurrentPage - 1)">Previous</button>
+                            </li>
+                            @for (int i = 1; i <= TotalPages; i++)
+                            {
+                                var pageNum = i;
+                                <li class="page-item @(pageNum == CurrentPage ? "active" : null)">
+                                    <button class="page-link"
+                                            @onclick="() => ChangePage(pageNum)"
+                                            disabled="@(pageNum == CurrentPage)">
+                                        @pageNum
+                                    </button>
+                                </li>
+                            }
+                            <li class="page-item @(CurrentPage == TotalPages ? "disabled" : null)">
+                                <button class="page-link" @onclick="() => ChangePage(CurrentPage + 1)">Next</button>
+                            </li>
+                        }
+                    </ul>
+                </nav>
+            }
+        }
+
+        @if (ShowFeedbackModal && SelectedReportDetail != null)
+        {
+            <Modal IsVisible="true" Title="Give Feedback">
+                <div class="modal-scrollable-content">
+                    <div class="report-modal-grid mb-3 mt-3 text-start">
+                        <div class="report-modal-label">NIS</div>
+                        <div class="report-modal-colon">:</div>
+                        <div class="report-modal-value">@SelectedReportDetail.nis</div>
+
+                        <div class="report-modal-label">Nama Lengkap</div>
+                        <div class="report-modal-colon">:</div>
+                        <div class="report-modal-value">@SelectedReportDetail.name</div>
+
+                        <div class="report-modal-label">Kelas</div>
+                        <div class="report-modal-colon">:</div>
+                        <div class="report-modal-value">@SelectedReportDetail.classroom_name</div>
+
+                        <div class="report-modal-label">Hari/Tanggal</div>
+                        <div class="report-modal-colon">:</div>
+                        <div class="report-modal-value">@SelectedReportDetail.date</div>
+
+                        <div class="report-modal-label">Jam</div>
+                        <div class="report-modal-colon">:</div>
+                        <div class="report-modal-value">@SelectedReportDetail.time WIB</div>
+
+                        <div class="report-modal-label">Nama PT</div>
+                        <div class="report-modal-colon">:</div>
+                        <div class="report-modal-value">@SelectedReportDetail.company_name</div>
+
+                        <div class="report-modal-label">Ringkasan Pekerjaan</div>
+                        <div class="report-modal-colon">:</div>
+                        <div class="report-modal-value">@SelectedReportDetail.content</div>
+
+                        <div class="report-modal-label">Feedback</div>
+                        <div class="report-modal-colon">:</div>
+                    </div>
+                    <div class="mb-3">
+                        <textarea id="feedbackInput"
+                                  class="form-control"
+                                  placeholder="Masukkan Feedback"
+                                  @bind="FeedbackInput"
+                                  @oninput="e => FeedbackInput = ((ChangeEventArgs)e).Value?.ToString() ?? string.Empty"
+                                  rows="3"></textarea>
+                    </div>
+                    <button class="btn btn-primary w-100 mb-2"
+                            @onclick="OnFeedbackButtonClick"
+                            disabled="@IsSubmittingFeedback">
+                        @(string.IsNullOrWhiteSpace(FeedbackInput) ? "Close" : "Confirm")
+                    </button>
+                </div>
+            </Modal>
+        }
+
+        @if (ShowGuidanceModal)
+        {
+            <Modal IsVisible="true">
+                <div class="modal-scrollable-content">
+                    <div class="d-flex flex-column align-items-center mb-3">
+                        <span class="bi bi-file-earmark-text text-warning" style="font-size: 2.5rem; margin-bottom: 0.5rem;"></span>
+                        <h5 class="fw-bold mb-2">Konfirmasi Bimbingan</h5>
+                        <div class="mb-3 text-center">
+                            Apakah siswa atas nama <b>@GuidanceStudentName</b> sudah melakukan bimbingan dengan Anda pada minggu ini?
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-around mt-2">
+                        <button class="btn btn-danger px-4" @onclick="CancelGuidance" disabled="@IsSubmittingGuidance">No</button>
+                        <button class="btn btn-success px-4" @onclick="ConfirmGuidance" disabled="@IsSubmittingGuidance">Yes</button>
+                    </div>
+                </div>
+            </Modal>
+        }
+    </div>
+</div>
+
+@code {
+    private string UserRole = "";
+    private List<ReportItem> Reports = new();
+    private List<ClassItem> ClassList = new();
+    private string searchName = "";
+    private int? selectedClassId;
+    private string selectedDropdown = "";
+    private bool isLoading = false;
+
+    private int CurrentPage = 1;
+    private int TotalPages = 1;
+
+    private CancellationTokenSource? searchDebounceCts;
+    private string selectedDate = "";
+    
+    bool ShowReportModal = false;
+    int SelectedPresenceTypeId = 0;
+    string SelectedPresenceTypeName = "";
+    Dictionary<string, IBrowserFile?> PresencePhotos = new();
+    bool IsSubmittingPresence = false;
+
+    string ModalTitle = "";
+    bool ShowFeedbackModal = false;
+    ReportItem? SelectedReportDetail = null;
+
+    string FeedbackInput = "";
+    string ContentInput = "";
+    bool IsSubmittingFeedback = false;
+    bool IsSubmittingReport = false;
+
+    bool ShowPresencePhotoModal = false;
+    int PreviewPresenceTypeId = 0;
+    string PreviewPresenceTypeName = "";
+    
+    bool ShowGuidanceModal = false;
+    int GuidanceStudentId = 0;
+    string GuidanceStudentName = "";
+    bool IsSubmittingGuidance = false;
+
+    void ShowGuidance(int studentId, string studentName)
+    {
+        GuidanceStudentId = studentId;
+        GuidanceStudentName = studentName;
+        ShowGuidanceModal = true;
+    }
+
+    void CancelGuidance()
+    {
+        GuidanceStudentId = 0;
+        GuidanceStudentName = "";
+        ShowGuidanceModal = false;
+        IsSubmittingGuidance = false;
+    }
+
+    async Task ConfirmGuidance()
+    {
+        if (GuidanceStudentId == 0) return;
+        IsSubmittingGuidance = true;
+        var response = await Http.PostAsync(APIUrl.Endpoint($"repots/weekly-guidance/{GuidanceStudentId}"), null);
+        IsSubmittingGuidance = false;
+        CancelGuidance();
+        await LoadReports();
+    }
+
+    private bool HasReportToday =>
+    Reports.Any(p =>
+        DateTime.TryParseExact(
+            p.date,
+            "dddd, dd MMMM yyyy",
+            new CultureInfo("id-ID"),
+            DateTimeStyles.None,
+            out var dt
+        ) && dt.Date == DateTime.Today
+    );
+
+    private List<PresenceTypeItem> PresenceTypes = new();
+    private int pageSize = 10;
+    private int PageSize
+    {
+        get => pageSize;
+        set
+        {
+            if (pageSize != value)
+            {
+                pageSize = value;
+                CurrentPage = 1;
+                _ = LoadReports();
+            }
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var token = await JS.InvokeAsync<string>("localStorage.getItem", "authToken");
+        if (!string.IsNullOrEmpty(token))
+        {
+            Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+        }
+
+        var user = await Http.GetFromJsonAsync<UserResponse>(APIUrl.Endpoint("me"));
+        UserRole = user.role;
+
+        await LoadReports();
+        if (UserRole != "Student") await LoadClasses();
+    }
+
+    private async Task LoadReports()
+    {
+        var url = APIUrl.Endpoint($"repots?page={CurrentPage}&pageSize={PageSize}");
+        if (!string.IsNullOrWhiteSpace(searchName))
+            url += $"&name={Uri.EscapeDataString(searchName)}";
+        if (selectedClassId.HasValue)
+            url += $"&classId={selectedClassId.Value}";
+        var response = await Http.GetFromJsonAsync<ReportListResponse>(url);
+        if (response != null)
+        {
+            Reports = response.data ?? new();
+            TotalPages = response.totalPages;
+        }
+        StateHasChanged();
+    }
+
+    private async void OnPresenceTypeChanged(int typeId)
+    {
+        if (HasReportToday)
+        {
+            await JS.InvokeVoidAsync("alert", "Kamu sudah melakukan presensi hari ini.");
+            return;
+        }
+        SelectedPresenceTypeId = typeId;
+        SelectedPresenceTypeName = PresenceTypes.FirstOrDefault(x => x.id == typeId)?.name ?? "";
+        PresencePhotos.Clear();
+        ShowReportModal = true;
+        StateHasChanged();
+    }
+
+    private void ShowAddReport()
+    {
+        ShowReportModal = true;
+        StateHasChanged();
+    }
+
+    private async void OnPageSizeChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var size))
+        {
+            PageSize = size;
+            CurrentPage = 1;
+            await LoadReports();
+        }
+    }
+
+    async Task LoadClasses()
+    {
+        var response = await Http.GetFromJsonAsync<ClassListResponse>(APIUrl.Endpoint($"classes?page={CurrentPage}"));
+        if (response != null) ClassList = response.classrooms ?? new();
+    }
+
+    async Task LoadPresence(string dateFilter = null)
+    {
+        isLoading = true;
+        StateHasChanged();
+
+        string url = APIUrl.Endpoint($"presence?page={CurrentPage}");
+        if (!string.IsNullOrWhiteSpace(searchName))
+            url += $"&search={searchName}";
+        if (selectedClassId.HasValue)
+            url += $"&classId={selectedClassId}";
+        if (!string.IsNullOrWhiteSpace(dateFilter))
+            url += $"&date={dateFilter}";
+
+        var response = await Http.GetFromJsonAsync<ReportListResponse>(url);
+        if (response != null)
+        {
+            Reports = response?.data ?? new();
+            TotalPages = response?.totalPages ?? 1;
+        }
+        isLoading = false;
+        StateHasChanged();
+    }
+
+    private async void OnFilterChanged(ChangeEventArgs e)
+    {
+        searchName = e.Value?.ToString() ?? "";
+        searchDebounceCts?.Cancel();
+        searchDebounceCts = new CancellationTokenSource();
+        var token = searchDebounceCts.Token;
+        try
+        {
+            await Task.Delay(300, token);
+            if (!token.IsCancellationRequested)
+            {
+                CurrentPage = 1;
+                await LoadReports();
+            }
+        }
+        catch (TaskCanceledException) { }
+    }
+
+    private async void OnClassChange(ChangeEventArgs e)
+    {
+        selectedClassId = int.TryParse(e.Value?.ToString(), out var id) ? id : null;
+        CurrentPage = 1;
+        await LoadReports();
+    }
+
+    void GoBack() => Navigation.NavigateTo("/home");
+
+    void CloseDetailModal()
+    {
+        ShowFeedbackModal = false;
+        ShowReportModal = false;
+        SelectedReportDetail = null;
+        FeedbackInput = "";
+        IsSubmittingFeedback = false;
+    }
+
+    void ShowFeedback(ReportItem item)
+    {
+        SelectedReportDetail = item;
+        ShowFeedbackModal = true;
+        FeedbackInput = "";
+    }
+
+    private async Task ChangePage(int page)
+    {
+        if (page >= 1 && page <= TotalPages)
+        {
+            CurrentPage = page;
+			await LoadReports();
+        }
+    }
+
+    void TriggerFileInput(string field)
+    {
+        JS.InvokeVoidAsync("triggerFileInput", $"fileInput_{field}");
+    }
+
+    void CancelReport()
+    {
+        ShowReportModal = false;
+        ContentInput = "";
+    }
+
+    async Task ConfirmReport()
+    {
+        if (string.IsNullOrWhiteSpace(ContentInput))
+        {
+            CloseDetailModal();
+            return;
+        }
+
+        IsSubmittingReport = true;
+        var contentObj = new { content = ContentInput };
+        var content = new StringContent(
+            System.Text.Json.JsonSerializer.Serialize(contentObj),
+            System.Text.Encoding.UTF8,
+            "application/json"
+        );
+        var response = await Http.PostAsync(APIUrl.Endpoint("repots"), content);
+        IsSubmittingReport = false;
+
+        if (response.IsSuccessStatusCode)
+        {
+            CloseDetailModal();
+            await LoadReports();
+        }
+        else await JS.InvokeVoidAsync("alert", "Gagal submit report.");
+    }
+
+    async Task OnFeedbackButtonClick()
+    {
+        if (string.IsNullOrWhiteSpace(FeedbackInput))
+        {
+            CloseDetailModal();
+            return;
+        }
+
+        if (SelectedReportDetail == null)
+            return;
+
+        IsSubmittingFeedback = true;
+        var feedbackObj = new { feedback = FeedbackInput };
+        var content = new StringContent(
+            System.Text.Json.JsonSerializer.Serialize(feedbackObj),
+            System.Text.Encoding.UTF8,
+            "application/json"
+        );
+        var response = await Http.PutAsync(APIUrl.Endpoint($"repots/feedback/{SelectedReportDetail.id}"), content);
+        IsSubmittingFeedback = false;
+
+        if (response.IsSuccessStatusCode)
+        {
+            CloseDetailModal();
+            await LoadReports();
+        }
+        else await JS.InvokeVoidAsync("alert", "Gagal submit feedback.");
+    }
+}

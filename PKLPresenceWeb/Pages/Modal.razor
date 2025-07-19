@@ -1,0 +1,15 @@
+﻿@if (IsVisible)
+{
+    <div class="modal-overlay">
+        <div class="modal-box">
+            <h5 class="fw-bold">@Title</h5>
+            @ChildContent
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public string Title { get; set; } = string.Empty;
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

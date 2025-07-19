@@ -1,0 +1,363 @@
+﻿@page "/home/profile/me"
+@inject HttpClient Http
+@inject IJSRuntime JS
+@inject NavigationManager Navigation
+@using System.Text.Json
+@using Microsoft.AspNetCore.Components.Forms
+@using PKLPresenceWeb.Model
+
+<div class="myprofile-wrapper">
+
+    <!-- Back Header -->
+    <div class="header-section d-flex align-items-center">
+        <button class="btn btn-link text-white fw-bold p-0 me-2" @onclick="GoBack">
+            <i class="bi-chevron-left fw-bold"></i>
+        </button>
+        <h5 class="mb-0 fw-bold text-white">My Profile</h5>
+    </div>
+
+    <div class="content-section d-flex flex-column align-items-center">
+        <div class="card w-100 shadow-sm d-flex flex-column align-items-center p-4">
+            <!-- Profile Photo -->
+            <div class="profile-photo-container position-relative mb-3">
+                <img src="@profilePhotoPreview" class="profile-photo" @onclick="TriggerPhotoInput" />
+                <InputFile id="profilePhotoInput" class="d-none" OnChange="OnPhotoChanged" accept="image/*" />
+                <span class="profile-photo-edit-icon position-absolute">
+                    <i class="bi bi-camera"></i>
+                </span>
+            </div>
+
+            <!-- NIS/NIP - Nama Lengkap -->
+            <div class="mb-3 w-100" style="max-width:450px;">
+                <label class="form-label fw-bold">@IdLabel - Nama Lengkap</label>
+                <input class="form-control"
+                       placeholder="@($"{IdPlaceholder} - Nama Lengkap")"
+                       @bind="nisnipFullname"
+                       @oninput="OnNisNipFullnameChanged" />
+                @if (showNisNipFullnameError)
+                {
+                    <div class="text-danger small mt-1">Format harus: @IdLabel - Nama Lengkap</div>
+                }
+            </div>
+
+            @if (role == "Student")
+            {
+                <div class="mb-3 w-100" style="max-width:450px;">
+                    <label class="form-label fw-bold">Kelas</label>
+                    <select class="form-select" @bind="selectedClassId">
+                        <option value="">Pilih</option>
+                        @foreach (var cls in classList)
+                        {
+                            <option value="@cls.id">@cls.name</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="mb-3 w-100" style="max-width:450px;">
+                    <label class="form-label fw-bold">Nama PT</label>
+                    <select class="form-select" @bind="selectedCompanyId">
+                        <option value="">Pilih</option>
+                        @foreach (var comp in companyList)
+                        {
+                            <option value="@comp.id">@comp.name</option>
+                        }
+                    </select>
+                </div>
+            }
+
+            <div class="mb-4 w-100" style="max-width:450px;">
+                <label class="form-label fw-bold">Email</label>
+                <input class="form-control"
+                       placeholder="contoh: email@domain.com"
+                       @bind="email"
+                       @oninput="ValidateEmail" />
+                @if (!string.IsNullOrEmpty(emailError))
+                {
+                    <div class="text-danger small mt-1">@emailError</div>
+                }
+            </div>
+
+            <div class="mb-4 w-100 d-flex justify-content-center gap-2" style="max-width:450px;">
+                <button type="button"
+                        class="btn @(gender == true ? "btn-primary" : "btn-light gender-unselected") w-50"
+                        @onclick="() => SetGender(true)">
+                    Male
+                </button>
+                <button type="button"
+                        class="btn @(gender == false ? "btn-primary" : "btn-light gender-unselected") w-50"
+                        @onclick="() => SetGender(false)">
+                    Female
+                </button>
+            </div>
+
+            <button class="btn btn-success w-100"
+                    style="max-width:450px;"
+                    @onclick="SaveProfile"
+                    disabled="@(!IsFormValid)">
+                Save
+            </button>
+        </div>
+    </div>
+</div>
+
+@code {
+    // State
+    private string profilePhotoPreview = "/images/default_profile.jpg";
+    private IBrowserFile? profilePhotoFile;
+    private bool isPhotoChanged = false;
+
+    private string nisnipFullname = "";
+    private string? nis = null;
+    private string? nip = null;
+    private string fullname = "";
+    private bool showNisNipFullnameError = false;
+
+    private List<ClassItem> classList = new();
+    private int TotalPages = 1;
+    private int CurrentPage = 1;
+    private int? selectedClassId;
+    private List<CompanyItem> companyList = new();
+    private int? selectedCompanyId;
+
+    private string email = "";
+    private string emailError = "";
+
+    private bool? gender = null;
+
+    private string role = "";
+    private string IdLabel => role == "Student" ? "NIS" : "NIP";
+    private string IdPlaceholder => role == "Student" ? "12345678" : "1987654321";
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var token = await JS.InvokeAsync<string>("localStorage.getItem", "authToken");
+            if (string.IsNullOrWhiteSpace(token)) return;
+            var authHeader = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+            // Get user data
+            var request = new HttpRequestMessage(HttpMethod.Get, APIUrl.Endpoint("me"));
+            request.Headers.Authorization = authHeader;
+            var response = await Http.SendAsync(request);
+
+            if (!response.IsSuccessStatusCode) return;
+
+            var json = await response.Content.ReadAsStringAsync();
+            var root = JsonDocument.Parse(json).RootElement;
+
+            role = root.GetProperty("role").GetString() ?? "";
+
+            // Email & Gender
+            email = root.GetProperty("email").GetString() ?? "";
+            gender = root.TryGetProperty("gender", out var genderProp) ? genderProp.GetBoolean() : (bool?)null;
+
+            // Data parsing
+            if (role == "Student")
+            {
+                var dataArray = root.GetProperty("data");
+                if (dataArray.GetArrayLength() > 0)
+                {
+                    var data = dataArray[0];
+                    nis = data.TryGetProperty("nis", out var nisProp) ? nisProp.GetString() : null;
+                    fullname = data.TryGetProperty("fullname", out var fnProp) ? fnProp.GetString() ?? "" : "";
+
+                    // Untuk dropdown, cari id kelas & company berdasarkan nama
+                    var classroomName = data.TryGetProperty("classroom", out var classProp) ? classProp.GetString() : null;
+                    var companyName = data.TryGetProperty("company", out var compProp) ? compProp.GetString() : null;
+
+                    // Load class & company list dulu
+                    await LoadClasses();
+                    var companyResp = await Http.GetFromJsonAsync<List<CompanyItem>>(APIUrl.Endpoint("data/companies"));
+                    companyList = companyResp ?? new();
+
+                    selectedClassId = classList.FirstOrDefault(c => c.name == classroomName)?.id;
+                    selectedCompanyId = companyList.FirstOrDefault(c => c.name == companyName)?.id;
+
+                    nisnipFullname = $"{nis} - {fullname}";
+                }
+            }
+            else
+            {
+                var data = root.GetProperty("data");
+                nip = data.TryGetProperty("nip", out var nipProp) ? nipProp.GetString() : null;
+                fullname = data.TryGetProperty("fullname", out var fnProp) ? fnProp.GetString() ?? "" : "";
+
+                nisnipFullname = $"{nip} - {fullname}";
+
+                // Load class & company list
+                await LoadClasses();
+                var companyResp = await Http.GetFromJsonAsync<List<CompanyItem>>(APIUrl.Endpoint("data/companies"));
+                companyList = companyResp ?? new();
+            }
+
+            // Profile photo
+            var photoReq = new HttpRequestMessage(HttpMethod.Get, APIUrl.Endpoint("me/photo"));
+            photoReq.Headers.Authorization = authHeader;
+            var photoResp = await Http.SendAsync(photoReq);
+            if (photoResp.IsSuccessStatusCode)
+            {
+                var bytes = await photoResp.Content.ReadAsByteArrayAsync();
+                var contentType = photoResp.Content.Headers.ContentType?.MediaType ?? "image/jpeg";
+                var base64 = Convert.ToBase64String(bytes);
+                profilePhotoPreview = $"data:{contentType};base64,{base64}";
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Gagal memuat data profil: " + ex.Message);
+        }
+    }
+
+    private void TriggerPhotoInput()
+    {
+        JS.InvokeVoidAsync("document.getElementById", "profilePhotoInput").AsTask();
+        // Fallback for Blazor: use JS interop to trigger click
+        JS.InvokeVoidAsync("eval", "document.getElementById('profilePhotoInput').click()");
+    }
+
+    private async Task OnPhotoChanged(InputFileChangeEventArgs e)
+    {
+        if (e.File != null)
+        {
+            const long maxFileSize = 2 * 1024 * 1024; // 2 MB
+            if (e.File.Size > maxFileSize)
+            {
+                await JS.InvokeVoidAsync("alert", "Ukuran file maksimal 2 MB");
+                return;
+            }
+
+            profilePhotoFile = e.File;
+            isPhotoChanged = true;
+            var buffer = new byte[e.File.Size];
+            await e.File.OpenReadStream(maxFileSize).ReadAsync(buffer);
+            var base64 = Convert.ToBase64String(buffer);
+            profilePhotoPreview = $"data:{e.File.ContentType};base64,{base64}";
+        }
+    }
+
+    private void OnNisNipFullnameChanged(ChangeEventArgs e)
+    {
+        nisnipFullname = e.Value?.ToString() ?? "";
+        ParseNisNipFullname();
+    }
+
+    private void ParseNisNipFullname()
+    {
+        showNisNipFullnameError = false;
+        nis = null;
+        nip = null;
+        fullname = "";
+        var parts = nisnipFullname.Split('-', 2, StringSplitOptions.TrimEntries);
+        if (parts.Length == 2)
+        {
+            if (role == "Student")
+                nis = parts[0];
+            else
+                nip = parts[0];
+            fullname = parts[1];
+        }
+        else
+        {
+            showNisNipFullnameError = true;
+        }
+    }
+
+    private void ValidateEmail(ChangeEventArgs e)
+    {
+        email = e.Value?.ToString() ?? "";
+        emailError = "";
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            emailError = "Email tidak boleh kosong";
+        }
+        else if (!System.Text.RegularExpressions.Regex.IsMatch(email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
+        {
+            emailError = "Format email tidak valid";
+        }
+    }
+
+    private void SetGender(bool isMale)
+    {
+        gender = isMale;
+    }
+
+    private bool IsFormValid =>
+        !string.IsNullOrWhiteSpace(nisnipFullname) &&
+        !showNisNipFullnameError &&
+        ((role == "Student" && !string.IsNullOrWhiteSpace(nis)) || (role != "Student" && !string.IsNullOrWhiteSpace(nip))) &&
+        !string.IsNullOrWhiteSpace(fullname) &&
+        (role != "Student" || (selectedClassId.HasValue && selectedCompanyId.HasValue)) &&
+        !string.IsNullOrWhiteSpace(email) &&
+        string.IsNullOrEmpty(emailError) &&
+        gender.HasValue;
+
+    private async Task SaveProfile()
+    {
+        if (!IsFormValid) return;
+
+        var token = await JS.InvokeAsync<string>("localStorage.getItem", "authToken");
+        if (string.IsNullOrWhiteSpace(token)) return;
+        var authHeader = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        // 1. Update profile photo (if changed)
+        if (isPhotoChanged && profilePhotoFile != null)
+        {
+            var content = new MultipartFormDataContent();
+            var stream = profilePhotoFile.OpenReadStream(long.MaxValue);
+            var fileContent = new StreamContent(stream);
+            fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(profilePhotoFile.ContentType);
+            content.Add(fileContent, "image", profilePhotoFile.Name);
+
+            var req = new HttpRequestMessage(HttpMethod.Put, APIUrl.Endpoint("me/photo"));
+            req.Headers.Authorization = authHeader;
+            req.Content = content;
+            var resp = await Http.SendAsync(req);
+            if (!resp.IsSuccessStatusCode)
+            {
+                await JS.InvokeVoidAsync("alert", "Gagal update foto profil.");
+                return;
+            }
+        }
+
+        // 2. Update profile data
+        var data = new Dictionary<string, object?>
+        {
+            { "nis", role == "Student" ? nis : null },
+            { "nip", role != "Student" ? nip : null },
+            { "fullname", fullname },
+            { "classroomid", role == "Student" ? selectedClassId : 0 },
+            { "companyid", role == "Student" ? selectedCompanyId : 0 },
+            { "email", email },
+            { "gender", gender }
+        };
+
+        var json = JsonSerializer.Serialize(data);
+        var req2 = new HttpRequestMessage(HttpMethod.Put, APIUrl.Endpoint("me"));
+        req2.Headers.Authorization = authHeader;
+        req2.Content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+        var resp2 = await Http.SendAsync(req2);
+        if (resp2.IsSuccessStatusCode)
+        {
+            Navigation.NavigateTo("/home/profile/me", true);
+        }
+        else
+        {
+            await JS.InvokeVoidAsync("alert", "Gagal update data profil.");
+        }
+    }
+
+    private async Task LoadClasses()
+    {
+        var response = await Http.GetFromJsonAsync<ClassListResponse>(APIUrl.Endpoint($"classes?page={CurrentPage}"));
+        if (response != null)
+        {
+            classList = response.classrooms ?? new();
+            TotalPages = response.totalPages;
+        }
+    }
+
+    private void GoBack() => Navigation.NavigateTo("/home/profile");
+
+
+}

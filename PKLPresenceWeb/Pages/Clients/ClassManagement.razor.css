@@ -1,0 +1,213 @@
+﻿h5.fw-bold {
+    font-size: 1.2rem;
+    color: #333;
+}
+
+.class-wrapper {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    background-color: #e1e1e1;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.header-section {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: #0476D9;
+    padding: 1.5rem;
+    height: calc(120px - 20px);
+    box-sizing: border-box;
+}
+
+.profile-page .btn-link {
+    text-decoration: none;
+    font-size: 1.3rem;
+}
+
+.content-section {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 2rem;
+    /* Hitung tinggi agar tidak tertutup bottom bar */
+    max-height: calc(100vh - calc(120px - 20px) - 50px); /* 120px header, 70px bottom bar, sesuaikan jika perlu */
+    /* 120px = tinggi header-section, 70px = tinggi bottom bar */
+}
+
+.nav-tabs {
+    gap: 1rem;
+    border-bottom: 1px solid #dee2e6;
+    white-space: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none; /* Firefox */
+    overflow-y: hidden !important;
+}
+
+    .nav-tabs .nav-link {
+        font-size: 0.95rem;
+        padding: 6px 12px;
+        color: #666;
+        border: none;
+        border-bottom: 2px solid transparent;
+        background-color: transparent;
+        transition: all 0.2s ease-in-out;
+        white-space: nowrap;
+    }
+
+        .nav-tabs .nav-link.active {
+            color: #000;
+            border-bottom: 2px solid #000;
+            font-weight: 600;
+        }
+
+/*.table {
+    font-size: 0.9rem;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+    .table thead {
+        background-color: #f9f9f9;
+        font-weight: bold;
+    }
+
+    .table th, .table td {
+        padding: 10px 16px;
+        vertical-align: middle;
+        white-space: nowrap;
+    }
+
+.table-responsive::-webkit-scrollbar {
+    height: 6px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+    background: #aaa;
+    border-radius: 4px;
+}*/
+
+input.form-control,
+select.form-select {
+    font-size: 0.9rem;
+    border-radius: 8px;
+    padding: 6px 12px;
+}
+
+/*.pagination {
+    gap: 4px;
+}
+
+    .pagination .page-link {
+        min-width: 36px;
+        padding: 6px 10px;
+        font-size: 0.85rem;
+        border-radius: 8px;
+        color: #000;
+        border: 1px solid #ccc;
+    }
+
+    .pagination .page-item.active .page-link {
+        background-color: #000;
+        color: #fff;
+        border-color: #000;
+    }
+
+    .pagination .page-item.disabled .page-link {
+        opacity: 0.5;
+    }*/
+
+@media (max-width: 768px) {
+    .nav-tabs {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .table th, .table td {
+        font-size: 0.85rem;
+        padding: 8px;
+    }
+
+    input.form-control,
+    select.form-select {
+        font-size: 0.85rem;
+    }
+}
+
+
+body {
+    background: linear-gradient(to bottom, #d3d3d3, #fefefe);
+}
+
+.d-none {
+    display: none !important;
+}
+
+/* Border luar tabel */
+/*.table-bordered-wrap {
+    border: 3px solid black;
+    border-radius: 8px;
+    overflow: hidden;
+}*/
+
+/* Scroll bar hanya muncul saat scroll */
+.scrollable-x {
+    overflow-x: auto;
+    scrollbar-width: thin; /* Firefox */
+}
+
+    /* Untuk menghilangkan scroll bar di Chrome ketika tidak aktif */
+    .scrollable-x::-webkit-scrollbar {
+        height: 6px;
+    }
+
+    .scrollable-x::-webkit-scrollbar-thumb {
+        background-color: rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+    }
+
+    .scrollable-x::-webkit-scrollbar-track {
+        background-color: transparent;
+    }
+
+.btn-green {
+    background-color: #00BA1E;
+    border-color: #009f1b;
+    color: white;
+}
+
+    .btn-green:hover {
+        background-color: #00BA1E;
+        border-color: #009f1b;
+        color: white;
+    }
+
+    .btn-green:focus {
+        box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #26C74F;
+        outline: none;
+    }
+
+.btn-red {
+    background-color: #F01919;
+    border-color: #C31515;
+    color: white;
+}
+
+    .btn-red:hover {
+        background-color: #F01919;
+        border-color: #C31515;
+        color: white;
+    }
+
+    .btn-red:focus {
+        box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #F34646;
+        outline: none;
+    }
+
+.search-class-input {
+    max-width: 350px;
+    width: 100%;
+}

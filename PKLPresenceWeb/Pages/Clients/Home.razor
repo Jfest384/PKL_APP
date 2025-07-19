@@ -1,0 +1,129 @@
+﻿@page "/home"
+@inject HttpClient Http
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+@using System.Text.Json
+@using PKLPresenceWeb.Model
+
+<div class="home-wrapper">
+    <div class="header-section d-flex justify-content-between align-items-center">
+        <div class="user-info">
+            <p class="text-white">Selamat datang,</p>
+            <p class="fw-bold text-white" style="font-size: 1.2rem;">@fullName</p>
+            <p class="fw-semibold text-white" style="font-size: 0.8rem;">@secondLine</p>
+        </div>
+        <div class="photo-wrapper" @onclick="GoToProfile">
+            <img src="@photoUrl" onerror="this.src='/images/default_profile.jpg'" class="profile-photo" />
+        </div>
+    </div>
+
+    <div class="content-section">
+        <div class="card-instruction mb-3">
+            <p class="fw-semibold mb-1">
+                <i class="bi bi-check-circle me-1"></i> Tatacara Presensi Kehadiran PKL
+            </p>
+            <ol class="mb-1">
+                <li>Masuk ke menu Presence.</li>
+                <li>
+                    Pilih status kehadiran.
+                    <ul>
+                        <li>Hadir</li>
+                        <li>Sakit</li>
+                        <li>Izin</li>
+                        <li>Libur</li>
+                    </ul>
+                </li>
+            </ol>
+            <small class="text-muted d-block mt-1">
+                <strong>Note:</strong> Presensi dilakukan setiap hari saat PKL dimulai, dan hanya dapat dilakukan 1x dalam sehari.
+            </small>
+        </div>
+
+        <div class="card-instruction mb-5">
+            <p class="fw-semibold mb-1">
+                <i class="bi bi-file-earmark-text me-1"></i> Tatacara Mengisi Laporan PKL
+            </p>
+            <ol class="mb-1">
+                <li>Masuk ke menu Intern Report.</li>
+                <li>Klik tombol Tambah.</li>
+                <li>
+                    Isi data berikut:
+                    <ul>
+                        @* <li>Hari/Tanggal</li>
+                        <li>Jam</li> *@
+                        <li>Ringkasan pekerjaan</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string fullName = "";
+    private string secondLine = "";
+    private string photoUrl = "/images/default_profile.jpg"; // default
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var token = await JS.InvokeAsync<string>("localStorage.getItem", "authToken");
+            if (string.IsNullOrWhiteSpace(token)) return;
+
+            var authHeader = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+            // ===== Ambil data user =====
+            var request = new HttpRequestMessage(HttpMethod.Get, APIUrl.Endpoint("me"));
+            request.Headers.Authorization = authHeader;
+            var response = await Http.SendAsync(request);
+
+            if (!response.IsSuccessStatusCode) return;
+
+            var json = await response.Content.ReadAsStringAsync();
+            var doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+
+            fullName = root.GetProperty("fullname").GetString() ?? "";
+            var role = root.GetProperty("role").GetString() ?? "";
+
+            if (role.ToLower() == "student")
+            {
+                var data = root.GetProperty("data");
+                if (data.GetArrayLength() > 0)
+                {
+                    var first = data[0];
+                    secondLine = first.GetProperty("classroom").GetString() ?? "";
+                }
+            }
+            else
+            {
+                secondLine = role;
+            }
+
+            // ===== Ambil foto profile =====
+            if (root.TryGetProperty("profile", out var profileProp) &&
+                profileProp.ValueKind != JsonValueKind.Null)
+            {
+                var photoRequest = new HttpRequestMessage(HttpMethod.Get, APIUrl.Endpoint("me/photo"));
+                photoRequest.Headers.Authorization = authHeader;
+                var photoResponse = await Http.SendAsync(photoRequest);
+
+                if (photoResponse.IsSuccessStatusCode)
+                {
+                    var bytes = await photoResponse.Content.ReadAsByteArrayAsync();
+                    var contentType = photoResponse.Content.Headers.ContentType?.MediaType ?? "image/jpeg";
+                    var base64 = Convert.ToBase64String(bytes);
+                    photoUrl = $"data:{contentType};base64,{base64}";
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Gagal memuat data user atau foto: " + ex.Message);
+        }
+    }
+
+    private void GoToProfile() => Navigation.NavigateTo("/home/profile");
+}
+

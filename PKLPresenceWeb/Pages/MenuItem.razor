@@ -1,0 +1,17 @@
+﻿@inherits LayoutComponentBase
+@inject NavigationManager Navigation
+
+<div class="menu-item d-flex align-items-center justify-content-between p-2 px-3 border-bottom"
+     role="button" @onclick="() => Navigation.NavigateTo(Link)">
+    <div>
+        <i class="bi @Icon me-2"></i> @Text
+    </div>
+    <i class="bi bi-chevron-right"></i>
+</div>
+
+@code {
+    [Parameter] public string Icon { get; set; } = "";
+    [Parameter] public string Text { get; set; } = "";
+    [Parameter] public string Link { get; set; } = "#";
+}
+

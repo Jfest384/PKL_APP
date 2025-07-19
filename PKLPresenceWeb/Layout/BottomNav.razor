@@ -1,0 +1,61 @@
+﻿@implements IDisposable
+@inject NavigationManager Navigation
+
+<nav class="bottom-nav-custom">
+    <a href="/home" class="@GetClass("home")">
+        <div class="nav-item-inner @(IsActive("home") ? "active" : "")">
+            <i class="bi bi-house"></i>
+            <span class="menu-label">Home</span>
+        </div>
+    </a>
+    <a href="/participant" class="@GetClass("participant")">
+        <div class="nav-item-inner @(IsActive("participant") ? "active" : "")">
+            <i class="bi bi-person"></i>
+            <span class="menu-label">Participant</span>
+        </div>
+    </a>
+    <a href="/presence" class="@GetClass("presence")">
+        <div class="nav-item-inner @(IsActive("presence") ? "active" : "")">
+            <i class="bi bi-calendar-check"></i>
+            <span class="menu-label">Presence</span>
+        </div>
+    </a>
+    <a href="/report" class="@GetClass("report")">
+        <div class="nav-item-inner @(IsActive("report") ? "active" : "")">
+            <i class="bi bi-file-earmark-text"></i>
+            <span class="menu-label">Report</span>
+        </div>
+    </a>
+</nav>
+
+@code {
+    private string currentPath = "";
+
+    protected override void OnInitialized()
+    {
+        UpdatePath();
+        Navigation.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        UpdatePath();
+        StateHasChanged();
+    }
+
+    private void UpdatePath()
+    {
+        currentPath = Navigation.ToBaseRelativePath(Navigation.Uri).Split('?')[0];
+    }
+
+    private string GetClass(string path) =>
+        IsActive(path) ? "nav-item-custom active" : "nav-item-custom";
+
+    private bool IsActive(string path) =>
+        string.Equals(currentPath, path, StringComparison.OrdinalIgnoreCase);
+
+    public void Dispose()
+    {
+        Navigation.LocationChanged -= OnLocationChanged;
+    }
+}

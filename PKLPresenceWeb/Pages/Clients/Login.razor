@@ -1,0 +1,108 @@
+﻿@page "/login"
+@using System.ComponentModel.DataAnnotations
+@using PKLPresenceWeb.Model
+@inject HttpClient Http
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+<div class="login-page">
+    <div class="login-box">
+        <h2 class="login-title">Login</h2>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="error-message">@errorMessage</div>
+        }
+
+        <input class="login-input"
+               type="text"
+               placeholder="Username"
+               @bind="loginDTO.username"
+               @onkeydown="OnInputKeyDown" />
+
+        <div class="password-container">
+            <input class="login-input"
+                   type="@PasswordInputType"
+                   placeholder="Password"
+                   @bind="loginDTO.password"
+                   @onkeydown="OnInputKeyDown" />
+            <button type="button" class="toggle-password" @onclick="TogglePasswordVisibility">
+                <span>@(showPassword ? "🙈" : "👁️")</span>
+            </button>
+        </div>
+
+        <div class="forgot-password">
+            <a @onclick="PreventDefault">Forgot password?</a>
+        </div>
+
+        <button class="btn btn-primary btn-lg w-100"
+                @onclick="LoginUser"
+                disabled="@isLoggingIn">
+            @(isLoggingIn ? "Logging..." : "Login")
+        </button>
+    </div>
+</div>
+
+@code {
+    private LoginDTO loginDTO = new()
+    {
+        username = string.Empty,
+        password = string.Empty
+    };
+
+    private bool showPassword = false;
+    private string? errorMessage;
+    private string PasswordInputType => showPassword ? "text" : "password";
+
+    private bool isLoggingIn = false;
+
+    private void TogglePasswordVisibility()
+    {
+        showPassword = !showPassword;
+    }
+
+    private Task PreventDefault(MouseEventArgs e)
+    {
+        return Task.CompletedTask;
+    }
+
+    private async Task LoginUser()
+    {
+        isLoggingIn = true;
+        StateHasChanged();
+        try
+        {
+            errorMessage = null;
+            var response = await Http.PostAsJsonAsync(APIUrl.Endpoint("authentication/login"), loginDTO);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var token = await response.Content.ReadAsStringAsync();
+                if (!string.IsNullOrWhiteSpace(token))
+                {
+                    await JS.InvokeVoidAsync("localStorage.setItem", "authToken", token);
+                    Navigation.NavigateTo("/home");
+                }
+                else errorMessage = "Token tidak ditemukan dalam respons.";
+            }
+            else errorMessage = "Login gagal. Periksa username dan password Anda.";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Terjadi kesalahan: " + ex.Message;
+        }
+        finally
+        {
+            isLoggingIn = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task OnInputKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !isLoggingIn)
+        {
+            await LoginUser();
+        }
+    }
+}
