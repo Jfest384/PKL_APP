@@ -1,5 +1,8 @@
 ﻿@page "/"
 
+@inject IJSRuntime JS
+@inject NavigationManager Navigation
+
 <PageTitle>Cover</PageTitle>
 
 <div class="d-flex flex-column justify-content-center align-items-center min-vh-100">
@@ -8,5 +11,21 @@
         This app is designed to help you record Presence and submit Intern Report.
     </p>
     <img src="images/logo.png" alt="Logo" class="mb-5 mt-5" style="max-width: 200px; width: 100%;" />
-    <a href="/login" class="btn btn-primary btn-lg mt-5" style="width: 250px">Let's Go</a>
+    <button class="btn btn-primary btn-lg mt-5" style="width: 250px" @onclick="OnLetsGoClicked">Let's Go</button>
 </div>
+
+@code {
+    private async Task OnLetsGoClicked()
+    {
+        var token = await JS.InvokeAsync<string>("localStorage.getItem", "authToken");
+        if (!string.IsNullOrWhiteSpace(token))
+        {
+            // Optional: cek expired token di sini jika ingin lebih aman
+            Navigation.NavigateTo("/home");
+        }
+        else
+        {
+            Navigation.NavigateTo("/login");
+        }
+    }
+}

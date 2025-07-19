@@ -301,8 +301,9 @@ namespace PKL_API.Controllers
 
 
         [Authorize]
-        [HttpGet("student/{studentId}/print")]
-        public async Task<IActionResult> PrintReportByStudent(int studentId,
+        [HttpGet("student/{studentName}/print")]
+        public async Task<IActionResult> PrintReportByStudent(
+            string studentName,
             [FromQuery] DateOnly? startDate,
             [FromQuery] DateOnly? endDate)
         {
@@ -316,12 +317,13 @@ namespace PKL_API.Controllers
                 return Unauthorized(ex.Message);
             }
 
-            // Validasi student dan ambil data lengkap
+            // Validasi student dan ambil data lengkap berdasarkan nama (case-insensitive)
             var student = await _db.Students
                 .Include(s => s.Classroom)
                 .Include(s => s.Company)
                 .Include(s => s.Mentor)
-                .FirstOrDefaultAsync(s => s.id == studentId);
+                .Include(s => s.User)
+                .FirstOrDefaultAsync(s => s.User.fullname.ToLower() == studentName.ToLower());
 
             if (student == null)
                 return NotFound("Student not found.");
@@ -344,7 +346,6 @@ namespace PKL_API.Controllers
                 if (waliKelas == null)
                     return StatusCode(403, "You are not assigned as a homeroom teacher for any class.");
 
-                // Cari classroom yang diwalikan oleh waliKelas ini
                 var classroom = await _db.Classrooms.FirstOrDefaultAsync(c => c.WaliKelasid == waliKelas.id);
                 if (classroom == null)
                     return StatusCode(403, "You are not assigned as a homeroom teacher for any class.");
@@ -357,7 +358,7 @@ namespace PKL_API.Controllers
                 .Include(r => r.Classroom)
                 .Include(r => r.Student)
                     .ThenInclude(s => s.Company)
-                .Where(r => r.Studentid == studentId);
+                .Where(r => r.Studentid == student.id);
 
             if (startDate.HasValue)
                 query = query.Where(r => r.date >= startDate.Value);

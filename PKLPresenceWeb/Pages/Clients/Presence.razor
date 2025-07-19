@@ -201,9 +201,6 @@
                         <video id="webrtc_@WebRTCField" autoplay playsinline class="webrtc-modal-video"></video>
                         <div class="text-muted small text-center mt-2">Tap/Enter/Spasi untuk ambil foto</div>
                         <div class="d-flex gap-2 mt-3">
-                            <button class="btn btn-secondary" title="Switch Camera" @onclick="SwitchWebRTCCamera">
-                                <i class="bi bi-camera-reverse"></i>
-                            </button>
                             <button class="btn btn-danger" @onclick="CloseWebRTCModal">Cancel</button>
                             <button class="btn btn-success" @onclick="CaptureWebRTCPhoto">Capture</button>
                         </div>
@@ -356,7 +353,7 @@
                             </li>
                             @for (int i = 1; i <= TotalPages; i++)
                             {
-                                var pageNum = i; // fix closure issue
+                                var pageNum = i;
                                 <li class="page-item @(pageNum == CurrentPage ? "active" : null)">
                                     <button class="page-link"
                                         @onclick="() => ChangePage(pageNum)"
@@ -617,13 +614,14 @@
         }
     }
 
-    private async void SwitchWebRTCCamera()
-    {
-        if (WebRTCField != null)
-        {
-            await JS.InvokeVoidAsync("webrtcPhoto.switchCamera", $"webrtc_{WebRTCField}");
-        }
-    }
+    // private async void SwitchWebRTCCamera()
+    // {
+    //     if (WebRTCField != null)
+    //     {
+    //         dotNetRef ??= DotNetObjectReference.Create(this);
+    //         await JS.InvokeVoidAsync("webrtcPhoto.switchCamera", $"webrtc_{WebRTCField}", dotNetRef);
+    //     }
+    // }
 
     private Dictionary<string, InputFile> inputFileRefs = new();
 
@@ -698,7 +696,7 @@
                 foreach (var field in PreviewPresenceFields)
                 {
                     var photo = photos.FirstOrDefault(p => MapPhotoTypeToField(p.type) == field.Field);
-                    var apiBase = Navigation.BaseUri.StartsWith("http://") ? "https://localhost:7027" : "https://victoria-translator-viii-ab.trycloudflare.com";
+                    var apiBase = Navigation.BaseUri.StartsWith("http://") ? "https://localhost:7027" : "https://later-current-architectural-refuse.trycloudflare.com";
                     if (photo != null)
                     {
                         // Ganti http ke https jika frontend diakses via https
