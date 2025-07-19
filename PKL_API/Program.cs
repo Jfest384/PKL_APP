@@ -62,6 +62,7 @@ builder.Services.AddCors(options =>
     {
         policy.WithOrigins(
                 "https://localhost:7235",
+                "https://presensi.smksabdev.my.id",
                 "http://localhost:5125")
               .AllowAnyMethod()
               .AllowAnyHeader()
