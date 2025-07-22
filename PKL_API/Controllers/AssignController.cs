@@ -93,7 +93,7 @@ namespace PKL_API.Controllers
                 return NotFound("Student not found.");
             }
 
-            if (!student.isPKL)
+            if (student.isPKL == false)
             {
                 return BadRequest("Student is not currently assigned to PKL.");
             }
@@ -152,7 +152,7 @@ namespace PKL_API.Controllers
             // Check PKL status and assign mentor
             foreach (var student in students)
             {
-                if (!student.isPKL)
+                if (student.isPKL == false)
                 {
                     return BadRequest($"Student with id {student.id} is not currently assigned to PKL.");
                 }

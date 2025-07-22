@@ -168,7 +168,10 @@
                                 <th class="text-center">Ringkasan Pekerjaan</th>
 								<th class="text-center">Feedback</th>
                                 <th class="text-center">Bimbingan</th>
-                                <th class="text-center">Action</th>
+                                @if (UserRole != "Admin" && UserRole != "Student")
+                                {
+                                    <th class="text-center">Action</th>
+                                }                               
                             </tr>
                         </thead>
                         <tbody>
@@ -198,19 +201,22 @@
                                                 <span class="bi bi-x text-danger" style="font-size: 2rem; font-weight: bold"></span>
                                             }
                                         </td>
-                                        <td>
-                                            <div class="d-flex gap-2 justify-content-center">
-                                                <button class="btn btn-sm btn-success" @onclick="() => ShowFeedback(item)">Feedback</button>
-                                                @if (UserRole == "Mentor")
-                                                {
-                                                    <button class="btn btn-sm btn-warning"
-                                                            @onclick="() => ShowGuidance(item.studentId, item.name)"
-                                                            disabled="@(item.isGuidance == "✔️")">
-                                                        Bimbingan
-                                                    </button>
-                                                }
-                                            </div>
-                                        </td>
+                                        @if (UserRole != "Admin" && UserRole != "Student")
+                                        {
+                                            <td>
+                                                <div class="d-flex gap-2 justify-content-center">
+                                                    <button class="btn btn-sm btn-success" @onclick="() => ShowFeedback(item)">Feedback</button>
+                                                    @if (UserRole == "Mentor")
+                                                    {
+                                                        <button class="btn btn-sm btn-warning"
+                                                                @onclick="() => ShowGuidance(item.studentId, item.name)"
+                                                                disabled="@(item.isGuidance == "✔️")">
+                                                            Bimbingan
+                                                        </button>
+                                                    }
+                                                </div>
+                                            </td>
+                                        }                                       
                                     </tr>
                                 }
                             }

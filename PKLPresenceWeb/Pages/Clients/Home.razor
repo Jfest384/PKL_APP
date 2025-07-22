@@ -1,8 +1,10 @@
 ﻿@page "/home"
+@attribute [Authorize]
 @inject HttpClient Http
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
 @using System.Text.Json
+@using Microsoft.AspNetCore.Authorization
 @using PKLPresenceWeb.Model
 
 <div class="home-wrapper">

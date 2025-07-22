@@ -56,16 +56,20 @@ namespace PKL_API.Controllers
             {
                 // Tampilkan semua data student, ganti id_class, id_department, id_mentor, id_company menjadi nama
                 var students = _db.Students
-                    .Where(s => s.User.id == selectedUserId)
+                    .Include(s => s.User)
+                    .Include(s => s.Classroom)
+                    .Include(s => s.Mentor).ThenInclude(m => m.User)
+                    .Include(s => s.Company)
+                    .Where(s => s.Userid == selectedUserId)
                     .Select(s => new
                     {
                         s.id,
                         s.nis,
-                        s.nisn,
+                        nisn = s.nisn ?? "-",
                         s.User.fullname,
-                        classroom = s.Classroom.name,
-                        mentor = s.Mentor.User.fullname,
-                        company = s.Company.name,
+                        classroom = s.Classroom != null ? s.Classroom.name : null,
+                        mentor = s.Mentor != null && s.Mentor.User != null ? s.Mentor.User.fullname : null,
+                        company = s.Company != null ? s.Company.name : null,
                         s.isPKL
                     })
                     .ToList();

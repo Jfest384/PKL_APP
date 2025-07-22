@@ -1,8 +1,10 @@
 ﻿@page "/participant/class-management"
+@attribute [Authorize]
 @inject HttpClient Http
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
 
+@using Microsoft.AspNetCore.Authorization
 @using PKLPresenceWeb.Model
 
 <div class="class-wrapper">

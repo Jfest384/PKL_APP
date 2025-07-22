@@ -1,12 +1,37 @@
-﻿<Router AppAssembly="@typeof(App).Assembly">
-    <Found Context="routeData">
-        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
-        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
-    </Found>
-    <NotFound>
-        <PageTitle>Not found</PageTitle>
-        <LayoutView Layout="@typeof(MainLayout)">
-            <p role="alert">Sorry, there's nothing at this address.</p>
-        </LayoutView>
-    </NotFound>
-</Router>
+﻿@using Microsoft.AspNetCore.Components.Authorization
+@using PKLPresenceWeb.Pages.Clients
+
+<CascadingAuthenticationState>
+    <Router AppAssembly="@typeof(App).Assembly">
+        <Found Context="routeData">
+            @if (IsPublicPage(routeData.PageType))
+            {
+                <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+            }
+            else
+            {
+                <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
+                    <NotAuthorized>
+                        <RedirectToLogin />
+                    </NotAuthorized>
+                </AuthorizeRouteView>
+            }
+        </Found>
+        <NotFound>
+            <LayoutView Layout="@typeof(MainLayout)">
+                <p role="alert">Sorry, there's nothing at this address.</p>
+            </LayoutView>
+        </NotFound>
+    </Router>
+</CascadingAuthenticationState>
+
+@code {
+    private static readonly Type[] PublicPages = new[]
+    {
+        typeof(PKLPresenceWeb.Pages.Clients.Cover), // pastikan Cover.razor ada @page "/"
+        typeof(PKLPresenceWeb.Pages.Clients.Login)
+    };
+
+    private bool IsPublicPage(Type pageType)
+        => PublicPages.Contains(pageType);
+}

@@ -1,8 +1,10 @@
 ﻿@page "/participant"
+@attribute [Authorize]
 @inject HttpClient Http
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
 
+@using Microsoft.AspNetCore.Authorization
 @using PKLPresenceWeb.Model
 @using System.Net.Http.Headers
 

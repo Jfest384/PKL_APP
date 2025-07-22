@@ -85,7 +85,7 @@ namespace PKL_API.Controllers
                     class_name = q.Classroom != null ? q.Classroom.name : null,
                     mentor_name = q.Mentor != null ? q.Mentor.User.fullname : null,
                     company_name = q.Company != null ? q.Company.name : null,
-                    isPKL = q.isPKL ? "Yes" : "No"
+                    isPKL = q.isPKL == true ? "Yes" : "No"
                 })
                 .FirstOrDefault();
             if (student == null)
@@ -129,7 +129,7 @@ namespace PKL_API.Controllers
 
             // Step 3: Base query for PKL students
             var query = _db.Students
-                .Where(q => q.isPKL)
+                .Where(q => q.isPKL == true)
                 .AsQueryable();
 
             // Step 4: Filter for student role

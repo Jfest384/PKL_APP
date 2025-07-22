@@ -1,9 +1,11 @@
 ﻿@page "/login"
 @using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Components.Authorization
 @using PKLPresenceWeb.Model
 @inject HttpClient Http
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
+@inject AuthenticationStateProvider AuthStateProvider
 
 <div class="login-page">
     <div class="login-box">
@@ -81,6 +83,13 @@
                 if (!string.IsNullOrWhiteSpace(token))
                 {
                     await JS.InvokeVoidAsync("localStorage.setItem", "authToken", token);
+
+                    // Tambahkan baris ini:
+                    if (AuthStateProvider is SimpleAuthStateProvider simpleAuth)
+                    {
+                        await simpleAuth.NotifyUserAuthenticationChanged();
+                    }
+
                     Navigation.NavigateTo("/home");
                 }
                 else errorMessage = "Token tidak ditemukan dalam respons.";

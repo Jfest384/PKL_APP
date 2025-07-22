@@ -1,8 +1,10 @@
 ﻿@page "/home/profile"
+@attribute [Authorize]
 @inject HttpClient Http
 @inject IJSRuntime JS
 @inject NavigationManager Navigation
 @using System.Text.Json
+@using Microsoft.AspNetCore.Authorization
 @using PKLPresenceWeb.Model
 
 <div class="profile-page">

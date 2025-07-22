@@ -44,7 +44,7 @@ namespace PKL_API.Controllers
                 .Include(s => s.Company)
                 .FirstOrDefaultAsync(s => s.Userid == userId);
 
-            if (student == null || !student.isPKL)
+            if (student == null || !(student.isPKL ?? false))
                 return StatusCode(403, "Only active PKL students can submit reports.");
 
             if (string.IsNullOrWhiteSpace(dto.content))
@@ -68,7 +68,7 @@ namespace PKL_API.Controllers
             {
                 id_student = student.id,
                 nis = student.nis,
-                name = student.User.fullname,
+                name = student.User?.fullname,
                 classroom = student.Classroom?.name,
                 company = student.Company?.name,
                 content = dto.content
@@ -138,7 +138,7 @@ namespace PKL_API.Controllers
             {
                 id_student = report.Studentid,
                 nis = report.Student.nis,
-                name = report.Student.User.fullname,
+                name = report.Student.User?.fullname,
                 classroom_name = classroom?.name,
                 company_name = company?.name,
                 content = report.content,
@@ -169,7 +169,8 @@ namespace PKL_API.Controllers
             IQueryable<Report> query = _db.Reports
                 .Include(r => r.Student).ThenInclude(s => s.Classroom)
                 .Include(r => r.Student).ThenInclude(s => s.User)
-                .Include(r => r.Student).ThenInclude(s => s.Company);
+                .Include(r => r.Student).ThenInclude(s => s.Company)
+                .Include(r => r.Student).ThenInclude(s => s.Mentor).ThenInclude(m => m.User);
 
             // Role-based filtering
             if (roleId == 2)
@@ -225,6 +226,7 @@ namespace PKL_API.Controllers
                 classId = r.Classroomid,
                 classroom_name = r.Student.Classroom?.name,
                 company_name = r.Student.Company?.name,
+                mentor = r.Student.Mentor?.User?.fullname ?? "-",
                 content = r.content,
                 feedback = r.feedback ?? "-",
                 isGuidance = _db.WeeklyGuidances.Any(w =>
@@ -301,9 +303,9 @@ namespace PKL_API.Controllers
 
 
         [Authorize]
-        [HttpGet("student/{studentName}/print")]
+        [HttpGet("student/{studentId}/print")]
         public async Task<IActionResult> PrintReportByStudent(
-            string studentName,
+            int studentId,
             [FromQuery] DateOnly? startDate,
             [FromQuery] DateOnly? endDate)
         {
@@ -317,41 +319,41 @@ namespace PKL_API.Controllers
                 return Unauthorized(ex.Message);
             }
 
-            // Validasi student dan ambil data lengkap berdasarkan nama (case-insensitive)
+            // Cari student berdasarkan studentId
             var student = await _db.Students
                 .Include(s => s.Classroom)
                 .Include(s => s.Company)
-                .Include(s => s.Mentor)
+                .Include(s => s.Mentor).ThenInclude(s => s.User)
                 .Include(s => s.User)
-                .FirstOrDefaultAsync(s => s.User.fullname.ToLower() == studentName.ToLower());
+                .FirstOrDefaultAsync(s => s.id == studentId);
 
             if (student == null)
                 return NotFound("Student not found.");
 
-            // Jika mentor, hanya boleh print siswa bimbingannya
-            if (roleId == 3)
-            {
-                var mentor = await _db.Mentors.FirstOrDefaultAsync(m => m.Userid == userId);
-                if (mentor == null)
-                    return StatusCode(403, "Mentor data not found.");
-                if (student.Mentorid != mentor.id)
-                    return StatusCode(403, "You can only print reports for your own mentees.");
-            }
+            //// Jika mentor, hanya boleh print siswa bimbingannya
+            //if (roleId == 3)
+            //{
+            //    var mentor = await _db.Mentors.FirstOrDefaultAsync(m => m.Userid == userId);
+            //    if (mentor == null)
+            //        return StatusCode(403, "Mentor data not found.");
+            //    if (student.Mentorid != mentor.id)
+            //        return StatusCode(403, "You can only print reports for your own mentees.");
+            //}
 
-            // Jika wali kelas, hanya boleh print siswa perwaliannya
-            if (roleId == 5)
-            {
-                var waliKelas = await _db.WaliKelas
-                    .FirstOrDefaultAsync(wk => wk.Userid == userId);
-                if (waliKelas == null)
-                    return StatusCode(403, "You are not assigned as a homeroom teacher for any class.");
+            //// Jika wali kelas, hanya boleh print siswa perwaliannya
+            //if (roleId == 5)
+            //{
+            //    var waliKelas = await _db.WaliKelas
+            //        .FirstOrDefaultAsync(wk => wk.Userid == userId);
+            //    if (waliKelas == null)
+            //        return StatusCode(403, "You are not assigned as a homeroom teacher for any class.");
 
-                var classroom = await _db.Classrooms.FirstOrDefaultAsync(c => c.WaliKelasid == waliKelas.id);
-                if (classroom == null)
-                    return StatusCode(403, "You are not assigned as a homeroom teacher for any class.");
-                if (student.Classroomid != classroom.id)
-                    return StatusCode(403, "You can only print reports for students in your homeroom class.");
-            }
+            //    var classroom = await _db.Classrooms.FirstOrDefaultAsync(c => c.WaliKelasid == waliKelas.id);
+            //    if (classroom == null)
+            //        return StatusCode(403, "You are not assigned as a homeroom teacher for any class.");
+            //    if (student.Classroomid != classroom.id)
+            //        return StatusCode(403, "You can only print reports for students in your homeroom class.");
+            //}
 
             // Ambil semua report siswa tersebut
             var query = _db.Reports
@@ -507,37 +509,50 @@ namespace PKL_API.Controllers
 
             Classroom? classroom = null;
 
-            if (roleId == 5)
-            {
-                // Wali Kelas: ambil kelas yang diwalikan user ini
-                var waliKelas = await _db.WaliKelas
-                    .FirstOrDefaultAsync(wk => wk.User.id == userId);
+            //if (roleId == 5)
+            //{
+            //    // Wali Kelas: ambil kelas yang diwalikan user ini
+            //    var waliKelas = await _db.WaliKelas
+            //        .FirstOrDefaultAsync(wk => wk.User.id == userId);
 
-                if (waliKelas == null)
-                    return NotFound("You are not assigned as a homeroom teacher for any class.");
+            //    if (waliKelas == null)
+            //        return NotFound("You are not assigned as a homeroom teacher for any class.");
 
-                classroom = await _db.Classrooms
-                    .FirstOrDefaultAsync(c => c.WaliKelasid == waliKelas.id);
+            //    classroom = await _db.Classrooms
+            //        .FirstOrDefaultAsync(c => c.WaliKelasid == waliKelas.id);
 
-                if (classroom == null)
-                    return NotFound("Classroom not found for your homeroom assignment.");
-                classId = classroom.id;
-            }
-            else
-            {
-                // Role lain: gunakan classId dari parameter
-                if (!classId.HasValue)
-                    return BadRequest("ClassId is required.");
-                classroom = await _db.Classrooms
-                    .Include(c => c.Students)
-                        .ThenInclude(s => s.Company)
-                    .Include(c => c.Students)
-                        .ThenInclude(s => s.Mentor)
-                    .FirstOrDefaultAsync(c => c.id == classId.Value);
+            //    if (classroom == null)
+            //        return NotFound("Classroom not found for your homeroom assignment.");
+            //    classId = classroom.id;
+            //}
+            //else
+            //{
+            //    // Role lain: gunakan classId dari parameter
+            //    if (!classId.HasValue)
+            //        return BadRequest("ClassId is required.");
+            //    classroom = await _db.Classrooms
+            //        .Include(c => c.Students)
+            //            .ThenInclude(s => s.Company)
+            //        .Include(c => c.Students)
+            //            .ThenInclude(s => s.Mentor)
+            //        .FirstOrDefaultAsync(c => c.id == classId.Value);
 
-                if (classroom == null)
-                    return NotFound("Classroom not found.");
-            }
+            //    if (classroom == null)
+            //        return NotFound("Classroom not found.");
+            //}
+
+            // Role lain: gunakan classId dari parameter
+            if (!classId.HasValue)
+                return BadRequest("ClassId is required.");
+            classroom = await _db.Classrooms
+                .Include(c => c.Students)
+                    .ThenInclude(s => s.Company)
+                .Include(c => c.Students)
+                    .ThenInclude(s => s.Mentor)
+                .FirstOrDefaultAsync(c => c.id == classId.Value);
+
+            if (classroom == null)
+                return NotFound("Classroom not found.");
 
             // Ambil semua report siswa di kelas tersebut
             var query = _db.Reports
@@ -546,6 +561,8 @@ namespace PKL_API.Controllers
                 .Include(r => r.Classroom)
                 .Include(r => r.Student)
                     .ThenInclude(s => s.Company)
+                .Include(r => r.Student)
+                    .ThenInclude(s => s.User)
                 .Where(r => r.Classroomid == classroom.id);
 
             if (startDate.HasValue)
@@ -665,27 +682,31 @@ namespace PKL_API.Controllers
                     .ThenInclude(s => s.Classroom)
                 .Include(m => m.Students)
                     .ThenInclude(s => s.Company)
+                .Include(m => m.Students)
+                    .ThenInclude(s => s.User)
                 .FirstOrDefaultAsync(m => m.id == mentorId);
 
             if (mentor == null)
                 return NotFound("Mentor not found.");
 
-            // Jika role 3 (mentor), hanya boleh print siswa bimbingannya sendiri
-            if (roleId == 3)
-            {
-                var currentMentor = await _db.Mentors.FirstOrDefaultAsync(m => m.Userid == userId);
-                if (currentMentor == null)
-                    return StatusCode(403, "Mentor data not found.");
-                if (mentor.id != currentMentor.id)
-                    return StatusCode(403, "You can only print reports for your own mentees.");
-            }
+            //// Jika role 3 (mentor), hanya boleh print siswa bimbingannya sendiri
+            //if (roleId == 3)
+            //{
+            //    var currentMentor = await _db.Mentors.FirstOrDefaultAsync(m => m.Userid == userId);
+            //    if (currentMentor == null)
+            //        return StatusCode(403, "Mentor data not found.");
+            //    if (mentor.id != currentMentor.id)
+            //        return StatusCode(403, "You can only print reports for your own mentees.");
+            //}
 
             var query = _db.Reports
                 .Include(r => r.Student)
                     .ThenInclude(s => s.Classroom)
                 .Include(r => r.Student)
                     .ThenInclude(s => s.Company)
-                .Include(r => r.Mentor)
+                .Include(r => r.Student)
+                    .ThenInclude(s => s.User)
+                .Include(r => r.Mentor).ThenInclude(m => m.User)
                 .Include(r => r.Classroom)
                 .Where(r => r.Mentorid == mentorId);
 

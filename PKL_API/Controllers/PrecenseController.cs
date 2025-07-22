@@ -229,7 +229,7 @@ namespace PKL_API.Controllers
                 var studentsQuery = _db.Students
                     .Include(s => s.User)
                     .Include(s => s.Classroom)
-                    .Where(s => s.Mentorid == mentor.id && s.isPKL);
+                    .Where(s => s.Mentorid == mentor.id && s.isPKL == true);
 
                 if (classId.HasValue)
                     studentsQuery = studentsQuery.Where(s => s.Classroomid == classId.Value);
@@ -297,7 +297,7 @@ namespace PKL_API.Controllers
                 var studentsQuery = _db.Students
                     .Include(s => s.User)
                     .Include(s => s.Classroom)
-                    .Where(s => s.Classroomid == classroom.id && s.isPKL);
+                    .Where(s => s.Classroomid == classroom.id && s.isPKL == true);
 
                 if (classId.HasValue)
                     studentsQuery = studentsQuery.Where(s => s.Classroomid == classId.Value);
@@ -356,7 +356,7 @@ namespace PKL_API.Controllers
                 var studentsQuery = _db.Students
                     .Include(s => s.User)
                     .Include(s => s.Classroom)
-                    .Where(s => s.isPKL);
+                    .Where(s => s.isPKL == true);
 
                 if (classId.HasValue)
                 {
@@ -365,7 +365,7 @@ namespace PKL_API.Controllers
                 if (!string.IsNullOrWhiteSpace(search))
                 {
                     var searchLower = search.ToLower();
-                    studentsQuery = studentsQuery.Where(s => s.User.fullname.ToLower().Contains(searchLower));
+                    studentsQuery = studentsQuery.Where(s => EF.Functions.Like(s.User.fullname, $"%{search}%"));
                 }
 
                 var students = await studentsQuery.ToListAsync();
@@ -386,16 +386,16 @@ namespace PKL_API.Controllers
                     {
                         id_presence = presence?.id.ToString() ?? "-",
                         nis = s.nis ?? "-",
-                        name = s.User.fullname ?? "-",
+                        name = s.User?.fullname ?? "-",
                         classId = s.Classroomid,
-                        classroom_name = s.Classroom != null ? s.Classroom.name ?? "-" : "-",
+                        classroom_name = s.Classroom?.name ?? "-",
                         date = ToIndonesianLongDate(filterDate),
-                        time = presence != null ? presence.time.ToString("HH:mm:ss") : "-",
+                        time = presence?.time.ToString("HH:mm:ss") ?? "-",
                         presence_type = presence?.PresenceType?.name ?? "-",
                         feedback = presence?.feedback ?? "-",
                         isPresence = presence != null ? "✔️" : "❌",
-                        lat = presence?.Detail != null ? presence.Detail.lat.ToString() : "-",
-                        longitude = presence?.Detail != null ? presence.Detail.longitude.ToString() : "-"
+                        lat = presence?.Detail?.lat.ToString() ?? "-",
+                        longitude = presence?.Detail?.longitude.ToString() ?? "-"
                     };
                 }).ToList();
 
@@ -733,7 +733,7 @@ namespace PKL_API.Controllers
             // Ambil semua student PKL di kelas ini
             var students = await _db.Students
                 .Include(s => s.User)
-                .Where(s => s.Classroomid == classroom.id && s.isPKL)
+                .Where(s => s.Classroomid == classroom.id && (s.isPKL ?? false))
                 .OrderBy(s => s.nis)
                 .ToListAsync();
 
