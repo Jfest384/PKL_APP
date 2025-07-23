@@ -1,5 +1,11 @@
-﻿@implements IDisposable
+﻿@using PKLPresenceWeb.Model
+@using System.Net.Http.Headers
+@implements IDisposable
 @inject NavigationManager Navigation
+@inject HttpClient Http
+@inject IJSRuntime JS
+@using PKLPresenceWeb.Model
+@using PKLPresenceWeb.Pages
 
 <nav class="bottom-nav-custom">
     <a href="/home" class="@GetClass("home")">
@@ -8,19 +14,19 @@
             <span class="menu-label">Home</span>
         </div>
     </a>
-    <a href="/participant" class="@GetClass("participant")">
+    <a class="@GetClass("participant")" @onclick="@(e => HandleMenuClick("participant"))" style="cursor:pointer;">
         <div class="nav-item-inner @(IsActive("participant") ? "active" : "")">
             <i class="bi bi-person"></i>
             <span class="menu-label">Participant</span>
         </div>
     </a>
-    <a href="/presence" class="@GetClass("presence")">
+    <a class="@GetClass("presence")" @onclick="@(e => HandleMenuClick("presence"))" style="cursor:pointer;">
         <div class="nav-item-inner @(IsActive("presence") ? "active" : "")">
             <i class="bi bi-calendar-check"></i>
             <span class="menu-label">Presence</span>
         </div>
     </a>
-    <a href="/report" class="@GetClass("report")">
+    <a class="@GetClass("report")" @onclick="@(e => HandleMenuClick("report"))" style="cursor:pointer;">
         <div class="nav-item-inner @(IsActive("report") ? "active" : "")">
             <i class="bi bi-file-earmark-text"></i>
             <span class="menu-label">Report</span>
@@ -28,13 +34,31 @@
     </a>
 </nav>
 
+@if (showWarningModal)
+{
+    <Modal IsVisible="true">
+        <div class="text-center">
+            <i class="bi bi-exclamation-triangle fs-1 mb-4 text-warning"></i>
+            <p>Pastikan sudah melengkapi data diri Anda</p>
+            <button class="btn btn-danger px-4" @onclick="CloseModal">Close</button>
+        </div>
+    </Modal>
+}
+
 @code {
     private string currentPath = "";
+    private bool isStudent = false;
+    private bool isDataComplete = true;
+    private bool showWarningModal = false;
+    private bool isInitialized = false;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         UpdatePath();
         Navigation.LocationChanged += OnLocationChanged;
+
+        // Fetch user role and validate student data
+        await CheckUserRoleAndValidateData();
     }
 
     private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
@@ -53,6 +77,75 @@
 
     private bool IsActive(string path) =>
         string.Equals(currentPath, path, StringComparison.OrdinalIgnoreCase);
+
+    private async Task CheckUserRoleAndValidateData()
+    {
+        try
+        {
+            var token = await JS.InvokeAsync<string>("localStorage.getItem", "authToken");
+            if (!string.IsNullOrEmpty(token))
+            {
+                Http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            var userResponse = await Http.GetFromJsonAsync<UserResponse>(APIUrl.Endpoint("me"));
+            isStudent = userResponse?.role == "Student";
+
+            if (isStudent)
+            {
+                var userId = userResponse?.id;
+                var response = await Http.GetFromJsonAsync<StudentPKLListResponse>(
+                    APIUrl.Endpoint($"students/pkl?userIdFilter={userId}")
+                );
+                var studentResponse = response?.students?.FirstOrDefault();
+                Console.WriteLine($"[DEBUG] studentResponse: {System.Text.Json.JsonSerializer.Serialize(studentResponse)}");
+                isDataComplete = studentResponse != null &&
+                                 !string.IsNullOrWhiteSpace(studentResponse.nis) &&
+                                 !string.IsNullOrWhiteSpace(studentResponse.fullname) &&
+                                 !string.IsNullOrWhiteSpace(studentResponse.company_name) &&
+                                 !string.IsNullOrWhiteSpace(studentResponse.email) &&
+                                 studentResponse.nis != "-" &&
+                                 studentResponse.fullname != "-" &&
+                                 studentResponse.company_name != "-" &&
+                                 studentResponse.email != "-";
+                Console.WriteLine($"[DEBUG] isDataComplete: {isDataComplete}");
+            }
+        }
+        catch
+        {
+            isDataComplete = false;
+        }
+
+        isInitialized = true;
+        Console.WriteLine($"[DEBUG] isStudent: {isStudent}, isDataComplete: {isDataComplete}, isInitialized: {isInitialized}");
+    }
+
+    private void HandleMenuClick(string menu)
+    {
+        if (!isInitialized)
+        {
+            Console.WriteLine("[DEBUG] Belum inisialisasi, klik diabaikan");
+            return;
+        }
+
+        if (isStudent && !isDataComplete)
+        {
+            Console.WriteLine("[DEBUG] Data belum lengkap, tampilkan modal");
+            showWarningModal = true;
+        }
+        else
+        {
+            Console.WriteLine($"[DEBUG] Navigasi ke: /{menu}");
+            Navigation.NavigateTo($"/{menu}");
+        }
+    }
+
+
+
+    private void CloseModal()
+    {
+        showWarningModal = false;
+    }
 
     public void Dispose()
     {

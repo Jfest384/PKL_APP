@@ -174,37 +174,35 @@
         @if (ShowAssignModal)
         {
             <Modal IsVisible="true">
-                <div class="modal-scrollable-content">
-                    @if (AssignModalState == "empty")
-                    {
-                        <div class="text-center">
-                            <i class="bi bi-exclamation-triangle fs-1 mb-4 text-danger"></i>
-                            <p class="fw-semibold mb-4">Silakan pilih minimal satu siswa terlebih dahulu sebelum melanjutkan.</p>
-                            <button class="btn btn-primary px-4" @onclick="CloseAssignModal">Return to List</button>
+                @if (AssignModalState == "empty")
+                {
+                    <div class="text-center">
+                        <i class="bi bi-exclamation-triangle fs-1 mb-4 text-danger"></i>
+                        <p class="fw-semibold mb-4">Silakan pilih minimal satu siswa terlebih dahulu sebelum melanjutkan.</p>
+                        <button class="btn btn-primary px-4" @onclick="CloseAssignModal">Return to List</button>
+                    </div>
+                }
+                else if (AssignModalState == "confirm")
+                {
+                    <div class="text-center">
+                        <i class="bi bi-person-plus fs-1 text-success"></i>
+                        <p class="fw-bold">Tambahkan Siswa</p>
+                        <p>@AssignModalText</p>
+                        <div class="d-flex justify-content-center gap-3 mt-4">
+                            <button class="btn btn-danger px-4" @onclick="CloseAssignModal">Cancel</button>
+                            <button class="btn btn-success px-4" @onclick="ConfirmAssignStudent">Confirm</button>
                         </div>
-                    }
-                    else if (AssignModalState == "confirm")
-                    {
-                        <div class="text-center">
-                            <i class="bi bi-person-plus fs-1 text-success"></i>
-                            <p class="fw-bold">Tambahkan Siswa</p>
-                            <p>@AssignModalText</p>
-                            <div class="d-flex justify-content-center gap-3 mt-4">
-                                <button class="btn btn-danger px-4" @onclick="CloseAssignModal">Cancel</button>
-                                <button class="btn btn-success px-4" @onclick="ConfirmAssignStudent">Confirm</button>
-                            </div>
-                        </div>
-                    }
-                    else if (AssignModalState == "done")
-                    {
-                        <div class="text-center">
-                            <i class="bi bi-person-plus fs-1 text-success"></i>
-                            <p class="fw-bold">Tambahkan Siswa</p>
-                            <p>Siswa berhasil ditambahkan ke kelas!</p>
-                            <button class="btn btn-primary px-4" @onclick="CloseAssignModal">Done</button>
-                        </div>
-                    }
-                </div>
+                    </div>
+                }
+                else if (AssignModalState == "done")
+                {
+                    <div class="text-center">
+                        <i class="bi bi-person-plus fs-1 text-success"></i>
+                        <p class="fw-bold">Tambahkan Siswa</p>
+                        <p>Siswa berhasil ditambahkan ke kelas!</p>
+                        <button class="btn btn-primary px-4" @onclick="CloseAssignModal">Done</button>
+                    </div>
+                }
             </Modal>
         }
 

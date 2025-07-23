@@ -1,0 +1,61 @@
+﻿/* Custom Modal Styles */
+.custom-modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.15);
+    z-index: 1050;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.custom-modal {
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+    padding: 32px 24px 24px 24px;
+    min-width: 320px;
+    max-width: 90vw;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.custom-modal-icon {
+    font-size: 2.5rem;
+    margin-bottom: 12px;
+}
+
+.custom-modal-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #444;
+}
+
+.custom-modal-message {
+    font-size: 1rem;
+    color: #888;
+    margin-bottom: 24px;
+}
+
+.custom-modal-btn {
+    width: 100%;
+    background: #e0e0e0;
+    color: #888;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 0;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+    .custom-modal-btn:hover {
+        background: #d5d5d5;
+    }

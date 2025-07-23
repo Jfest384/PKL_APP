@@ -67,9 +67,9 @@ namespace PKL_API.Controllers
                         s.nis,
                         nisn = s.nisn ?? "-",
                         s.User.fullname,
-                        classroom = s.Classroom != null ? s.Classroom.name : null,
-                        mentor = s.Mentor != null && s.Mentor.User != null ? s.Mentor.User.fullname : null,
-                        company = s.Company != null ? s.Company.name : null,
+                        classroom = s.Classroom != null ? s.Classroom.name : "-",
+                        mentor = s.Mentor != null && s.Mentor.User != null ? s.Mentor.User.fullname : "-",
+                        company = s.Company != null ? s.Company.name : "-",
                         s.isPKL
                     })
                     .ToList();

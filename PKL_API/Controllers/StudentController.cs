@@ -102,7 +102,8 @@ namespace PKL_API.Controllers
             [FromQuery] string? name,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10,
-            [FromQuery] bool? noMentor = null // tambahkan parameter opsional
+            [FromQuery] bool? noMentor = null, // tambahkan parameter opsional
+            [FromQuery] int? userIdFilter = null // tambahkan filter berdasarkan userId
         )
         {
             // Step 1: Get user ID from token
@@ -152,6 +153,12 @@ namespace PKL_API.Controllers
                 query = query.Where(q => q.Mentorid == null);
             }
 
+            // Step 4.2: Filter by userId if provided
+            if (userIdFilter.HasValue)
+            {
+                query = query.Where(q => q.Userid == userIdFilter.Value);
+            }
+
             // Step 5: Filter by name if provided
             if (!string.IsNullOrWhiteSpace(name))
             {
@@ -176,6 +183,7 @@ namespace PKL_API.Controllers
                     q.Userid,
                     q.nis,
                     q.User.fullname,
+                    q.User.email,
                     q.Classroomid,
                     class_name = q.Classroom != null ? q.Classroom.name : "-",
                     mentor_name = q.Mentor != null ? q.Mentor.User.fullname : "-",
