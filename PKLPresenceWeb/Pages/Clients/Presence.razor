@@ -146,7 +146,6 @@
                                             else if (ActiveWebRTCField == field.Field)
                                             {
                                                 <video id="webrtc_@field.Field" autoplay playsinline style="width:100%;height:120px;object-fit:cover;border-radius:8px;background:#222;"></video>
-                                                <div class="text-muted small text-center mt-2">Tap/Enter untuk ambil foto</div>
                                             }
                                             else
                                             {
@@ -199,7 +198,6 @@
                 <Modal IsVisible="true" Title="Ambil Foto">
                     <div class="d-flex flex-column align-items-center">
                         <video id="webrtc_@WebRTCField" autoplay playsinline class="webrtc-modal-video"></video>
-                        <div class="text-muted small text-center mt-2">Tap/Enter/Spasi untuk ambil foto</div>
                         <div class="d-flex gap-2 mt-3">
                             <button class="btn btn-danger" @onclick="CloseWebRTCModal">Cancel</button>
                             <button class="btn btn-success" @onclick="CaptureWebRTCPhoto">Capture</button>
@@ -696,7 +694,7 @@
                 foreach (var field in PreviewPresenceFields)
                 {
                     var photo = photos.FirstOrDefault(p => MapPhotoTypeToField(p.type) == field.Field);
-                    var apiBase = Navigation.BaseUri.StartsWith("https://presensi.smksabdev.my.id/");
+                    var apiBase = "http://localhost:5027";
                     if (photo != null)
                     {
                         // Ganti http ke https jika frontend diakses via https

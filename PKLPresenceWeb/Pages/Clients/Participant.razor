@@ -104,7 +104,8 @@
                                                         <i class="bi bi-person-plus"></i> ke Kelas
                                                     </button>
                                                     <button class="btn btn-sm btn-warning"
-                                                            @onclick="() => ConfirmAddToPkl(item)">
+                                                            @onclick="() => ConfirmAddToPkl(item)"
+                                                            disabled="@(IsStudentInPKL(int.Parse(item[0])))">
                                                         <i class="bi bi-person-plus"></i> ke Siswa PKL
                                                     </button>
                                                 </div>
@@ -158,37 +159,77 @@
                 </div>
             }
 
-            <nav class="d-flex justify-content-center mt-2">
-                <ul class="pagination">
-                    @if (GetCurrentData() is null || GetCurrentData().Count == 0)
+            <nav class="d-flex justify-content-center mt-2" style="padding: 1rem;">
+                <ul class="pagination d-flex flex-wrap justify-content-center">
+                    <li class="page-item @(CurrentPage == 1 ? "disabled" : null)">
+                        <button class="page-link" @onclick="() => ChangePage(CurrentPage - 1)">Previous</button>
+                    </li>
+
+                    @* Selalu tampilkan page 1 *@
+                    <li class="page-item @(CurrentPage == 1 ? "active" : null)">
+                        <button class="page-link" @onclick="() => ChangePage(1)" disabled="@(CurrentPage == 1)">1</button>
+                    </li>
+
+                    @if (CurrentPage <= 3)
                     {
-                        <li class="page-item disabled">
-                            <button type="button" class="page-link disabled" disabled style="pointer-events:none;opacity:0.6;">Prev</button>
-                        </li>
-                        <li class="page-item disabled">
-                            <button type="button" class="page-link disabled" disabled style="pointer-events:none;opacity:0.6;">Next</button>
-                        </li>
+                        // Tampilkan halaman 2 sampai 4
+                        for (int i = 2; i <= Math.Min(4, TotalPages - 1); i++)
+                        {
+                            var pageNumber = i;
+                            <li class="page-item @(pageNumber == CurrentPage ? "active" : null)">
+                                <button class="page-link" @onclick="() => ChangePage(pageNumber)" disabled="@(pageNumber == CurrentPage)">@pageNumber</button>
+                            </li>
+                        }
+
+                        if (TotalPages > 5)
+                        {
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        }
+                    }
+                    else if (CurrentPage >= TotalPages - 2)
+                    {
+                        if (TotalPages > 5)
+                        {
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        }
+
+                        for (int i = TotalPages - 3; i < TotalPages; i++)
+                        {
+                            if (i > 1)
+                            {
+                                var pageNumber = i;
+                                <li class="page-item @(pageNumber == CurrentPage ? "active" : null)">
+                                    <button class="page-link" @onclick="() => ChangePage(pageNumber)" disabled="@(pageNumber == CurrentPage)">@pageNumber</button>
+                                </li>
+                            }
+                        }
                     }
                     else
                     {
-                        <li class="page-item @(CurrentPage == 1 ? "disabled" : null)">
-                            <button class="page-link" @onclick="() => ChangePage(CurrentPage - 1)">Previous</button>
-                        </li>
-                        @for (int i = 1; i <= TotalPages; i++)
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+
+                        for (int i = CurrentPage - 1; i <= CurrentPage + 1; i++)
                         {
-                            var pageNum = i;
-                            <li class="page-item @(pageNum == CurrentPage ? "active" : null)">
-                                <button class="page-link"
-                                    @onclick="() => ChangePage(pageNum)"
-                                    disabled="@(pageNum == CurrentPage)">
-                                    @pageNum
-                                </button>
+                            var pageNumber = i;
+                            <li class="page-item @(pageNumber == CurrentPage ? "active" : null)">
+                                <button class="page-link" @onclick="() => ChangePage(pageNumber)" disabled="@(pageNumber == CurrentPage)">@pageNumber</button>
                             </li>
                         }
-                        <li class="page-item @(CurrentPage == TotalPages ? "disabled" : null)">
-                            <button class="page-link" @onclick="() => ChangePage(CurrentPage + 1)">Next</button>
+
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                    }
+
+                    @* Selalu tampilkan halaman terakhir (jika > 1) *@
+                    @if (TotalPages > 1)
+                    {
+                        <li class="page-item @(CurrentPage == TotalPages ? "active" : null)">
+                            <button class="page-link" @onclick="() => ChangePage(TotalPages)" disabled="@(CurrentPage == TotalPages)">@TotalPages</button>
                         </li>
                     }
+
+                    <li class="page-item @(CurrentPage == TotalPages ? "disabled" : null)">
+                        <button class="page-link" @onclick="() => ChangePage(CurrentPage + 1)">Next</button>
+                    </li>
                 </ul>
             </nav>
         }
@@ -196,18 +237,16 @@
         @if (ShowConfirmationModal)
         {
             <Modal IsVisible="ShowConfirmationModal">
-                <div class="modal-scrollable-content">
-                    <div class="text-center">
-                        <i class="bi bi-person-plus fs-1"></i>
-                        <p class="fw-bold">Tambahkan Siswa</p>
-                        <p>@ConfirmationText</p>
-                        <div class="d-flex justify-content-center gap-3 mt-4">
-                            @if (ConfirmButtonText != "Done")
-                            {
-                                <button class="btn btn-danger px-4" @onclick="CancelModal">Cancel</button>
-                            }
-                            <button class="btn btn-primary px-4" @onclick="ConfirmAssignPkl">@ConfirmButtonText</button>
-                        </div>
+                <div class="text-center">
+                    <i class="bi bi-person-plus fs-1"></i>
+                    <p class="fw-bold">Tambahkan Siswa</p>
+                    <p>@ConfirmationText</p>
+                    <div class="d-flex justify-content-center gap-3 mt-4">
+                        @if (ConfirmButtonText != "Done")
+                        {
+                            <button class="btn btn-danger px-4" @onclick="CancelModal">Cancel</button>
+                        }
+                        <button class="btn btn-primary px-4" @onclick="ConfirmAssignPkl">@ConfirmButtonText</button>
                     </div>
                 </div>
             </Modal>
@@ -384,6 +423,9 @@
             var res = await Http.GetFromJsonAsync<StudentListResponse>(url);
             Students = res?.students ?? new();
             TotalPages = res?.totalPages ?? 1;
+
+            // Ambil semua siswa PKL dari semua halaman
+            StudentPKLs = await GetAllStudentPKLsAsync();
         }
         else if (CurrentTab == "Pembimbing PKL")
         {
@@ -408,6 +450,11 @@
         StateHasChanged();
     }
 
+    private bool IsStudentInPKL(int studentId)
+    {
+        return StudentPKLs.Any(pkl => pkl.id == studentId);
+    }
+
     private async Task ChangeTab(string tab)
     {
         CurrentTab = tab;
@@ -420,7 +467,7 @@
 
     private async Task ChangePage(int page)
     {
-        if (page >= 1 && page <= TotalPages)
+        if (page >= 1 && page <= TotalPages && page != CurrentPage)
         {
             CurrentPage = page;
             await LoadData();
@@ -508,7 +555,7 @@
         }
 
         var payload = new { isPKL = true, idClass = SelectedClassId };
-        var response = await Http.PutAsJsonAsync(APIUrl.Endpoint($"assign/{SelectedClassId}"), payload);
+        var response = await Http.PutAsJsonAsync(APIUrl.Endpoint($"assign/{SelectedStudentId}"), payload);
 
         if (response.IsSuccessStatusCode)
         {
@@ -536,22 +583,28 @@
         IsLoadingStudents = true;
 
         // Ambil semua siswa PKL tanpa mentor dari semua halaman
-        var allStudents = new List<StudentPKLItem>();
-        int page = 1;
-        int totalPages = 1;
-        do
-        {
-            var res = await Http.GetFromJsonAsync<StudentPKLListResponse>(APIUrl.Endpoint($"students/pkl?page={page}&noMentor=true"));
-            if (res?.students != null)
-                allStudents.AddRange(res.students);
-            totalPages = res?.totalPages ?? 1;
-            page++;
-        } while (page <= totalPages);
+        var allStudents = await GetAllStudentPKLsAsync();
 
         AvailableStudents = allStudents;
         IsLoadingStudents = false;
 
         StateHasChanged();
+    }
+
+    private async Task<List<StudentPKLItem>> GetAllStudentPKLsAsync()
+    {
+        var allPKLs = new List<StudentPKLItem>();
+        int page = 1;
+        int totalPages = 1;
+        do
+        {
+            var res = await Http.GetFromJsonAsync<StudentPKLListResponse>(APIUrl.Endpoint($"students/pkl?page={page}"));
+            if (res?.students != null)
+                allPKLs.AddRange(res.students);
+            totalPages = res?.totalPages ?? 1;
+            page++;
+        } while (page <= totalPages);
+        return allPKLs;
     }
 
     void OnStudentCheckboxChanged(ChangeEventArgs e, int studentId)

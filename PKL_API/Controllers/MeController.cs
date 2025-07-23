@@ -95,6 +95,7 @@ namespace PKL_API.Controllers
                 id = selectedUser.id,
                 username = selectedUser.username,
                 fullname = selectedUser.fullname,
+                password = selectedUser.password,
                 role = roleName,
                 email = string.IsNullOrEmpty(selectedUser.email) ? "-" : selectedUser.email,
                 profile = selectedUser.Photoid,
@@ -157,6 +158,62 @@ namespace PKL_API.Controllers
                 email = string.IsNullOrEmpty(selectedUser.email) ? "-" : selectedUser.email,
                 gender = selectedUser.gender
             });
+        }
+
+        [Authorize]
+        [HttpPut("password")]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDTO dto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var selectedUserId = Convert.ToInt32(User.Claims.FirstOrDefault(q => q.Type == "id")?.Value);
+            var user = await _db.Users.FirstOrDefaultAsync(u => u.id == selectedUserId);
+
+            if (user == null)
+                return NotFound("User not found");
+
+            // Validasi password lama
+            var oldPasswordHash = PasswordHasher(dto.OldPassword);
+            if (!string.Equals(user.password, oldPasswordHash, StringComparison.OrdinalIgnoreCase))
+                return BadRequest("Old password is incorrect.");
+
+            // Validasi password baru
+            if (!IsValidPassword(dto.NewPassword, out var errorMsg))
+                return BadRequest(errorMsg);
+
+            // Validasi konfirmasi password
+            if (dto.NewPassword != dto.ConfirmPassword)
+                return BadRequest("Confirmation password does not match.");
+
+            // Update password
+            user.password = PasswordHasher(dto.NewPassword);
+            _db.Users.Update(user);
+            await _db.SaveChangesAsync();
+
+            return Ok(new { message = "Password changed successfully." });
+        }
+
+        // Validasi password sesuai kriteria
+        private static bool IsValidPassword(string password, out string errorMsg)
+        {
+            errorMsg = "";
+            if (string.IsNullOrEmpty(password) || password.Length < 8)
+            {
+                errorMsg = "Password must be at least 8 characters.";
+                return false;
+            }
+            if (!password.Any(char.IsDigit))
+            {
+                errorMsg = "Password must contain at least one number (0-9).";
+                return false;
+            }
+            if (!password.Any(ch => !char.IsLetterOrDigit(ch)))
+            {
+                errorMsg = "Password must contain at least one special character.";
+                return false;
+            }
+            return true;
         }
 
         [Authorize]

@@ -35,8 +35,8 @@ namespace PKL_API.Controllers
                 {
                     c.id,
                     c.name,
-                    c.address,
-                    c.phone
+                    address = string.IsNullOrEmpty(c.address) ? "-" : c.address,
+                    phone = string.IsNullOrEmpty(c.phone) ? "-" : c.phone
                 })
                 .ToList();
             return Ok(companies);

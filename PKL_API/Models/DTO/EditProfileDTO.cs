@@ -18,8 +18,5 @@ namespace PKL_API.Models.DTO
         [StringLength(100)]
         public required string email { get; set; }
         public required bool gender { get; set; }
-
-        //[StringLength(100)]
-        //public string? password { get; set; }
     }
 }

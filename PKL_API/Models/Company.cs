@@ -9,9 +9,9 @@ namespace PKL_API.Models
         [StringLength(100)]
         public required string name { get; set; }
         [DataType(DataType.MultilineText)]
-        public required string address { get; set; }
+        public string? address { get; set; }
         [StringLength(20)]
-        public required string phone { get; set; }
+        public string? phone { get; set; }
         public required ICollection<Student> Students { get; set; }
     }
 }

@@ -229,7 +229,7 @@ namespace PKL_API.Controllers
                 var studentsQuery = _db.Students
                     .Include(s => s.User)
                     .Include(s => s.Classroom)
-                    .Where(s => s.Mentorid == mentor.id && s.isPKL == true);
+                    .Where(s => s.Mentorid == mentor.id && s.isPKL.HasValue && s.isPKL.Value);
 
                 if (classId.HasValue)
                     studentsQuery = studentsQuery.Where(s => s.Classroomid == classId.Value);
@@ -297,7 +297,7 @@ namespace PKL_API.Controllers
                 var studentsQuery = _db.Students
                     .Include(s => s.User)
                     .Include(s => s.Classroom)
-                    .Where(s => s.Classroomid == classroom.id && s.isPKL == true);
+                    .Where(s => s.Classroomid == classroom.id && s.isPKL.HasValue && s.isPKL.Value);
 
                 if (classId.HasValue)
                     studentsQuery = studentsQuery.Where(s => s.Classroomid == classId.Value);
@@ -356,7 +356,7 @@ namespace PKL_API.Controllers
                 var studentsQuery = _db.Students
                     .Include(s => s.User)
                     .Include(s => s.Classroom)
-                    .Where(s => s.isPKL == true);
+                    .Where(s => s.isPKL.HasValue && s.isPKL.Value);
 
                 if (classId.HasValue)
                 {
@@ -365,10 +365,22 @@ namespace PKL_API.Controllers
                 if (!string.IsNullOrWhiteSpace(search))
                 {
                     var searchLower = search.ToLower();
-                    studentsQuery = studentsQuery.Where(s => EF.Functions.Like(s.User.fullname, $"%{search}%"));
+                    studentsQuery = studentsQuery.Where(s => s.User != null && EF.Functions.Like(s.User.fullname, $"%{searchLower}%"));
                 }
 
                 var students = await studentsQuery.ToListAsync();
+                foreach (var s in students)
+                {
+                    try
+                    {
+                        var val = s.isPKL; // force read
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Student ID {s.id} gagal dibaca: {ex.Message}");
+                    }
+                }
+
                 var studentIds = students.Select(s => s.id).ToList();
 
                 var filterDate = date ?? DateOnly.FromDateTime(DateTime.Now);
