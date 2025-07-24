@@ -9,7 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddDbContext<PklContext>(opt =>
 {
-    opt.UseSqlServer("Data Source=MSI\\SQLEXPRESS;Initial Catalog=PKL_APP;Integrated Security=True;Trust Server Certificate=True");
+    opt.UseSqlServer("Data Source=127.0.0.1\\SQLEXPRESS;Initial Catalog=PKL_APP;Integrated Security=True;Trust Server Certificate=True");
 });
 
 builder.Services.AddAuthentication("Bearer").AddJwtBearer(opt =>
