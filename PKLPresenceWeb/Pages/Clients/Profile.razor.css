@@ -49,7 +49,7 @@
     border-radius: 1rem;
     font-size: 0.95rem;
     max-width: 1000px; /* Lebar maksimum card */
-    width: 90%; /* Lebar responsif, misal 90% dari parent */
+    width: 100%; /* Lebar responsif, misal 90% dari parent */
     margin: 0 auto 0 auto;
 }
 
@@ -61,7 +61,7 @@
     border-radius: 1rem;
     font-size: 0.95rem;
     max-width: 1000px; /* Lebar maksimum card */
-    width: 90%; /* Lebar responsif, misal 90% dari parent */
+    width: 100%; /* Lebar responsif, misal 90% dari parent */
     margin: 0 auto 2rem auto;
 }
 

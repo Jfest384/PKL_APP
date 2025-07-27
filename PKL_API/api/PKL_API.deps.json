@@ -9,6 +9,7 @@
       "PKL_API/1.0.0": {
         "dependencies": {
           "Microsoft.AspNetCore.Authentication.JwtBearer": "8.0.17",
+          "Microsoft.AspNetCore.Components.Authorization": "8.0.18",
           "Microsoft.EntityFrameworkCore.Design": "9.0.6",
           "Microsoft.EntityFrameworkCore.SqlServer": "9.0.6",
           "QuestPDF": "2025.5.1",
@@ -63,6 +64,52 @@
           "lib/net8.0/Microsoft.AspNetCore.Authentication.JwtBearer.dll": {
             "assemblyVersion": "8.0.17.0",
             "fileVersion": "8.0.1725.26609"
+          }
+        }
+      },
+      "Microsoft.AspNetCore.Authorization/8.0.18": {
+        "dependencies": {
+          "Microsoft.AspNetCore.Metadata": "8.0.18",
+          "Microsoft.Extensions.Logging.Abstractions": "9.0.6",
+          "Microsoft.Extensions.Options": "9.0.6"
+        },
+        "runtime": {
+          "lib/net8.0/Microsoft.AspNetCore.Authorization.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.1825.31706"
+          }
+        }
+      },
+      "Microsoft.AspNetCore.Components/8.0.18": {
+        "dependencies": {
+          "Microsoft.AspNetCore.Authorization": "8.0.18",
+          "Microsoft.AspNetCore.Components.Analyzers": "8.0.18"
+        },
+        "runtime": {
+          "lib/net8.0/Microsoft.AspNetCore.Components.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.1825.31706"
+          }
+        }
+      },
+      "Microsoft.AspNetCore.Components.Analyzers/8.0.18": {},
+      "Microsoft.AspNetCore.Components.Authorization/8.0.18": {
+        "dependencies": {
+          "Microsoft.AspNetCore.Authorization": "8.0.18",
+          "Microsoft.AspNetCore.Components": "8.0.18"
+        },
+        "runtime": {
+          "lib/net8.0/Microsoft.AspNetCore.Components.Authorization.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.1825.31706"
+          }
+        }
+      },
+      "Microsoft.AspNetCore.Metadata/8.0.18": {
+        "runtime": {
+          "lib/net8.0/Microsoft.AspNetCore.Metadata.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.1825.31706"
           }
         }
       },
@@ -959,6 +1006,41 @@
       "sha512": "sha512-sDxQH6HXibqSpMCyAag2b8ZJMFeCNF3FiwuGKOzJd0n3X7P6OI75QUp4LSam2/d8DYSO36Z8nm7mmRCHJ5vkMw==",
       "path": "microsoft.aspnetcore.authentication.jwtbearer/8.0.17",
       "hashPath": "microsoft.aspnetcore.authentication.jwtbearer.8.0.17.nupkg.sha512"
+    },
+    "Microsoft.AspNetCore.Authorization/8.0.18": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-ZKCGwaoN0hJoWaE9WpvwsjgVkJNtDTP0Tp8T2/S4sR3KZr0KXdp1ROrAl+xJKBFd4acMQ7c6lU1YF/C6wfC+Cg==",
+      "path": "microsoft.aspnetcore.authorization/8.0.18",
+      "hashPath": "microsoft.aspnetcore.authorization.8.0.18.nupkg.sha512"
+    },
+    "Microsoft.AspNetCore.Components/8.0.18": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-HmSsFizBnFRqd5EstlR65LzY8oGsOKsKo3zNmFLgRYND0IESy5Hvb3DPklbqDjZdRDb0B11KlyOHPM8AgEjRJQ==",
+      "path": "microsoft.aspnetcore.components/8.0.18",
+      "hashPath": "microsoft.aspnetcore.components.8.0.18.nupkg.sha512"
+    },
+    "Microsoft.AspNetCore.Components.Analyzers/8.0.18": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-dZJloNAzGIKV1oOJcMCsUlb6Be7ZJR7S80NoYifDiri4n7awgP9ZszL7bylIUMIMlHETLofU1HX5OkxBapbzSg==",
+      "path": "microsoft.aspnetcore.components.analyzers/8.0.18",
+      "hashPath": "microsoft.aspnetcore.components.analyzers.8.0.18.nupkg.sha512"
+    },
+    "Microsoft.AspNetCore.Components.Authorization/8.0.18": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-PmoNfKwTILLCQl72zmluHMyGELTD/O04LTby9cRm1Mq/2ylFwj3XuDdS+JFRqSyQk2sT6J7n8zOgbcOtmEf1xA==",
+      "path": "microsoft.aspnetcore.components.authorization/8.0.18",
+      "hashPath": "microsoft.aspnetcore.components.authorization.8.0.18.nupkg.sha512"
+    },
+    "Microsoft.AspNetCore.Metadata/8.0.18": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-vuTpRfALl6MCvmbJAGy2DhJVh0Ai7k6/seYo5rxdfY/n/WPSzK2sO2fg3LKCU3tAUV/3TPuessU0xhCsDnORWw==",
+      "path": "microsoft.aspnetcore.metadata/8.0.18",
+      "hashPath": "microsoft.aspnetcore.metadata.8.0.18.nupkg.sha512"
     },
     "Microsoft.Bcl.AsyncInterfaces/7.0.0": {
       "type": "package",

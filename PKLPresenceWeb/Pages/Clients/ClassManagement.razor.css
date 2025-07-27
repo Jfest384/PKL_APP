@@ -63,62 +63,12 @@
             font-weight: 600;
         }
 
-/*.table {
-    font-size: 0.9rem;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    overflow: hidden;
-}
-
-    .table thead {
-        background-color: #f9f9f9;
-        font-weight: bold;
-    }
-
-    .table th, .table td {
-        padding: 10px 16px;
-        vertical-align: middle;
-        white-space: nowrap;
-    }
-
-.table-responsive::-webkit-scrollbar {
-    height: 6px;
-}
-
-.table-responsive::-webkit-scrollbar-thumb {
-    background: #aaa;
-    border-radius: 4px;
-}*/
-
 input.form-control,
 select.form-select {
     font-size: 0.9rem;
     border-radius: 8px;
     padding: 6px 12px;
 }
-
-/*.pagination {
-    gap: 4px;
-}
-
-    .pagination .page-link {
-        min-width: 36px;
-        padding: 6px 10px;
-        font-size: 0.85rem;
-        border-radius: 8px;
-        color: #000;
-        border: 1px solid #ccc;
-    }
-
-    .pagination .page-item.active .page-link {
-        background-color: #000;
-        color: #fff;
-        border-color: #000;
-    }
-
-    .pagination .page-item.disabled .page-link {
-        opacity: 0.5;
-    }*/
 
 @media (max-width: 768px) {
     .nav-tabs {
@@ -145,13 +95,6 @@ body {
 .d-none {
     display: none !important;
 }
-
-/* Border luar tabel */
-/*.table-bordered-wrap {
-    border: 3px solid black;
-    border-radius: 8px;
-    overflow: hidden;
-}*/
 
 /* Scroll bar hanya muncul saat scroll */
 .scrollable-x {

@@ -28,7 +28,7 @@
                                value="@type.id"
                                checked="@(SelectedPresenceTypeId == type.id)"
                                @onchange="() => OnPresenceTypeChanged(type.id)"
-                               disabled="@HasPresenceToday" />
+                               disabled="@HasPresenceTodayGlobal" />
                         <label class="form-check-label presence-radio-label" for="presenceType_@type.id">
                             @type.name
                         </label>
@@ -77,7 +77,7 @@
                 </table>
             </div>
 
-            <select class="form-select page-size-dropdown m-3" @bind="PageSize">
+            <select class="form-select page-size-dropdown mt-3 mb-3" @bind="PageSize">
                 <option value="5">Show 5 Entries</option>
                 <option value="10">Show 10 Entries</option>
                 <option value="15">Show 15 Entries</option>
@@ -612,15 +612,6 @@
         }
     }
 
-    // private async void SwitchWebRTCCamera()
-    // {
-    //     if (WebRTCField != null)
-    //     {
-    //         dotNetRef ??= DotNetObjectReference.Create(this);
-    //         await JS.InvokeVoidAsync("webrtcPhoto.switchCamera", $"webrtc_{WebRTCField}", dotNetRef);
-    //     }
-    // }
-
     private Dictionary<string, InputFile> inputFileRefs = new();
 
     private InputFile GetInputFileRef(string field)
@@ -645,16 +636,18 @@
         }
     }
 
-    private bool HasPresenceToday =>
-    Presences.Any(p =>
-        DateTime.TryParseExact(
-            p.date,
-            "dddd, dd MMMM yyyy",
-            new CultureInfo("id-ID"),
-            DateTimeStyles.None,
-            out var dt
-        ) && dt.Date == DateTime.Today
-    );
+    // private bool HasPresenceToday =>
+    // Presences.Any(p =>
+    //     DateTime.TryParseExact(
+    //         p.date,
+    //         "dddd, dd MMMM yyyy",
+    //         new CultureInfo("id-ID"),
+    //         DateTimeStyles.None,
+    //         out var dt
+    //     ) && dt.Date == DateTime.Today
+    // );
+
+    private bool HasPresenceTodayGlobal = false;
 
     // Mapping presence type ke field foto
     readonly Dictionary<int, List<(string Label, string Field)>> PresenceTypeFields = new()
@@ -784,6 +777,12 @@
         {
             await LoadPresenceTypes();
             await LoadStudentPresences();
+
+            // Cek presensi hari ini (ambil data presensi hari ini saja)
+            var todayStr = DateTime.Today.ToString("yyyy-MM-dd");
+            var url = APIUrl.Endpoint($"presence?date={todayStr}");
+            var response = await Http.GetFromJsonAsync<PresenceListResponse>(url);
+            HasPresenceTodayGlobal = response?.data?.Any() == true;
         }
         else
         {
@@ -813,7 +812,7 @@
 
     private async void OnPresenceTypeChanged(int typeId)
     {
-        if (HasPresenceToday)
+        if (HasPresenceTodayGlobal)
         {
             await JS.InvokeVoidAsync("alert", "Kamu sudah melakukan presensi hari ini.");
             return;
@@ -1083,7 +1082,8 @@
             SelectedPresenceTypeId = 0;
             SelectedPresenceTypeName = "";
             LocationInput = "";
-            await LoadStudentPresences();
+            // Tambahkan baris ini untuk refresh page
+            Navigation.NavigateTo(Navigation.Uri, forceLoad: true);
         }
         else await JS.InvokeVoidAsync("alert", "Gagal submit presensi.");
     }

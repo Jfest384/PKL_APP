@@ -1,31 +1,49 @@
-﻿using Microsoft.AspNetCore.Components.Authorization;
+﻿using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.JSInterop;
 using System.Security.Claims;
+using System.Threading.Tasks;
 
-namespace PKLPresenceWeb.Model
+public class SimpleAuthStateProvider : AuthenticationStateProvider
 {
-    public class SimpleAuthStateProvider : AuthenticationStateProvider
+    private readonly IJSRuntime _js;
+    private readonly NavigationManager _navigation;
+
+    public SimpleAuthStateProvider(IJSRuntime js, NavigationManager navigation)
     {
-        private readonly IJSRuntime _js;
+        _js = js;
+        _navigation = navigation;
+    }
 
-        public SimpleAuthStateProvider(IJSRuntime js)
+    public override async Task<AuthenticationState> GetAuthenticationStateAsync()
+    {
+        var token = await _js.InvokeAsync<string>("localStorage.getItem", "authToken");
+        var identity = new ClaimsIdentity();
+
+        if (!string.IsNullOrWhiteSpace(token) && !IsTokenExpired(token))
         {
-            _js = js;
+            identity = new ClaimsIdentity(new[] { new Claim(ClaimTypes.Name, "User") }, "jwt");
+        }
+        else
+        {
+            var currentUri = new Uri(_navigation.Uri).AbsolutePath.ToLower();
+            if (currentUri != "/login" && currentUri != "/")
+            {
+                _navigation.NavigateTo("/login", true);
+            }
         }
 
-        public override async Task<AuthenticationState> GetAuthenticationStateAsync()
-        {
-            var token = await _js.InvokeAsync<string>("localStorage.getItem", "authToken");
-            ClaimsIdentity identity = string.IsNullOrWhiteSpace(token)
-                ? new ClaimsIdentity()
-                : new ClaimsIdentity(new[] { new Claim("token", token) }, "apiauth");
-            return new AuthenticationState(new ClaimsPrincipal(identity));
-        }
+        return new AuthenticationState(new ClaimsPrincipal(identity));
+    }
 
-        // Tambahkan method ini
-        public async Task NotifyUserAuthenticationChanged()
-        {
-            NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
-        }
+    private bool IsTokenExpired(string token)
+    {
+        // Implementasi pengecekan kadaluarsa JWT
+        return false; // Ganti dengan logika validasi token
+    }
+
+    public async Task NotifyUserAuthenticationChanged()
+    {
+        NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
     }
 }

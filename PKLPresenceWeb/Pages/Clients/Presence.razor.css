@@ -170,7 +170,7 @@ input[type="radio"].presence-radio-input {
 
 .presence-modal-grid {
     display: grid;
-    grid-template-columns: 115px 18px 1fr;
+    grid-template-columns: 110px 18px 1fr;
     row-gap: 5px;
     font-size: 1rem;
     color: black;

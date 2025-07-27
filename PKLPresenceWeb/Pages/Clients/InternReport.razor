@@ -18,7 +18,7 @@
         @if (UserRole == "Student")
         {
             <div class="d-flex justify-content-end gap-2 mb-3 presence-radio-group">
-                <button class="btn btn-primary"
+                <button class="btn btn-warning"
                         @onclick="ShowAddReport"
                         disabled="@HasReportToday">
                     Add Report
@@ -62,8 +62,8 @@
                 </table>
             </div>
 
-            <select class="form-select page-size-dropdown m-3" @bind="PageSize">
-                <option value="2">Show 2 Entries</option>
+            <select class="form-select page-size-dropdown mt-3 mb-3" @bind="PageSize">
+                <option value="5">Show 5 Entries</option>
                 <option value="10">Show 10 Entries</option>
                 <option value="15">Show 15 Entries</option>
             </select>

@@ -46,6 +46,38 @@ namespace PKL_API.Controllers
             if (student == null)
                 return NotFound("Student not found");
 
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png" };
+
+            // Helper to validate file extension
+            bool IsValidFile(IFormFile? file)
+            {
+                if (file == null) return true;
+                var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+                return allowedExtensions.Contains(ext);
+            }
+
+            // Validate all photo files in dto
+            var photoFiles = new IFormFile?[]
+            {
+                dto.FullBodyPhoto,
+                dto.MedicalCertificate,
+                dto.Treatment,
+                dto.SickToCompany,
+                dto.SickToMentor,
+                dto.SickToWalas,
+                dto.PermitToCompany,
+                dto.PermitToMentor,
+                dto.PermitToWalas,
+                dto.Activity,
+                dto.HolidayFromCompany
+            };
+
+            foreach (var file in photoFiles)
+            {
+                if (file != null && !IsValidFile(file))
+                    return BadRequest("Only JPG, JPEG, or PNG files are allowed for photo uploads.");
+            }
+
             var detail = new PresenceDetail();
 
             async Task<Guid?> SavePhotoAsync(IFormFile? file)
@@ -186,6 +218,8 @@ namespace PKL_API.Controllers
                 if (student == null)
                     return BadRequest("Student data not found.");
                 query = query.Where(p => p.Studentid == student.id);
+                if (date.HasValue)
+                    query = query.Where(p => p.date == date.Value);
                 var totalCount = await query.CountAsync();
                 var presences = await query
                     .OrderByDescending(p => p.date)
