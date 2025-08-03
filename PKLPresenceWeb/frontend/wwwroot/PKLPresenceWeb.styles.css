@@ -599,7 +599,7 @@ input[type="radio"].presence-radio-input[b-yabyv8rrba] {
 
 .report-modal-grid[b-yabyv8rrba] {
     display: grid;
-    grid-template-columns: 135px 18px 1fr;
+    grid-template-columns: 110px 18px 1fr;
     row-gap: 5px;
     font-size: 1rem;
     color: black;

@@ -60,15 +60,15 @@ namespace PKL_API.Controllers
             var photoFiles = new IFormFile?[]
             {
                 dto.FullBodyPhoto,
-                dto.MedicalCertificate,
+                //dto.MedicalCertificate,
                 dto.Treatment,
-                dto.SickToCompany,
-                dto.SickToMentor,
-                dto.SickToWalas,
+                //dto.SickToCompany,
+                //dto.SickToMentor,
+                //dto.SickToWalas,
                 dto.PermitToCompany,
                 dto.PermitToMentor,
                 dto.PermitToWalas,
-                dto.Activity,
+                //dto.Activity,
                 dto.HolidayFromCompany
             };
 
@@ -98,15 +98,15 @@ namespace PKL_API.Controllers
             }
 
             detail.FullBodyPhotoid = await SavePhotoAsync(dto.FullBodyPhoto);
-            detail.MedicalCertificatePhotoid = await SavePhotoAsync(dto.MedicalCertificate);
+            //detail.MedicalCertificatePhotoid = await SavePhotoAsync(dto.MedicalCertificate);
             detail.TreatmentPhotoid = await SavePhotoAsync(dto.Treatment);
-            detail.SickToCompanyPhotoid = await SavePhotoAsync(dto.SickToCompany);
-            detail.SickToMentorPhotoid = await SavePhotoAsync(dto.SickToMentor);
-            detail.SickToWalasPhotoid = await SavePhotoAsync(dto.SickToWalas);
+            //detail.SickToCompanyPhotoid = await SavePhotoAsync(dto.SickToCompany);
+            //detail.SickToMentorPhotoid = await SavePhotoAsync(dto.SickToMentor);
+            //detail.SickToWalasPhotoid = await SavePhotoAsync(dto.SickToWalas);
             detail.PermitToCompanyPhotoid = await SavePhotoAsync(dto.PermitToCompany);
             detail.PermitToMentorPhotoid = await SavePhotoAsync(dto.PermitToMentor);
             detail.PermitToWalasPhotoid = await SavePhotoAsync(dto.PermitToWalas);
-            detail.ActivityPhotoid = await SavePhotoAsync(dto.Activity);
+            //detail.ActivityPhotoid = await SavePhotoAsync(dto.Activity);
             detail.HolidayFromCompanyPhotoid = await SavePhotoAsync(dto.HolidayFromCompany);
 
             if (dto.Lat.HasValue)
@@ -138,6 +138,9 @@ namespace PKL_API.Controllers
 
             return Ok(new { message = "Presence submitted successfully" });
         }
+
+        [Authorize]
+        [HttpPut("presence-report/{presenceId}")]
 
         [Authorize]
         [HttpPut("feedback/{presenceId}")]
@@ -384,8 +387,7 @@ namespace PKL_API.Controllers
                 });
             }
 
-            // For Admin/Operator (roleId == 1 || roleId == 4)
-            else if (roleId == 1 || roleId == 4)
+            else
             {
                 var studentsQuery = _db.Students
                     .Include(s => s.User)
@@ -567,7 +569,7 @@ namespace PKL_API.Controllers
                 .Include(s => s.Classroom)
                 .Include(s => s.Company)
                 .Include(s => s.Mentor)
-                //.ThenInclude(m => m.User)
+                    .ThenInclude(m => m.User)
                 .FirstOrDefaultAsync(s => s.id == studentId);
 
             if (student == null)
@@ -619,6 +621,7 @@ namespace PKL_API.Controllers
             return File(pdfBytes, "application/pdf", fileName);
         }
 
+        [Obsolete]
         private static byte[] GenerateStudentPresencePdf(
             Student student,
             List<Presence> presences,
@@ -661,14 +664,17 @@ namespace PKL_API.Controllers
                                 table.ColumnsDefinition(columns =>
                                 {
                                     columns.ConstantColumn(45); // Label
-                                    columns.RelativeColumn();   // Nilai
+                                    columns.ConstantColumn(15); // Separator
+                                    columns.RelativeColumn();   // Value
                                 });
 
                                 table.Cell().Element(CellStyle).Text("NIS");
-                                table.Cell().Element(CellStyle).Text($":  {student.nis ?? "-"}");
+                                table.Cell().Element(CellStyle).Text(":");
+                                table.Cell().Element(CellStyle).Text(student.nis ?? "-").WrapAnywhere();
 
                                 table.Cell().Element(CellStyle).Text("Name");
-                                table.Cell().Element(CellStyle).Text($":  {student.User.fullname ?? "-"}");
+                                table.Cell().Element(CellStyle).Text(":");
+                                table.Cell().Element(CellStyle).Text(student.User?.fullname ?? "-").WrapAnywhere();
                             });
 
                             // Sisi kanan: Class & Mentor
@@ -677,14 +683,17 @@ namespace PKL_API.Controllers
                                 table.ColumnsDefinition(columns =>
                                 {
                                     columns.ConstantColumn(45); // Label
-                                    columns.RelativeColumn();   // Nilai
+                                    columns.ConstantColumn(15); // Separator
+                                    columns.RelativeColumn();   // Value
                                 });
 
                                 table.Cell().Element(CellStyle).Text("Class");
-                                table.Cell().Element(CellStyle).Text($":  {className}");
+                                table.Cell().Element(CellStyle).Text(":");
+                                table.Cell().Element(CellStyle).Text(className).WrapAnywhere();
 
                                 table.Cell().Element(CellStyle).Text("Mentor");
-                                table.Cell().Element(CellStyle).Text($":  {mentorName}");
+                                table.Cell().Element(CellStyle).Text(":");
+                                table.Cell().Element(CellStyle).Text(mentorName).WrapAnywhere();
                             });
 
                             IContainer CellStyle(IContainer container) =>
@@ -780,7 +789,7 @@ namespace PKL_API.Controllers
             var students = await _db.Students
                 .Include(s => s.User)
                 .Where(s => s.Classroomid == classroom.id && (s.isPKL ?? false))
-                .OrderBy(s => s.nis)
+                .OrderBy(s => s.User.fullname)
                 .ToListAsync();
 
             // Tentukan rentang tanggal
@@ -859,7 +868,7 @@ namespace PKL_API.Controllers
                         page.PageColor(Colors.White);
 
                         page.Header()
-                            .Text($"Class PKL Presence Matrix - {classroom.name}")
+                            .Text($"Presensi PKL - {classroom.name}")
                             .FontSize(18)
                             .Bold()
                             .AlignCenter();

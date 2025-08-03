@@ -4,8 +4,8 @@
 @inject NavigationManager Navigation
 @inject HttpClient Http
 @inject IJSRuntime JS
-@using PKLPresenceWeb.Model
 @using PKLPresenceWeb.Pages
+@inject NavigationManager NavigationManager
 
 <nav class="bottom-nav-custom">
     <a href="/home" class="@GetClass("home")">
@@ -108,6 +108,7 @@
                                  studentResponse.fullname != "-" &&
                                  studentResponse.company_name != "-" &&
                                  studentResponse.email != "-";
+
                 Console.WriteLine($"[DEBUG] isDataComplete: {isDataComplete}");
             }
         }
@@ -145,6 +146,7 @@
     private void CloseModal()
     {
         showWarningModal = false;
+        NavigationManager.NavigateTo("/home/profile/me");
     }
 
     public void Dispose()

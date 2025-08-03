@@ -52,6 +52,7 @@ namespace PKL_API.Controllers
                     q.Userid,
                     q.nis,
                     q.User.fullname,
+                    q.User.gender,
                     q.Classroomid,
                     class_name = q.Classroom != null ? q.Classroom.name : null,
                     q.isPKL
@@ -80,6 +81,7 @@ namespace PKL_API.Controllers
                     q.id,
                     q.Userid,
                     q.User.fullname,
+                    q.User.gender,
                     q.nis,
                     q.nisn,
                     class_name = q.Classroom != null ? q.Classroom.name : null,
@@ -93,6 +95,41 @@ namespace PKL_API.Controllers
                 return NotFound("Student not found");
             }
             return Ok(student);
+        }
+
+        [Authorize]
+        [HttpGet($"{V}/photo")]
+        public async Task<IActionResult> GetStudentPhoto(int studentId)
+        {
+            // Step 1: Get the student by id
+            var student = await _db.Students
+                .AsNoTracking()
+                .FirstOrDefaultAsync(s => s.id == studentId);
+
+            if (student == null)
+                return NotFound("Student not found.");
+
+            // Step 2: Get the user by Userid
+            var user = await _db.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.id == student.Userid);
+
+            if (user == null)
+                return NotFound("User not found.");
+
+            // Step 3: Get the photo by Photoid
+            if (user.Photoid == null)
+                return NotFound("Photo not found.");
+
+            var photo = await _db.Photos
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.id == user.Photoid.Value);
+
+            if (photo == null || photo.photo == null)
+                return NotFound("Photo not found.");
+
+            var contentType = photo.extension.Contains("png") ? "image/png" : "image/jpeg";
+            return File(photo.photo, $"{contentType}");
         }
 
         [Authorize]

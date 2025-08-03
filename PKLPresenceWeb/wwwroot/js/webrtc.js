@@ -21,6 +21,7 @@
             video.srcObject = stream;
             window.webrtcPhoto.streams[elementId] = stream;
 
+            // Klik video juga bisa capture
             video.onclick = () => window.webrtcPhoto.capture(elementId);
             video.tabIndex = 0;
         } catch (e) {
@@ -39,7 +40,7 @@
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
         // Ambil data base64 JPG
-        const dataUrl = canvas.toDataURL('image/jpeg'); // Bisa ganti ke 'image/png'
+        const dataUrl = canvas.toDataURL('image/jpeg');
 
         const dotNetRef = window.webrtcPhoto.dotNetRefs[elementId];
         if (dotNetRef) {

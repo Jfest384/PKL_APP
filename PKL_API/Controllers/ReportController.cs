@@ -304,6 +304,7 @@ namespace PKL_API.Controllers
 
         [Authorize]
         [HttpGet("student/{studentId}/print")]
+        [Obsolete]
         public async Task<IActionResult> PrintReportByStudent(
             int studentId,
             [FromQuery] DateOnly? startDate,
@@ -378,6 +379,7 @@ namespace PKL_API.Controllers
             return File(pdfBytes, "application/pdf", fileName);
         }
 
+        [Obsolete]
         private static byte[] GenerateStudentReportPdf(
             Student student,
             List<Report> reports,
@@ -420,14 +422,17 @@ namespace PKL_API.Controllers
                                 table.ColumnsDefinition(columns =>
                                 {
                                     columns.ConstantColumn(45); // Label
-                                    columns.RelativeColumn();   // Nilai
+                                    columns.ConstantColumn(15); // Separator
+                                    columns.RelativeColumn();   // Value
                                 });
 
                                 table.Cell().Element(CellStyle).Text("NIS");
-                                table.Cell().Element(CellStyle).Text($":  {student.nis ?? "-"}");
+                                table.Cell().Element(CellStyle).Text(":");
+                                table.Cell().Element(CellStyle).Text(student.nis ?? "-").WrapAnywhere();
 
                                 table.Cell().Element(CellStyle).Text("Name");
-                                table.Cell().Element(CellStyle).Text($":  {student.User?.fullname ?? "-"}");
+                                table.Cell().Element(CellStyle).Text(":");
+                                table.Cell().Element(CellStyle).Text(student.User?.fullname ?? "-").WrapAnywhere();
                             });
 
                             // Sisi kanan: Class & Mentor
@@ -436,14 +441,17 @@ namespace PKL_API.Controllers
                                 table.ColumnsDefinition(columns =>
                                 {
                                     columns.ConstantColumn(45); // Label
-                                    columns.RelativeColumn();   // Nilai
+                                    columns.ConstantColumn(15); // Separator
+                                    columns.RelativeColumn();   // Value
                                 });
 
                                 table.Cell().Element(CellStyle).Text("Class");
-                                table.Cell().Element(CellStyle).Text($":  {className}");
+                                table.Cell().Element(CellStyle).Text(":");
+                                table.Cell().Element(CellStyle).Text(className).WrapAnywhere();
 
                                 table.Cell().Element(CellStyle).Text("Mentor");
-                                table.Cell().Element(CellStyle).Text($":  {mentorName}");
+                                table.Cell().Element(CellStyle).Text(":");
+                                table.Cell().Element(CellStyle).Text(mentorName).WrapAnywhere();
                             });
 
                             IContainer CellStyle(IContainer container) =>
@@ -558,6 +566,8 @@ namespace PKL_API.Controllers
             var query = _db.Reports
                 .Include(r => r.Student)
                     .ThenInclude(s => s.Mentor)
+                .Include(r => r.Mentor)
+                    .ThenInclude(m => m.User)
                 .Include(r => r.Classroom)
                 .Include(r => r.Student)
                     .ThenInclude(s => s.Company)
@@ -617,7 +627,7 @@ namespace PKL_API.Controllers
                             table.ColumnsDefinition(columns =>
                             {
                                 columns.ConstantColumn(60);
-                                columns.RelativeColumn(1);  // Student
+                                columns.RelativeColumn(2);  // Student
                                 columns.ConstantColumn(80); // Date
                                 columns.RelativeColumn(1);
                                 columns.RelativeColumn(1);  // Company
@@ -762,7 +772,7 @@ namespace PKL_API.Controllers
                             table.ColumnsDefinition(columns =>
                             {
                                 columns.ConstantColumn(60); // NIS
-                                columns.RelativeColumn(1);  // Name
+                                columns.RelativeColumn(2);  // Name
                                 columns.RelativeColumn(1);  // Class
                                 columns.ConstantColumn(80); // Date
                                 columns.RelativeColumn(1);  // Company

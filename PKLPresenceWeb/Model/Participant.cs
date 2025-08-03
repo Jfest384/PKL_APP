@@ -18,6 +18,7 @@ namespace PKLPresenceWeb.Model
         public int userid { get; set; }
         public string nis { get; set; }
         public string fullname { get; set; }
+        public bool gender { get; set; }
         public int classroomid { get; set; }
         public string class_name { get; set; }
         public bool isPKL { get; set; }
