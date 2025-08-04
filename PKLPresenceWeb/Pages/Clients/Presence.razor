@@ -63,6 +63,11 @@
                                     <td>@item.feedback</td>
                                     <td>
                                         <button class="btn btn-sm btn-success" @onclick="() => ShowDetail(item)">Detail</button>
+                                        <button class="btn btn-sm btn-warning ms-1"
+                                                @onclick="() => ShowReportModal(item)"
+                                                disabled="@(item.presence_type == "-" || GetPresenceTypeId(item) == 4)">
+                                            Report
+                                        </button>
                                     </td>
                                 </tr>
                             }
@@ -188,6 +193,122 @@
                                     disabled="@(!IsPresenceFormValid || IsSubmittingPresence || !IsLocationValid)">
                                 Confirm
                             </button>
+                        </div>
+                    </div>
+                </Modal>
+            }
+
+            @if (ShowReportModalFlag)
+            {
+                <Modal IsVisible="true" Title="@ReportPresenceTypeName">
+                    <div class="modal-scrollable-content">
+                        @if (ReportPresenceTypeId == 1)
+                        {
+                            <div class="mb-3 mx-1">
+                                <label class="mb-2">Ringkasan Pekerjaan di Industri</label>
+                                <textarea class="form-control" placeholder="Masukkan report ..." @bind="ReportTextInput" rows="4"></textarea>
+                            </div>
+                        }
+                        else if (ReportPresenceTypeId == 2)
+                        {
+                            <div class="d-flex flex-column align-items-center gap-4">
+                                <div class="text-center w-100">
+                                    <div class="mb-1 fw-normal">Surat MC</div>
+                                    <label class="upload-box-report" @onclick='() => OnPhotoBoxClick("MedicalCertificate", isReport: true)'>
+                                        @if (ReportPhotoPreviews.ContainsKey("MedicalCertificate") && ReportPhotoPreviews["MedicalCertificate"] != null)
+                                        {
+                                            <img src="@ReportPhotoPreviews["MedicalCertificate"]" class="img-upload-preview" />
+                                        }
+                                        else
+                                        {
+                                            <div class="upload-box-inner m-2">
+                                                <i class="bi bi-image" style="font-size:2.5rem;color:#888"></i>
+                                                <div class="mt-2 text-secondary">Upload Foto</div>
+                                            </div>
+                                        }
+                                    </label>
+                                </div>
+                                <div class="text-center w-100">
+                                    <div class="mb-1 fw-normal">Info Sakit Ke Perusahaan</div>
+                                    <label class="upload-box-report">
+                                        <InputFile class="d-none" OnChange='e => OnReportPhotoChanged(e, "SickToCompany")' accept="image/*" />
+                                        @if (ReportPhotoPreviews.ContainsKey("SickToCompany") && ReportPhotoPreviews["SickToCompany"] != null)
+                                        {
+                                            <img src="@ReportPhotoPreviews["SickToCompany"]" class="img-upload-preview" />
+                                        }
+                                        else
+                                        {
+                                            <div class="upload-box-inner m-2">
+                                                <i class="bi bi-image" style="font-size:2.5rem;color:#888;"></i>
+                                                <div class="mt-2 text-secondary">Upload Foto</div>
+                                            </div>
+                                        }
+                                    </label>
+                                </div>
+                                <div class="text-center w-100">
+                                    <div class="mb-1 fw-normal">Info Sakit ke Pembimbing Sekolah</div>
+                                    <label class="upload-box-report">
+                                        <InputFile class="d-none" OnChange='e => OnReportPhotoChanged(e, "SickToMentor")' accept="image/*" />
+                                        @if (ReportPhotoPreviews.ContainsKey("SickToMentor") && ReportPhotoPreviews["SickToMentor"] != null)
+                                        {
+                                            <img src="@ReportPhotoPreviews["SickToMentor"]" class="img-upload-preview" />
+                                        }
+                                        else
+                                        {
+                                            <div class="upload-box-inner m-2">
+                                                <i class="bi bi-image" style="font-size:2.5rem;color:#888;"></i>
+                                                <div class="mt-2 text-secondary">Upload Foto</div>
+                                            </div>
+                                        }
+                                    </label>
+                                </div>
+                                <div class="text-center w-100">
+                                    <div class="mb-1 fw-normal">Info Sakit ke Walas</div>
+                                    <label class="upload-box-report">
+                                        <InputFile class="d-none" OnChange='e => OnReportPhotoChanged(e, "SickToWalas")' accept="image/*" />
+                                        @if (ReportPhotoPreviews.ContainsKey("SickToWalas") && ReportPhotoPreviews["SickToWalas"] != null)
+                                        {
+                                            <img src="@ReportPhotoPreviews["SickToWalas"]" class="img-upload-preview" />
+                                        }
+                                        else
+                                        {
+                                            <div class="upload-box-inner m-2">
+                                                <i class="bi bi-image" style="font-size:2.5rem;color:#888;"></i>
+                                                <div class="mt-2 text-secondary">Upload Foto</div>
+                                            </div>
+                                        }
+                                    </label>
+                                </div>
+                            </div>
+                        }
+                        else if (ReportPresenceTypeId == 3)
+                        {
+                            <div class="d-flex flex-column align-items-center gap-4">
+                                <div class="text-center w-100">
+                                    <div class="mb-1 fw-normal">Kegiatan yang dilakukan</div>
+                                    <label class="upload-box-report" @onclick='() => OnPhotoBoxClick("Activity", isReport: true)'>
+                                        @if (ReportPhotoPreviews.ContainsKey("Activity") && ReportPhotoPreviews["Activity"] != null)
+                                        {
+                                            <img src="@ReportPhotoPreviews["Activity"]" class="img-upload-preview" />
+                                        }
+                                        else
+                                        {
+                                            <div class="upload-box-inner">
+                                                <i class="bi bi-image m-2" style="font-size:2.5rem;color:#888;"></i>
+                                                <div class="mt-2 text-secondary">Upload Foto</div>
+                                            </div>
+                                        }
+                                    </label>
+                                </div>
+                            </div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(ReportModalError))
+                        {
+                            <div class="alert alert-danger mt-3">@ReportModalError</div>
+                        }
+                        <div class="d-flex justify-content-center gap-3 mt-4">
+                            <button class="btn btn-danger px-4" style="min-width:120px;" @onclick="CancelReportModal">Cancel</button>
+                            <button class="btn btn-success px-4" style="min-width:120px;" @onclick="ConfirmReportModal">Confirm</button>
                         </div>
                     </div>
                 </Modal>
@@ -596,29 +717,34 @@
     public async Task OnWebRTCCapture(string elementId, string dataUrl)
     {
         var field = elementId.Replace("webrtc_", "");
-        PresencePhotoPreviews[field] = dataUrl;
-
-        // Convert base64 to byte[] and set as IBrowserFile (for upload)
         var base64 = dataUrl.Substring(dataUrl.IndexOf(",") + 1);
         var bytes = Convert.FromBase64String(base64);
         var file = new BlazorInputFileStreamFile(field + ".jpg", "image/jpeg", bytes);
-        PresencePhotos[field] = file;
 
-        // Tutup modal WebRTC
+        if (IsReportWebRTC)
+        {
+            ReportPhotoPreviews[field] = dataUrl;
+            ReportPhotos[field] = file;
+        }
+        else
+        {
+            PresencePhotoPreviews[field] = dataUrl;
+            PresencePhotos[field] = file;
+        }
+
         ShowWebRTCModal = false;
         WebRTCField = null;
-        ActiveWebRTCField = null;
+        IsReportWebRTC = false;
         StateHasChanged();
     }
 
-    private void OnPhotoBoxClick(string field)
+    private bool IsReportWebRTC = false;
+
+    private void OnPhotoBoxClick(string field, bool isReport = false)
     {
-        if (IsWebRTCField(field))
-        {
-            WebRTCField = field;
-            ShowWebRTCModal = true;
-        }
-        else TriggerFileInput(field);
+        WebRTCField = field;
+        ShowWebRTCModal = true;
+        IsReportWebRTC = isReport;
     }
 
     private bool IsWebRTCField(string field)
@@ -676,17 +802,6 @@
         }
     }
 
-    // private bool HasPresenceToday =>
-    // Presences.Any(p =>
-    //     DateTime.TryParseExact(
-    //         p.date,
-    //         "dddd, dd MMMM yyyy",
-    //         new CultureInfo("id-ID"),
-    //         DateTimeStyles.None,
-    //         out var dt
-    //     ) && dt.Date == DateTime.Today
-    // );
-
     private bool HasPresenceTodayGlobal = false;
 
     // Mapping presence type ke field foto
@@ -694,7 +809,7 @@
     {
         // Sesuaikan id dengan id presenceType Anda
         { 1, new() { ("Foto Full Body", "FullBodyPhoto"), ("Location", "Location") } }, // Hadir
-        { 2, new() { ("Surat MC", "MedicalCertificate"), ("Saat Berobat", "Treatment"), ("Info Sakit ke Perusahaan", "SickToCompany"), ("Info Sakit ke Pembimbing Sekolah", "SickToMentor"), ("Info Sakit ke Walas", "SickToWalas") } }, // Sakit
+        { 2, new() { ("Saat Berobat", "Treatment") } }, // Sakit
         { 3, new() { ("Izin ke Perusahaan", "PermitToCompany"), ("Izin ke Pembimbing Sekolah", "PermitToMentor"), ("Izin ke Walas", "PermitToWalas"), ("Kegiatan yang dilakukan", "Activity") } }, // Izin
         { 4, new() { ("Info Libur dari Perusahaan", "HolidayFromCompany") } }, // Libur
         // Tambahkan mapping lain jika ada
@@ -1160,5 +1275,126 @@
             await LoadPresence();
         }
         else await JS.InvokeVoidAsync("alert", "Gagal submit feedback.");
+    }
+
+    private int GetPresenceTypeId(PresenceItem item)
+    {
+        var type = PresenceTypes.FirstOrDefault(x => x.name.Trim().Equals(item.presence_type.Trim(), StringComparison.OrdinalIgnoreCase));
+        return type?.id ?? 0;
+    }
+
+    // State untuk Report Modal
+    bool ShowReportModalFlag = false;
+    int ReportPresenceId = 0;
+    int ReportPresenceTypeId = 0;
+    string ReportPresenceTypeName = "";
+    string ReportTextInput = "";
+    Dictionary<string, IBrowserFile?> ReportPhotos = new();
+    Dictionary<string, string?> ReportPhotoPreviews = new();
+    string ReportModalError = "";
+    string ReportActivityInput = "";
+
+    private void ShowReportModal(PresenceItem item)
+    {
+        ReportPresenceId = int.TryParse(item.id_presence, out var id) ? id : 0;
+        ReportPresenceTypeId = GetPresenceTypeId(item);
+        ReportPresenceTypeName = PresenceTypes.FirstOrDefault(x => x.id == ReportPresenceTypeId)?.name ?? "";
+        ReportTextInput = "";
+        ReportActivityInput = "";
+        ReportPhotos.Clear();
+        ReportPhotoPreviews.Clear();
+        ReportModalError = "";
+        ShowReportModalFlag = true;
+    }
+
+    private async Task OnReportPhotoChanged(InputFileChangeEventArgs e, string field)
+    {
+        var file = e.File;
+        if (file != null)
+        {
+            ReportPhotos[field] = file;
+            using var stream = file.OpenReadStream(long.MaxValue);
+            using var ms = new MemoryStream();
+            await stream.CopyToAsync(ms);
+            var bytes = ms.ToArray();
+            ReportPhotoPreviews[field] = $"data:{file.ContentType};base64,{Convert.ToBase64String(bytes)}";
+        }
+        else
+        {
+            ReportPhotoPreviews[field] = null;
+        }
+        StateHasChanged();
+    }
+
+    private void CancelReportModal()
+    {
+        ShowReportModalFlag = false;
+        ReportPresenceId = 0;
+        ReportPresenceTypeId = 0;
+        ReportTextInput = "";
+        ReportActivityInput = "";
+        ReportPhotos.Clear();
+        ReportPhotoPreviews.Clear();
+        ReportModalError = "";
+    }
+
+    private async Task ConfirmReportModal()
+    {
+        try
+        {
+            var content = new MultipartFormDataContent();
+
+            if (ReportPresenceTypeId == 1)
+            {
+                content.Add(new StringContent(ReportTextInput ?? ""), "daily_report");
+            }
+            else if (ReportPresenceTypeId == 2)
+            {
+                foreach (var field in new[] { "MedicalCertificate", "SickToCompany", "SickToMentor", "SickToWalas" })
+                {
+                    if (ReportPhotos.TryGetValue(field, out var file) && file != null)
+                    {
+                        var stream = file.OpenReadStream(long.MaxValue);
+                        var fileContent = new StreamContent(stream);
+                        fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
+                        content.Add(fileContent, field, file.Name);
+                    }
+                    else
+                    {
+                        content.Add(new StringContent(""), field);
+                    }
+                }
+            }
+            else if (ReportPresenceTypeId == 3)
+            {
+                if (ReportPhotos.TryGetValue("Activity", out var file) && file != null)
+                {
+                    var stream = file.OpenReadStream(long.MaxValue);
+                    var fileContent = new StreamContent(stream);
+                    fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
+                    content.Add(fileContent, "Activity", file.Name);
+                }
+                else
+                {
+                    content.Add(new StringContent(""), "Activity");
+                }
+            }
+
+            var response = await Http.PutAsync(APIUrl.Endpoint($"presence/{ReportPresenceId}/edit"), content);
+
+            if (response.IsSuccessStatusCode)
+            {
+                CancelReportModal();
+                Navigation.NavigateTo(Navigation.Uri, forceLoad: true);
+            }
+            else
+            {
+                ReportModalError = "Gagal submit report.";
+            }
+        }
+        catch
+        {
+            ReportModalError = "Terjadi kesalahan saat submit report.";
+        }
     }
 }

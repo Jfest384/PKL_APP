@@ -18,6 +18,8 @@ namespace PKL_API.Models
         [Column("long", TypeName = "decimal(10,7)")]
         public decimal? longitude { get; set; }
 
+        [MaxLength]
+        public string? daily_report { get; set; }
 
         [ForeignKey(nameof(MedicalCertificatePhoto))]
         [Column("medical_certificate")]
@@ -77,6 +79,8 @@ namespace PKL_API.Models
         [Column("holiday_from_company")]
         public Guid? HolidayFromCompanyPhotoid { get; set; }
         public PresencePhoto? HolidayFromCompanyPhoto { get; set; }
+
+
 
     }
 }

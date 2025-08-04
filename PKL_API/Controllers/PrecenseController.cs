@@ -32,7 +32,7 @@ namespace PKL_API.Controllers
 
         [Authorize]
         [HttpPost]
-        [RequestSizeLimit(5_000_000)]
+        [RequestSizeLimit(4_000_000)]
         public async Task<IActionResult> SubmitPrecense([FromForm] PrecenseDTO dto)
         {
             var userIdClaim = User.FindFirst("id")?.Value;
@@ -60,15 +60,10 @@ namespace PKL_API.Controllers
             var photoFiles = new IFormFile?[]
             {
                 dto.FullBodyPhoto,
-                //dto.MedicalCertificate,
                 dto.Treatment,
-                //dto.SickToCompany,
-                //dto.SickToMentor,
-                //dto.SickToWalas,
                 dto.PermitToCompany,
                 dto.PermitToMentor,
                 dto.PermitToWalas,
-                //dto.Activity,
                 dto.HolidayFromCompany
             };
 
@@ -98,15 +93,10 @@ namespace PKL_API.Controllers
             }
 
             detail.FullBodyPhotoid = await SavePhotoAsync(dto.FullBodyPhoto);
-            //detail.MedicalCertificatePhotoid = await SavePhotoAsync(dto.MedicalCertificate);
             detail.TreatmentPhotoid = await SavePhotoAsync(dto.Treatment);
-            //detail.SickToCompanyPhotoid = await SavePhotoAsync(dto.SickToCompany);
-            //detail.SickToMentorPhotoid = await SavePhotoAsync(dto.SickToMentor);
-            //detail.SickToWalasPhotoid = await SavePhotoAsync(dto.SickToWalas);
             detail.PermitToCompanyPhotoid = await SavePhotoAsync(dto.PermitToCompany);
             detail.PermitToMentorPhotoid = await SavePhotoAsync(dto.PermitToMentor);
             detail.PermitToWalasPhotoid = await SavePhotoAsync(dto.PermitToWalas);
-            //detail.ActivityPhotoid = await SavePhotoAsync(dto.Activity);
             detail.HolidayFromCompanyPhotoid = await SavePhotoAsync(dto.HolidayFromCompany);
 
             if (dto.Lat.HasValue)
@@ -138,9 +128,6 @@ namespace PKL_API.Controllers
 
             return Ok(new { message = "Presence submitted successfully" });
         }
-
-        [Authorize]
-        [HttpPut("presence-report/{presenceId}")]
 
         [Authorize]
         [HttpPut("feedback/{presenceId}")]
@@ -240,7 +227,8 @@ namespace PKL_API.Controllers
                         presence_type = p.PresenceType != null ? p.PresenceType.name : "-",
                         feedback = p.feedback ?? "-",
                         lat = p.Detail != null ? (p.Detail.lat.ToString()) : "-",
-                        longitude = p.Detail != null ? (p.Detail.longitude.ToString()) : "-"
+                        longitude = p.Detail != null ? (p.Detail.longitude.ToString()) : "-",
+                        isComplete = GetPresenceCompleteSymbol(p)
                     })
                     .ToListAsync();
                 return Ok(new
@@ -301,7 +289,8 @@ namespace PKL_API.Controllers
                         feedback = presence?.feedback ?? "-",
                         isPresence = presence != null ? "✔️" : "❌",
                         lat = presence?.Detail != null ? presence.Detail.lat.ToString() : "-",
-                        longitude = presence?.Detail?.longitude?.ToString() ?? "-"
+                        longitude = presence?.Detail?.longitude?.ToString() ?? "-",
+                        isComplete = GetPresenceCompleteSymbol(presence)
                     };
                 }).ToList();
 
@@ -370,7 +359,8 @@ namespace PKL_API.Controllers
                         feedback = presence?.feedback ?? "-",
                         isPresence = presence != null ? "✔️" : "❌",
                         lat = presence?.Detail != null ? presence.Detail.lat.ToString() : "-",
-                        longitude = presence?.Detail != null ? presence.Detail.longitude.ToString() : "-"
+                        longitude = presence?.Detail != null ? presence.Detail.longitude.ToString() : "-",
+                        isComplete = GetPresenceCompleteSymbol(presence)
                     };
                 }).ToList();
 
@@ -443,7 +433,8 @@ namespace PKL_API.Controllers
                         feedback = presence?.feedback ?? "-",
                         isPresence = presence != null ? "✔️" : "❌",
                         lat = presence?.Detail?.lat.ToString() ?? "-",
-                        longitude = presence?.Detail?.longitude.ToString() ?? "-"
+                        longitude = presence?.Detail?.longitude.ToString() ?? "-",
+                        isComplete = GetPresenceCompleteSymbol(presence)
                     };
                 }).ToList();
 
@@ -462,6 +453,38 @@ namespace PKL_API.Controllers
 
             // Fallback: return BadRequest if role is not handled
             return BadRequest("Role not supported.");
+        }
+
+        private static string GetPresenceCompleteSymbol(Presence? presence)
+        {
+            if (presence == null)
+                return "-";
+
+            var typeId = presence.PresenceTypeid;
+            var detail = presence.Detail;
+
+            if (typeId == 4)
+                return "✔️";
+
+            if (detail == null)
+                return "❌";
+
+            if (typeId == 1)
+                return !string.IsNullOrWhiteSpace(detail.daily_report) ? "✔️" : "❌";
+
+            if (typeId == 2)
+            {
+                return (detail.MedicalCertificatePhotoid != null
+                    && detail.SickToCompanyPhotoid != null
+                    && detail.SickToMentorPhotoid != null
+                    && detail.SickToWalasPhotoid != null)
+                    ? "✔️" : "❌";
+            }
+
+            if (typeId == 3)
+                return detail.ActivityPhotoid != null ? "✔️" : "❌";
+
+            return "❌";
         }
 
         [Authorize]
@@ -923,6 +946,86 @@ namespace PKL_API.Controllers
                     });
                 }
             }).GeneratePdf();
+        }
+
+        [Authorize]
+        [HttpPut("{presenceId}/edit")]
+        [RequestSizeLimit(4_000_000)]
+        public async Task<IActionResult> EditPresence(int presenceId, [FromForm] Presence_ReportDTO dto)
+        {
+            var userIdClaim = User.FindFirst("id")?.Value;
+            if (userIdClaim == null || !int.TryParse(userIdClaim, out int userId))
+                return Unauthorized("Invalid user token");
+
+            var presence = await _db.Presences
+                .Include(p => p.Detail)
+                .FirstOrDefaultAsync(p => p.id == presenceId);
+            if (presence == null)
+                return NotFound("Presence not found.");
+
+            // Only allow the student who owns the presence to edit
+            var student = await _db.Students.FirstOrDefaultAsync(s => s.Userid == userId);
+            if (student == null || presence.Studentid != student.id)
+                return StatusCode(403, "You are not allowed to edit this presence.");
+
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".pdf" };
+
+            bool IsValidFile(IFormFile? file)
+            {
+                if (file == null) return true;
+                var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+                return allowedExtensions.Contains(ext);
+            }
+
+            var photoFiles = new (IFormFile? file, Action<Guid?> setId, string propName)[]
+            {
+                (dto.MedicalCertificate, id => presence.Detail.MedicalCertificatePhotoid = id, "MedicalCertificate"),
+                (dto.SickToCompany, id => presence.Detail.SickToCompanyPhotoid = id, "SickToCompany"),
+                (dto.SickToMentor, id => presence.Detail.SickToMentorPhotoid = id, "SickToMentor"),
+                (dto.SickToWalas, id => presence.Detail.SickToWalasPhotoid = id, "SickToWalas"),
+                (dto.Activity, id => presence.Detail.ActivityPhotoid = id, "Activity")
+            };
+
+            foreach (var (file, _, propName) in photoFiles)
+            {
+                if (file != null && !IsValidFile(file))
+                    return BadRequest($"Only JPG, JPEG, PNG, or PDF files are allowed for {propName}.");
+            }
+
+            async Task<Guid?> SavePhotoAsync(IFormFile? file)
+            {
+                if (file == null || file.Length == 0)
+                    return null;
+                using var ms = new MemoryStream();
+                await file.CopyToAsync(ms);
+                var photo = new PresencePhoto
+                {
+                    id = Guid.NewGuid(),
+                    photo = ms.ToArray(),
+                    extension = Path.GetExtension(file.FileName)
+                };
+                _db.PresencePhotos.Add(photo);
+                return photo.id;
+            }
+
+            foreach (var (file, setId, _) in photoFiles)
+            {
+                if (file != null)
+                {
+                    var photoId = await SavePhotoAsync(file);
+                    setId(photoId);
+                }
+            }
+
+            // Set daily_report as string (text) from dto
+            if (presence.Detail != null)
+            {
+                presence.Detail.daily_report = dto.daily_report;
+            }
+
+            await _db.SaveChangesAsync();
+
+            return Ok(new { message = "Presence updated successfully" });
         }
     }
 }

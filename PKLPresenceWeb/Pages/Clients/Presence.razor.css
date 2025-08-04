@@ -246,3 +246,28 @@ input[type="radio"].presence-radio-input {
         height: 300px;
     }
 }
+
+.upload-box,
+.upload-box-report {
+    display: inline-block;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 8px;
+    background: #fafbfc;
+    cursor: pointer;
+    width: fit-content;
+    height: fit-content;
+    padding: 0;
+    text-align: center;
+    position: relative;
+}
+
+    .upload-box img,
+    .upload-box-report img,
+    .img-upload-preview {
+        display: block;
+        max-width: 240px;
+        max-height: 180px;
+        width: auto;
+        height: auto;
+        border-radius: 8px;
+    }

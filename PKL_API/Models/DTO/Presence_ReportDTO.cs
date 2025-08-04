@@ -1,8 +1,11 @@
-﻿namespace PKL_API.Models.DTO
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace PKL_API.Models.DTO
 {
     public class Presence_ReportDTO
     {
-        public IFormFile? DailyReport { get; set; }
+        [MaxLength]
+        public string? daily_report { get; set; }
         public IFormFile? MedicalCertificate { get; set; }
         public IFormFile? SickToCompany { get; set; }
         public IFormFile? SickToMentor { get; set; }

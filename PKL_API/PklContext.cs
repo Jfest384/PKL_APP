@@ -6,7 +6,6 @@ namespace PKL_API
     public class PklContext : DbContext
     {
         public PklContext(DbContextOptions opt) : base(opt) { }
-
         public DbSet<User> Users { get; set; }
         public DbSet<Student> Students { get; set; }
         public DbSet<Role> Roles { get; set; }
@@ -87,7 +86,5 @@ namespace PKL_API
                       .OnDelete(DeleteBehavior.Restrict);
             });
         }
-
     }
-
 }
