@@ -23,6 +23,8 @@
         public string isPresence { get; set; }
         public string lat { get; set; }
         public string longitude { get; set; }
+        public string report { get; set; }
+        public string isComplete { get; set; }
     }
 
     public class PresenceTypeItem

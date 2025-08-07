@@ -36,7 +36,10 @@ namespace PKL_API.Controllers
             if (!string.IsNullOrWhiteSpace(name))
             {
                 var lowered = name.ToLower();
-                query = query.Where(q => q.User.fullname.ToLower().Contains(lowered));
+                query = query.Where(q =>
+                    q.User.fullname.ToLower().Contains(lowered) ||
+                    q.nis.ToLower().Contains(lowered)
+                );
             }
 
             var totalItems = query.Count();
@@ -139,8 +142,8 @@ namespace PKL_API.Controllers
             [FromQuery] string? name,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10,
-            [FromQuery] bool? noMentor = null, // tambahkan parameter opsional
-            [FromQuery] int? userIdFilter = null // tambahkan filter berdasarkan userId
+            [FromQuery] bool? noMentor = null,
+            [FromQuery] int? userIdFilter = null
         )
         {
             // Step 1: Get user ID from token
@@ -196,11 +199,14 @@ namespace PKL_API.Controllers
                 query = query.Where(q => q.Userid == userIdFilter.Value);
             }
 
-            // Step 5: Filter by name if provided
+            // Step 5: Filter by name or nis if provided
             if (!string.IsNullOrWhiteSpace(name))
             {
                 var lowered = name.ToLower();
-                query = query.Where(q => q.User.fullname.ToLower().Contains(lowered));
+                query = query.Where(q =>
+                    q.User.fullname.ToLower().Contains(lowered) ||
+                    q.nis.ToLower().Contains(lowered)
+                );
             }
 
             // Step 6: Pagination

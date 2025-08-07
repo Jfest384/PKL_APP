@@ -7,11 +7,16 @@
 @using System.Globalization
 
 <div class="report-wrapper">
-    <div class="header-section d-flex align-items-center">
-        <button class="btn btn-link text-white fw-bold p-0 me-2" @onclick="GoBack">
-            <i class="bi-chevron-left fw-bold"></i>
-        </button>
-        <h5 class="mb-0 fw-bold text-white">Intern Report</h5>
+    <div class="header-section d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center">
+            <button class="btn btn-link text-white fw-bold p-0 me-2" @onclick="GoBack">
+                <i class="bi-chevron-left fw-bold"></i>
+            </button>
+            <h5 class="mb-0 fw-bold text-white">Intern Report</h5>
+        </div>
+        <div class="photo-wrapper" @onclick="GoToProfile">
+            <img src="@photoUrl" onerror="this.src='/images/default_profile.jpg'" class="profile-photo" />
+        </div>
     </div>
 
     <div class="content-section">
@@ -24,9 +29,9 @@
                     Add Report
                 </button>
             </div>
-                
+
             <div class="scrollable-x">
-                <table class="table table-bordered">
+                <table class="table table-bordered student-table">
                     <thead>
                         <tr>
                             <th class="text-center">No</th>
@@ -89,8 +94,8 @@
                             var pageNum = i;
                             <li class="page-item @(pageNum == CurrentPage ? "active" : null)">
                                 <button class="page-link"
-                                    @onclick="() => ChangePage(pageNum)"
-                                    disabled="@(pageNum == CurrentPage)">
+                                        @onclick="() => ChangePage(pageNum)"
+                                        disabled="@(pageNum == CurrentPage)">
                                     @pageNum
                                 </button>
                             </li>
@@ -113,10 +118,12 @@
                                   class="form-control"
                                   placeholder="Masukkan report..."
                                   @bind="ContentInput"
-                                  @oninput="e => ContentInput = ((ChangeEventArgs)e).Value?.ToString() ?? string.Empty"
+                                  @oninput="OnContentInput"
+                                  maxlength="200"
                                   rows="3"></textarea>
+                        <div class="char-counter-outer">@ContentInput.Length/200</div>
                     </div>
-                    <div class="d-flex justify-content-around mt-4">
+                    <div class="d-flex justify-content-around mt-2">
                         <button class="btn btn-danger px-4" @onclick="CancelReport">Cancel</button>
                         <button class="btn btn-success px-4"
                                 @onclick="ConfirmReport"
@@ -155,79 +162,134 @@
             else
             {
                 <div class="scrollable-x">
-                    <table class="table table-bordered">
-                        <thead>
-                            <tr>
-                                <th class="text-center">No</th>
-                                <th class="text-center">NIS</th>
-                                <th class="text-center">Nama Lengkap</th>
-                                <th class="text-center">Kelas</th>
-                                <th class="text-center">Hari/Tanggal</th>
-                                <th class="text-center">Jam</th>
-                                <th class="text-center">Nama PT</th>
-                                <th class="text-center">Ringkasan Pekerjaan</th>
-								<th class="text-center">Feedback</th>
-                                <th class="text-center">Bimbingan</th>
-                                @if (UserRole != "Admin" && UserRole != "Student" && UserRole != "Teacher")
-                                {
+                    @if (UserRole == "Mentor" || UserRole == "Kepala Jurusan" || UserRole == "Wali Kelas")
+                    {
+                        <table class="table table-bordered mentor-table">
+                            <thead>
+                                <tr>
+                                    <th class="text-center">No</th>
+                                    <th class="text-center">NIS</th>
+                                    <th class="text-center">Nama Lengkap</th>
+                                    <th class="text-center">Kelas</th>
+                                    <th class="text-center">Hari/Tanggal</th>
+                                    <th class="text-center">Jam</th>
+                                    <th class="text-center">Nama PT</th>
+                                    <th class="text-center">Ringkasan Pekerjaan</th>
+                                    <th class="text-center">Feedback</th>
+                                    <th class="text-center">Bimbingan</th>
                                     <th class="text-center">Action</th>
-                                }                               
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @if (Reports is not null && Reports.Count > 0)
-                            {
-                                var rowIndex = (CurrentPage - 1) * 10;
-                                @foreach (var item in Reports)
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Reports is not null && Reports.Count > 0)
                                 {
-                                    rowIndex++;
-                                    <tr>
-                                        <td class="text-center">@rowIndex</td>
-                                        <td>@item.nis</td>
-                                        <td>@item.name</td>
-                                        <td>@item.classroom_name</td>
-                                        <td>@item.date</td>
-                                        <td>@item.time</td>
-                                        <td>@item.company_name</td>
-                                        <td>@item.content</td>
-                                        <td>@item.feedback</td>
-                                        <td class="text-center">
-                                            @if (item.isGuidance == "✔️")
-                                            {
-                                                <span class="bi bi-check text-success" style="font-size: 2rem; font-weight: bold"></span>
-                                            }
-                                            else
-                                            {
-                                                <span class="bi bi-x text-danger" style="font-size: 2rem; font-weight: bold"></span>
-                                            }
-                                        </td>
-                                        @if (UserRole != "Admin" && UserRole != "Student" && UserRole != "Teacher")
-                                        {
+                                    var rowIndex = (CurrentPage - 1) * 10;
+                                    @foreach (var item in Reports)
+                                    {
+                                        rowIndex++;
+                                        <tr>
+                                            <td class="text-center">@rowIndex</td>
+                                            <td>@item.nis</td>
+                                            <td>@item.name</td>
+                                            <td>@item.classroom_name</td>
+                                            <td>@item.date</td>
+                                            <td>@item.time</td>
+                                            <td>@item.company_name</td>
+                                            <td>@item.content</td>
+                                            <td>@item.feedback</td>
+                                            <td class="text-center">
+                                                @if (item.isGuidance == "✔️")
+                                                {
+                                                    <span class="bi bi-check text-success" style="font-size: 2rem; font-weight: bold"></span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="bi bi-x text-danger" style="font-size: 2rem; font-weight: bold"></span>
+                                                }
+                                            </td>
                                             <td>
-                                                <div class="d-flex gap-2 justify-content-center">
+                                                <div class="d-flex flex-column gap-2 align-items-center">
                                                     <button class="btn btn-sm btn-success" @onclick="() => ShowFeedback(item)">Feedback</button>
                                                     @if (UserRole == "Mentor")
                                                     {
                                                         <button class="btn btn-sm btn-warning"
                                                                 @onclick="() => ShowGuidance(item.studentId, item.name)"
-                                                                disabled="@(item.isGuidance == "✔️")">
+                                                                disabled="@(item.isGuidance == "✔️")"
+                                                                style="font-size: 0.8rem;">
                                                             Bimbingan
                                                         </button>
                                                     }
                                                 </div>
                                             </td>
-                                        }                                       
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="11" class="text-center text-muted">Tidak ada data laporan PKL.</td>
                                     </tr>
                                 }
-                            }
-                            else
-                            {
+                            </tbody>
+                        </table>
+                    }
+
+                    @if (UserRole == "Admin" || UserRole == "Teacher")
+                    {
+                        <table class="table table-bordered admin-table">
+                            <thead>
                                 <tr>
-                                    <td colspan="11" class="text-center text-muted">Tidak ada data laporan PKL.</td>
+                                    <th class="text-center">No</th>
+                                    <th class="text-center">NIS</th>
+                                    <th class="text-center">Nama Lengkap</th>
+                                    <th class="text-center">Kelas</th>
+                                    <th class="text-center">Hari/Tanggal</th>
+                                    <th class="text-center">Jam</th>
+                                    <th class="text-center">Nama PT</th>
+                                    <th class="text-center">Ringkasan Pekerjaan</th>
+                                    <th class="text-center">Feedback</th>
+                                    <th class="text-center">Bimbingan</th>
                                 </tr>
-                            }
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                @if (Reports is not null && Reports.Count > 0)
+                                {
+                                    var rowIndex = (CurrentPage - 1) * 10;
+                                    @foreach (var item in Reports)
+                                    {
+                                        rowIndex++;
+                                        <tr>
+                                            <td class="text-center">@rowIndex</td>
+                                            <td>@item.nis</td>
+                                            <td>@item.name</td>
+                                            <td>@item.classroom_name</td>
+                                            <td>@item.date</td>
+                                            <td>@item.time</td>
+                                            <td>@item.company_name</td>
+                                            <td>@item.content</td>
+                                            <td>@item.feedback</td>
+                                            <td class="text-center">
+                                                @if (item.isGuidance == "✔️")
+                                                {
+                                                    <span class="bi bi-check text-success" style="font-size: 2rem; font-weight: bold"></span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="bi bi-x text-danger" style="font-size: 2rem; font-weight: bold"></span>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="11" class="text-center text-muted">Tidak ada data laporan PKL.</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
                 </div>
 
                 <div class="row justify-content-end mb-2">
@@ -405,7 +467,7 @@
 
     private CancellationTokenSource? searchDebounceCts;
     private string selectedDate = "";
-    
+
     bool ShowReportModal = false;
     int SelectedPresenceTypeId = 0;
     string SelectedPresenceTypeName = "";
@@ -424,7 +486,7 @@
     bool ShowPresencePhotoModal = false;
     int PreviewPresenceTypeId = 0;
     string PreviewPresenceTypeName = "";
-    
+
     bool ShowGuidanceModal = false;
     int GuidanceStudentId = 0;
     string GuidanceStudentName = "";
@@ -491,7 +553,20 @@
         }
 
         var user = await Http.GetFromJsonAsync<UserResponse>(APIUrl.Endpoint("me"));
-        UserRole = user.role;
+        UserRole = user?.role ?? "";
+
+        // ===== Ambil foto profile =====
+        var photoRequest = new HttpRequestMessage(HttpMethod.Get, APIUrl.Endpoint("me/photo"));
+        photoRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+        var photoResponse = await Http.SendAsync(photoRequest);
+
+        if (photoResponse.IsSuccessStatusCode)
+        {
+            var bytes = await photoResponse.Content.ReadAsByteArrayAsync();
+            var contentType = photoResponse.Content.Headers.ContentType?.MediaType ?? "image/jpeg";
+            var base64 = Convert.ToBase64String(bytes);
+            photoUrl = $"data:{contentType};base64,{base64}";
+        }
 
         await LoadReports();
         if (UserRole != "Student") await LoadClasses();
@@ -620,7 +695,7 @@
         if (page >= 1 && page <= TotalPages)
         {
             CurrentPage = page;
-			await LoadReports();
+            await LoadReports();
         }
     }
 
@@ -689,4 +764,15 @@
         }
         else await JS.InvokeVoidAsync("alert", "Gagal submit feedback.");
     }
+
+    private void OnContentInput(ChangeEventArgs e)
+    {
+        var value = e.Value?.ToString() ?? string.Empty;
+        if (value.Length > 200)
+            value = value.Substring(0, 200);
+        ContentInput = value;
+    }
+
+    private void GoToProfile() => Navigation.NavigateTo("/home/profile");
+    private string photoUrl = "/images/default_profile.jpg";
 }

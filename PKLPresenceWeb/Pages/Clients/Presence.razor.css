@@ -271,3 +271,136 @@ input[type="radio"].presence-radio-input {
         height: auto;
         border-radius: 8px;
     }
+
+.char-counter-outer {
+    display: flex;
+    justify-content: flex-end;
+    font-size: 0.85rem;
+    color: #888;
+    margin-top: 2px;
+    margin-right: 2px;
+}
+
+.photo-wrapper {
+    cursor: pointer;
+    width: 75px;
+    height: 75px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 2px solid white;
+    flex-shrink: 0;
+}
+
+.profile-photo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Untuk Selain Student */
+.table.mentor-table th:nth-child(1), .table.mentor-table td:nth-child(1) {
+    width: 5%;
+}
+
+.table.mentor-table th:nth-child(2), .table.mentor-table td:nth-child(2) {
+    width: 7%;
+}
+
+.table.mentor-table th:nth-child(3), .table.mentor-table td:nth-child(3) {
+    width: 17%;
+}
+
+.table.mentor-table th:nth-child(4), .table.mentor-table td:nth-child(4) {
+    width: 8%;
+}
+
+.table.mentor-table th:nth-child(5), .table.mentor-table td:nth-child(5) {
+    width: 6%;
+}
+
+.table.mentor-table th:nth-child(6), .table.mentor-table td:nth-child(6) {
+    width: 12%;
+}
+
+.table.mentor-table th:nth-child(7), .table.mentor-table td:nth-child(7) {
+    width: 7%;
+}
+
+.table.mentor-table th:nth-child(8), .table.mentor-table td:nth-child(8) {
+    width: 6%;
+}
+
+.table.mentor-table th:nth-child(9), .table.mentor-table td:nth-child(9) {
+    width: 23%;
+}
+
+.table.mentor-table th:nth-child(10), .table.mentor-table td:nth-child(10) {
+    width: 9%;
+}
+
+/* Untuk Student */
+.table.student-table th:nth-child(1), .table.student-table td:nth-child(1) {
+    width: 10%;
+}
+
+.table.student-table th:nth-child(2), .table.student-table td:nth-child(2) {
+    width: 20%;
+}
+
+.table.student-table th:nth-child(3), .table.student-table td:nth-child(3) {
+    width: 10%;
+}
+
+.table.student-table th:nth-child(4), .table.student-table td:nth-child(4) {
+    width: 10%;
+}
+
+.table.student-table th:nth-child(5), .table.student-table td:nth-child(5) {
+    width: 30%;
+}
+
+.table.student-table th:nth-child(6), .table.student-table td:nth-child(6) {
+    width: 20%;
+}
+
+
+
+.table th, .table td {
+    word-break: break-word;
+    white-space: normal;
+}
+
+.scrollable-x > .table {
+    min-width: 1400px; /* opsional, agar tabel tidak terlalu kecil di layar kecil */
+    max-width: 1900px; /* ganti sesuai kebutuhan */
+    width: 100%;
+    table-layout: fixed;
+    margin: 0 auto;
+}
+
+    .scrollable-x > .table.student-table {
+        min-width: 750px;
+        max-width: 1900px; /* atau sesuai kebutuhan */
+        width: 100%;
+        table-layout: fixed;
+        margin: 0 auto;
+    }
+
+    .scrollable-x > .table.mentor-table {
+        min-width: 1150px;
+        max-width: 1900px; /* atau sesuai kebutuhan */
+        width: 100%;
+        table-layout: fixed;
+        margin: 0 auto;
+    }
+
+.position-relative {
+    position: relative;
+}
+
+@media (min-width: 1400px) {
+    .presence-action-group {
+        flex-direction: row !important;
+        gap: 0.5rem !important;
+    }
+}

@@ -36,3 +36,20 @@ window.resetInputFile = function (id) {
     var input = document.getElementById(id);
     if (input) input.value = "";
 };
+
+window.registerMapClickForGoogleMaps = function (mapElementId, lat, lng) {
+    if (!window.L) return;
+    var map = window.L.map(mapElementId);
+    map.setView([lat, lng], 16);
+
+    // Hapus event click sebelumnya agar tidak dobel
+    map.off('click');
+
+    map.on('click', function () {
+        var url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+        window.open(url, '_blank');
+    });
+
+    // Tambahkan marker
+    window.L.marker([lat, lng]).addTo(map);
+};

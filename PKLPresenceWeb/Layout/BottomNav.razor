@@ -16,8 +16,8 @@
     </a>
     <a class="@GetClass("participant")" @onclick="@(e => HandleMenuClick("participant"))" style="cursor:pointer;">
         <div class="nav-item-inner @(IsActive("participant") ? "active" : "")">
-            <i class="bi bi-person"></i>
-            <span class="menu-label">Participant</span>
+            <i class="bi @(ParticipantMenuIcon)"></i>
+            <span class="menu-label">@ParticipantMenuLabel</span>
         </div>
     </a>
     <a class="@GetClass("presence")" @onclick="@(e => HandleMenuClick("presence"))" style="cursor:pointer;">
@@ -51,6 +51,17 @@
     private bool isDataComplete = true;
     private bool showWarningModal = false;
     private bool isInitialized = false;
+
+    private string ParticipantMenuLabel =>
+    isAdminOrKepalaJurusan ? "Management" : "Participant";
+
+    private string ParticipantMenuIcon =>
+        isAdminOrKepalaJurusan ? "bi-gear" : "bi-person";
+
+    private bool isAdminOrKepalaJurusan =>
+        userRole == "Admin" || userRole == "Kepala Jurusan";
+
+    private string userRole = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -89,7 +100,8 @@
             }
 
             var userResponse = await Http.GetFromJsonAsync<UserResponse>(APIUrl.Endpoint("me"));
-            isStudent = userResponse?.role == "Student";
+            userRole = userResponse?.role ?? "";
+            isStudent = userRole == "Student";
 
             if (isStudent)
             {
@@ -98,18 +110,6 @@
                     APIUrl.Endpoint($"students/pkl?userIdFilter={userId}")
                 );
                 var studentResponse = response?.students?.FirstOrDefault();
-                Console.WriteLine($"[DEBUG] studentResponse: {System.Text.Json.JsonSerializer.Serialize(studentResponse)}");
-                isDataComplete = studentResponse != null &&
-                                 !string.IsNullOrWhiteSpace(studentResponse.nis) &&
-                                 !string.IsNullOrWhiteSpace(studentResponse.fullname) &&
-                                 !string.IsNullOrWhiteSpace(studentResponse.company_name) &&
-                                 !string.IsNullOrWhiteSpace(studentResponse.email) &&
-                                 studentResponse.nis != "-" &&
-                                 studentResponse.fullname != "-" &&
-                                 studentResponse.company_name != "-" &&
-                                 studentResponse.email != "-";
-
-                Console.WriteLine($"[DEBUG] isDataComplete: {isDataComplete}");
             }
         }
         catch
@@ -118,25 +118,21 @@
         }
 
         isInitialized = true;
-        Console.WriteLine($"[DEBUG] isStudent: {isStudent}, isDataComplete: {isDataComplete}, isInitialized: {isInitialized}");
     }
 
     private void HandleMenuClick(string menu)
     {
         if (!isInitialized)
         {
-            Console.WriteLine("[DEBUG] Belum inisialisasi, klik diabaikan");
             return;
         }
 
         if (isStudent && !isDataComplete)
         {
-            Console.WriteLine("[DEBUG] Data belum lengkap, tampilkan modal");
             showWarningModal = true;
         }
         else
         {
-            Console.WriteLine($"[DEBUG] Navigasi ke: /{menu}");
             Navigation.NavigateTo($"/{menu}");
         }
     }

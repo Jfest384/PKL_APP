@@ -5,13 +5,19 @@
 @inject IJSRuntime JS
 @using Microsoft.AspNetCore.Components.Forms
 @using System.Globalization
+@using System.Text.Json
 
 <div class="presence-wrapper">
-    <div class="header-section d-flex align-items-center">
-        <button class="btn btn-link text-white fw-bold p-0 me-2" @onclick="GoBack">
-            <i class="bi-chevron-left fw-bold"></i>
-        </button>
-        <h5 class="mb-0 fw-bold text-white">Presence</h5>
+    <div class="header-section d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center">
+            <button class="btn btn-link text-white fw-bold p-0 me-2" @onclick="GoBack">
+                <i class="bi-chevron-left fw-bold"></i>
+            </button>
+            <h5 class="mb-0 fw-bold text-white">Presence</h5>
+        </div>
+        <div class="photo-wrapper" @onclick="GoToProfile">
+            <img src="@photoUrl" onerror="this.src='/images/default_profile.jpg'" class="profile-photo" />
+        </div>
     </div>
 
     <div class="content-section">
@@ -37,7 +43,7 @@
             </div>
 
             <div class="scrollable-x">
-                <table class="table table-bordered">
+                <table class="table table-bordered student-table">
                     <thead>
                         <tr>
                             <th class="text-center">No</th>
@@ -61,13 +67,18 @@
                                     <td>@item.time</td>
                                     <td>@item.presence_type</td>
                                     <td>@item.feedback</td>
-                                    <td>
-                                        <button class="btn btn-sm btn-success" @onclick="() => ShowDetail(item)">Detail</button>
-                                        <button class="btn btn-sm btn-warning ms-1"
-                                                @onclick="() => ShowReportModal(item)"
-                                                disabled="@(item.presence_type == "-" || GetPresenceTypeId(item) == 4)">
-                                            Report
-                                        </button>
+                                    <td class="text-center">
+                                        <div class="d-flex flex-column gap-2 align-items-center justify-content-center presence-action-group">
+                                            <button class="btn btn-sm btn-success" @onclick="() => ShowDetail(item)"
+                                                    style="padding-left: 0.65rem; padding-right: 0.65rem;">
+                                                Detail
+                                            </button>
+                                            <button class="btn btn-sm btn-warning"
+                                                    @onclick="() => ShowReportModal(item)"
+                                                    disabled="@(item.presence_type == "-" || GetPresenceTypeId(item) == 4 || !string.IsNullOrWhiteSpace(item.report) && item.report != "-")">
+                                                Report
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             }
@@ -143,7 +154,6 @@
                                     {
                                         <label class="upload-box border rounded"
                                                @onclick="() => OnPhotoBoxClick(field.Field)">
-                                            @* ... (isi box, sama seperti sebelumnya) *@
                                             @if (PresencePhotoPreviews.ContainsKey(field.Field) && PresencePhotoPreviews[field.Field] != null)
                                             {
                                                 <img src="@PresencePhotoPreviews[field.Field]" style="display:block; max-height:180px; max-width:240px; width:auto; height:auto; margin:auto;" />
@@ -204,9 +214,16 @@
                     <div class="modal-scrollable-content">
                         @if (ReportPresenceTypeId == 1)
                         {
-                            <div class="mb-3 mx-1">
+                            <div class="mb-1 mx-1">
                                 <label class="mb-2">Ringkasan Pekerjaan di Industri</label>
-                                <textarea class="form-control" placeholder="Masukkan report ..." @bind="ReportTextInput" rows="4"></textarea>
+                                <textarea class="form-control"
+                                          placeholder="Masukkan report..." 
+                                          @bind="ReportTextInput" 
+                                          @oninput="OnContentInput"
+                                          maxlength="200" 
+                                          rows="4">
+                                </textarea>
+                                <div class="char-counter-outer">@ReportTextInput.Length/200</div>
                             </div>
                         }
                         else if (ReportPresenceTypeId == 2)
@@ -293,7 +310,7 @@
                                         }
                                         else
                                         {
-                                            <div class="upload-box-inner">
+                                            <div class="upload-box-inner m-2">
                                                 <i class="bi bi-image m-2" style="font-size:2.5rem;color:#888;"></i>
                                                 <div class="mt-2 text-secondary">Upload Foto</div>
                                             </div>
@@ -306,9 +323,13 @@
                         {
                             <div class="alert alert-danger mt-3">@ReportModalError</div>
                         }
-                        <div class="d-flex justify-content-center gap-3 mt-4">
-                            <button class="btn btn-danger px-4" style="min-width:120px;" @onclick="CancelReportModal">Cancel</button>
-                            <button class="btn btn-success px-4" style="min-width:120px;" @onclick="ConfirmReportModal">Confirm</button>
+                        <div class="d-flex justify-content-center gap-3 mt-2">
+                            <button class="btn btn-danger px-4" style="min-width:90px;" @onclick="CancelReportModal">Cancel</button>
+                            <button class="btn btn-success px-4" style="min-width:90px;"
+                                    @onclick="ConfirmReportModal"
+                                    disabled="@( !IsReportFormValid )">
+                                Confirm
+                            </button>
                         </div>
                     </div>
                 </Modal>
@@ -331,7 +352,7 @@
         {
             <div class="row g-2 mb-3">
                 <div class="col">
-                    <input class="form-control" placeholder="Nama Siswa..." @bind="searchName" @oninput="OnFilterChanged" />
+                    <input class="form-control" placeholder="Search..." @bind="searchName" @oninput="OnFilterChanged" />
                 </div>
                 <div class="col">
                     <select class="form-select" @onchange="OnClassChange">
@@ -355,7 +376,7 @@
             else
             {
                 <div class="scrollable-x">
-                    <table class="table table-bordered">
+                    <table class="table table-bordered mentor-table">
                         <thead>
                             <tr>
                                 <th class="text-center">No</th>
@@ -414,9 +435,10 @@
                                         <td>@item.presence_type</td>
                                         <td>@item.feedback</td>
                                         <td>
-                                            <div class="d-flex gap-2 justify-content-center">
+                                            <div class="d-flex flex-column gap-2 align-items-center">
                                                 <button class="btn btn-sm btn-success"
                                                         @onclick="() => ShowDetail(item)"
+                                                        style="padding-left: 1.2rem; padding-right: 1.2rem;"
                                                         disabled="@(string.IsNullOrWhiteSpace(item.presence_type) || item.presence_type == "-")">
                                                     Detail
                                                 </button>
@@ -533,7 +555,7 @@
         @if ((ShowDetailModal || ShowFeedbackModal) && SelectedPresenceDetail != null)
         {
             <Modal IsVisible="true" Title="@ModalTitle">
-                <div class="modal-scrollable-content">
+                <div class="modal-scrollable-content mx-1">
                     <div class="presence-modal-grid mb-3 mt-3 text-start">
                         <div class="presence-modal-label">NIS</div>
                         <div class="presence-modal-colon">:</div>
@@ -592,13 +614,15 @@
                     }
                     @if (ShowFeedbackModal)
                     {
-                        <div class="mb-3">
+                        <div class="mb-3 mx-1">
                             <textarea id="feedbackInput"
                                       class="form-control"
                                       placeholder="Masukkan Feedback"
                                       @bind="FeedbackInput"
-                                      @oninput="e => FeedbackInput = ((ChangeEventArgs)e).Value?.ToString() ?? string.Empty"
+                                      @oninput="e => FeedbackInput = ((ChangeEventArgs)e).Value?.ToString()?.Substring(0, Math.Min(200, ((ChangeEventArgs)e).Value?.ToString()?.Length ?? 0)) ?? string.Empty"
+                                      maxlength="200"
                                       rows="3"></textarea>
+                            <div class="char-counter-outer">@FeedbackInput.Length/200</div>
                         </div>
                         <button class="btn btn-primary w-100 mb-2"
                                 @onclick="OnFeedbackButtonClick"
@@ -627,7 +651,7 @@
                         @foreach (var field in PreviewPresenceFields
                                         .Where(f => PreviewPresenceTypeId != 1 || f.Field == "FullBodyPhoto"))
                         {
-                            <div class="mb-3">
+                            <div class="mb-3 mx-1">
                                 <label class="d-block mt-2 mb-1 fw-normal">@field.Label</label>
                                 <label class="upload-box border rounded">
                                     @if (PreviewPresencePhotoUrls.ContainsKey(field.Field) && PreviewPresencePhotoUrls[field.Field] != null)
@@ -642,6 +666,11 @@
                                         </span>
                                     }
                                 </label>
+                                @if (PreviewPresenceTypeId == 1 && field.Field == "FullBodyPhoto")
+                                {
+                                    <div class="mt-3 mb-1">Laporan Harian</div>
+                                    <textarea class="form-control" rows="4" readonly style="background:#f8f9fa;">@PreviewPresenceReport</textarea>
+                                }
                             </div>
                         }
                         <div class="d-flex justify-content-center gap-3 mt-4">
@@ -712,6 +741,17 @@
 
     private string? ActiveWebRTCField = null;
     private DotNetObjectReference<Presence>? dotNetRef;
+
+    private string PreviewPresenceReport = "";
+    private bool IsReportFormValid =>
+    ReportPresenceTypeId switch
+    {
+        1 => !string.IsNullOrWhiteSpace(ReportTextInput),
+        2 => new[] { "MedicalCertificate", "SickToCompany", "SickToMentor", "SickToWalas" }
+                .All(f => ReportPhotos.ContainsKey(f) && ReportPhotos[f] != null),
+        3 => ReportPhotos.ContainsKey("Activity") && ReportPhotos["Activity"] != null,
+        _ => false
+    };
 
     [JSInvokable]
     public async Task OnWebRTCCapture(string elementId, string dataUrl)
@@ -797,7 +837,11 @@
             if (double.TryParse(SelectedPresenceDetail.lat, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var lat) &&
                 double.TryParse(SelectedPresenceDetail.longitude, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var lng))
             {
+                // Render map seperti biasa
                 await JS.InvokeVoidAsync("renderPresenceMapWithMarker", "detailPresenceMap", lat, lng, null);
+
+                // Daftarkan event click untuk buka Google Maps
+                await JS.InvokeVoidAsync("registerMapClickForGoogleMaps", "detailPresenceMap", lat, lng);
             }
         }
     }
@@ -810,7 +854,7 @@
         // Sesuaikan id dengan id presenceType Anda
         { 1, new() { ("Foto Full Body", "FullBodyPhoto"), ("Location", "Location") } }, // Hadir
         { 2, new() { ("Saat Berobat", "Treatment") } }, // Sakit
-        { 3, new() { ("Izin ke Perusahaan", "PermitToCompany"), ("Izin ke Pembimbing Sekolah", "PermitToMentor"), ("Izin ke Walas", "PermitToWalas"), ("Kegiatan yang dilakukan", "Activity") } }, // Izin
+        { 3, new() { ("Izin ke Perusahaan", "PermitToCompany"), ("Izin ke Pembimbing Sekolah", "PermitToMentor"), ("Izin ke Walas", "PermitToWalas") } }, // Izin
         { 4, new() { ("Info Libur dari Perusahaan", "HolidayFromCompany") } }, // Libur
         // Tambahkan mapping lain jika ada
     };
@@ -820,6 +864,7 @@
         ShowPresencePhotoModal = false;
         IsLoadingPresencePhotos = true;
         PreviewPresencePhotoUrls.Clear();
+        PreviewPresenceReport = item.report ?? "";
 
         // Dapatkan presence type id dari item.presence_type
         var type = PresenceTypes.FirstOrDefault(x =>
@@ -842,7 +887,7 @@
                 foreach (var field in PreviewPresenceFields)
                 {
                     var photo = photos.FirstOrDefault(p => MapPhotoTypeToField(p.type) == field.Field);
-                    var apiBase = "https://presensi.smksabdev.my.id";
+                    var apiBase = "http://localhost:5027";
                     if (photo != null)
                     {
                         // Ganti http ke https jika frontend diakses via https
@@ -926,7 +971,21 @@
         }
 
         var user = await Http.GetFromJsonAsync<UserResponse>(APIUrl.Endpoint("me"));
-        UserRole = user.role;
+        UserRole = user?.role ?? "";
+
+        // ===== Ambil foto profile =====
+        var photoRequest = new HttpRequestMessage(HttpMethod.Get, APIUrl.Endpoint("me/photo"));
+        photoRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+        var photoResponse = await Http.SendAsync(photoRequest);
+
+        if (photoResponse.IsSuccessStatusCode)
+        {
+            var bytes = await photoResponse.Content.ReadAsByteArrayAsync();
+            var contentType = photoResponse.Content.Headers.ContentType?.MediaType ?? "image/jpeg";
+            var base64 = Convert.ToBase64String(bytes);
+            photoUrl = $"data:{contentType};base64,{base64}";
+        }
+        
 
         if (UserRole == "Student")
         {
@@ -1397,4 +1456,15 @@
             ReportModalError = "Terjadi kesalahan saat submit report.";
         }
     }
+
+    private void OnContentInput(ChangeEventArgs e)
+    {
+        var value = e.Value?.ToString() ?? string.Empty;
+        if (value.Length > 200)
+            value = value.Substring(0, 200);
+        ReportTextInput = value;
+    }
+
+    private void GoToProfile() => Navigation.NavigateTo("/home/profile");
+    private string photoUrl = "/images/default_profile.jpg"; // default
 }

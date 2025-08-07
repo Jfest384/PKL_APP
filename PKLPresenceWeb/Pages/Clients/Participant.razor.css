@@ -63,73 +63,12 @@
             background-color: #fff;
         }
 
-/*.table {
-    font-size: 0.9rem;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    overflow: hidden;
-}
-
-    .table thead th,
-    .table thead td {
-        background-color: #0476D9 !important;
-        color: #fff !important;
-    }
-
-    .table th, .table td {
-        padding: 10px 16px;
-        vertical-align: middle;
-        white-space: nowrap;
-    }
-
-    .table tbody tr:nth-child(odd) td,
-    .table tbody tr:nth-child(odd) th {
-        background-color: #f1f1f1 !important;
-    }
-
-    .table tbody tr:nth-child(even) td,
-    .table tbody tr:nth-child(even) th {
-        background-color: #fff !important;*/ /* Atau ganti dengan warna lain jika ingin */
-    /*}
-
-.table-responsive::-webkit-scrollbar {
-    height: 6px;
-}
-
-.table-responsive::-webkit-scrollbar-thumb {
-    background: #aaa;
-    border-radius: 4px;
-}*/
-
 input.form-control,
 select.form-select {
     font-size: 0.9rem;
     border-radius: 8px;
     padding: 6px 12px;
 }
-
-/*.pagination {
-    gap: 4px;
-}
-
-    .pagination .page-link {
-        min-width: 36px;
-        padding: 6px 10px;
-        font-size: 0.85rem;
-        border-radius: 8px;
-        color: #000;
-        border: 1px solid #ccc;
-    }
-
-    .pagination .page-item.active .page-link {
-        background-color: #000;
-        color: #fff;
-        border-color: #000;
-    }
-
-    .pagination .page-item.disabled .page-link {
-        opacity: 0.5;
-    }*/
 
 @media (max-width: 768px) {
     .nav-tabs {
@@ -156,13 +95,6 @@ body {
 .d-none {
     display: none !important;
 }
-
-/* Border luar tabel */
-/*.table-bordered-wrap {
-    border: 3px solid black;
-    border-radius: 8px;
-    overflow: hidden;
-}*/
 
 /* Scroll bar hanya muncul saat scroll */
 .scrollable-x {
@@ -191,3 +123,250 @@ body {
     .scrollable-x::-webkit-scrollbar-thumb:hover {
         background: #888;
     }
+
+/* Untuk Student, Walas, Mentor, Teacher */
+.table.pembimbing-table th:nth-child(1), .table.pembimbing-table td:nth-child(1) {
+    width: 15%;
+}
+
+.table.pembimbing-table th:nth-child(2), .table.pembimbing-table td:nth-child(2) {
+    width: 40%;
+}
+
+.table.pembimbing-table th:nth-child(3), .table.pembimbing-table td:nth-child(3) {
+    width: 45%;
+}
+
+
+/* Untuk Student, Walas, Mentor, Teacher */
+.table.pkl-table th:nth-child(1), .table.pkl-table td:nth-child(1) {
+    width: 8%;
+}
+
+.table.pkl-table th:nth-child(2), .table.pkl-table td:nth-child(2) {
+    width: 10%;
+}
+
+.table.pkl-table th:nth-child(3), .table.pkl-table td:nth-child(3) {
+    width: 23%;
+}
+
+.table.pkl-table th:nth-child(4), .table.pkl-table td:nth-child(4) {
+    width: 15%;
+}
+
+.table.pkl-table th:nth-child(5), .table.pkl-table td:nth-child(5) {
+    width: 23%;
+}
+
+.table.pkl-table th:nth-child(6), .table.pkl-table td:nth-child(6) {
+    width: 21%;
+}
+
+/* Untuk Walas, Mentor, Teacher */
+.table.tkj-table th:nth-child(1), .table.tkj-table td:nth-child(1) {
+    width: 12%;
+}
+
+.table.tkj-table th:nth-child(2), .table.tkj-table td:nth-child(2) {
+    width: 14%;
+}
+
+.table.tkj-table th:nth-child(3), .table.tkj-table td:nth-child(3) {
+    width: 34%;
+}
+
+.table.tkj-table th:nth-child(4), .table.tkj-table td:nth-child(4) {
+    width: 26%;
+}
+
+.table.tkj-table th:nth-child(5), .table.tkj-table td:nth-child(5) {
+    width: 14%;
+}
+
+/* Untuk Admin, Kajur */
+.table.pembimbing-admin th:nth-child(1), .table.pembimbing-admin td:nth-child(1) {
+    width: 10%;
+}
+
+.table.pembimbing-admin th:nth-child(2), .table.pembimbing-admin td:nth-child(2) {
+    width: 33%;
+}
+
+.table.pembimbing-admin th:nth-child(3), .table.pembimbing-admin td:nth-child(3) {
+    width: 33%;
+}
+
+.table.pembimbing-admin th:nth-child(4), .table.pembimbing-admin td:nth-child(4) {
+    width: 24%;
+}
+
+/* Untuk Admin, Kajur */
+.table.pkl-admin th:nth-child(1), .table.pkl-admin td:nth-child(1) {
+    width: 7%;
+}
+
+.table.pkl-admin th:nth-child(2), .table.pkl-admin td:nth-child(2) {
+    width: 9%;
+}
+
+.table.pkl-admin th:nth-child(3), .table.pkl-admin td:nth-child(3) {
+    width: 20%;
+}
+
+.table.pkl-admin th:nth-child(4), .table.pkl-admin td:nth-child(4) {
+    width: 12%;
+}
+
+.table.pkl-admin th:nth-child(5), .table.pkl-admin td:nth-child(5) {
+    width: 20%;
+}
+
+.table.pkl-admin th:nth-child(6), .table.pkl-admin td:nth-child(6) {
+    width: 17%;
+}
+
+.table.pkl-admin th:nth-child(7), .table.pkl-admin td:nth-child(7) {
+    width: 15%;
+}
+
+/* Untuk Admin, Kajur */
+.table.tkj-admin th:nth-child(1), .table.tkj-admin td:nth-child(1) {
+    width: 10%;
+}
+
+.table.tkj-admin th:nth-child(2), .table.tkj-admin td:nth-child(2) {
+    width: 13%;
+}
+
+.table.tkj-admin th:nth-child(3), .table.tkj-admin td:nth-child(3) {
+    width: 32%;
+}
+
+.table.tkj-admin th:nth-child(4), .table.tkj-admin td:nth-child(4) {
+    width: 20%;
+}
+
+.table.tkj-admin th:nth-child(5), .table.tkj-admin td:nth-child(5) {
+    width: 25%;
+}
+
+/* Untuk Admin, Kajur */
+.table.class th:nth-child(1), .table.class td:nth-child(1) {
+    width: 6%;
+}
+
+.table.class th:nth-child(2), .table.class td:nth-child(2) {
+    width: 12%;
+}
+
+.table.class th:nth-child(3), .table.class td:nth-child(3) {
+    width: 10%;
+}
+
+.table.class th:nth-child(4), .table.class td:nth-child(4) {
+    width: 20%;
+}
+
+.table.class th:nth-child(5), .table.class td:nth-child(5) {
+    width: 10%;
+}
+
+.table.class th:nth-child(6), .table.class td:nth-child(6) {
+    width: 30%;
+}
+
+.table.class th:nth-child(7), .table.class td:nth-child(7) {
+    width: 12%;
+}
+
+
+
+.table th, .table td {
+    word-break: break-word;
+    white-space: normal;
+}
+
+.scrollable-x > .table {
+    min-width: 1400px; /* opsional, agar tabel tidak terlalu kecil di layar kecil */
+    max-width: 1900px; /* ganti sesuai kebutuhan */
+    width: 100%;
+    table-layout: fixed;
+    margin: 0 auto;
+}
+
+    .scrollable-x > .table.pembimbing-table {
+        min-width: 650px;
+        max-width: 1900px; /* atau sesuai kebutuhan */
+        width: 100%;
+        table-layout: fixed;
+        margin: 0 auto;
+    }
+
+    .scrollable-x > .table.pkl-table {
+        min-width: 900px;
+        max-width: 1900px; /* atau sesuai kebutuhan */
+        width: 100%;
+        table-layout: fixed;
+        margin: 0 auto;
+    }
+
+    .scrollable-x > .table.tkj-table {
+        min-width: 750px;
+        max-width: 1900px; /* atau sesuai kebutuhan */
+        width: 100%;
+        table-layout: fixed;
+        margin: 0 auto;
+    }
+
+    .scrollable-x > .table.pembimbing-admin {
+        min-width: 700px;
+        max-width: 1900px; /* atau sesuai kebutuhan */
+        width: 100%;
+        table-layout: fixed;
+        margin: 0 auto;
+    }
+
+    .scrollable-x > .table.pembimbing-admin {
+        min-width: 950px;
+        max-width: 1900px; /* atau sesuai kebutuhan */
+        width: 100%;
+        table-layout: fixed;
+        margin: 0 auto;
+    }
+
+    .scrollable-x > .table.tkj-admin {
+        min-width: 750px;
+        max-width: 1900px; /* atau sesuai kebutuhan */
+        width: 100%;
+        table-layout: fixed;
+        margin: 0 auto;
+    }
+
+    .scrollable-x > .table.class {
+        min-width: 900px;
+        max-width: 1900px; /* atau sesuai kebutuhan */
+        width: 100%;
+        table-layout: fixed;
+        margin: 0 auto;
+    }
+
+.position-relative {
+    position: relative;
+}
+
+.photo-wrapper {
+    cursor: pointer;
+    width: 75px;
+    height: 75px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 2px solid white;
+    flex-shrink: 0;
+}
+
+.profile-photo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}

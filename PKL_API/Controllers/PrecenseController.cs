@@ -228,6 +228,7 @@ namespace PKL_API.Controllers
                         feedback = p.feedback ?? "-",
                         lat = p.Detail != null ? (p.Detail.lat.ToString()) : "-",
                         longitude = p.Detail != null ? (p.Detail.longitude.ToString()) : "-",
+                        report = p.Detail.daily_report ?? "-",
                         isComplete = GetPresenceCompleteSymbol(p)
                     })
                     .ToListAsync();
@@ -240,10 +241,9 @@ namespace PKL_API.Controllers
                     data = presences
                 });
             }
-            // Replace the following code blocks in the GetPresences method:
 
             // For Mentor (roleId == 3)
-            else if (roleId == 3) // Mentor
+            else if (roleId == 3)
             {
                 var mentor = await _db.Mentors.FirstOrDefaultAsync(m => m.Userid == userId);
                 if (mentor == null)
@@ -251,28 +251,26 @@ namespace PKL_API.Controllers
 
                 var filterDate = date ?? DateOnly.FromDateTime(DateTime.Now);
 
+                // Ambil semua siswa PKL bimbingan mentor ini
                 var studentsQuery = _db.Students
                     .Include(s => s.User)
                     .Include(s => s.Classroom)
-                    .Where(s => s.Mentorid == mentor.id && s.isPKL.HasValue && s.isPKL.Value);
+                    .Where(s => s.Mentorid == mentor.id && s.isPKL == true);
 
                 if (classId.HasValue)
                     studentsQuery = studentsQuery.Where(s => s.Classroomid == classId.Value);
 
-                if (!string.IsNullOrWhiteSpace(search))
-                {
-                    var searchLower = search.ToLower();
-                    studentsQuery = studentsQuery.Where(s => s.User.fullname.ToLower().Contains(searchLower));
-                }
-
                 var students = await studentsQuery.ToListAsync();
+                var studentIds = students.Select(s => s.id).ToList();
 
+                // Ambil presensi hari itu
                 var presencesOnDate = await _db.Presences
-                    .Include(p => p.Detail)
                     .Include(p => p.PresenceType)
+                    .Include(p => p.Detail)
                     .Where(p => p.Mentorid == mentor.id && p.date == filterDate)
                     .ToListAsync();
 
+                // Mapping left join
                 var result = students.Select(s =>
                 {
                     var presence = presencesOnDate.FirstOrDefault(p => p.Studentid == s.id);
@@ -281,21 +279,34 @@ namespace PKL_API.Controllers
                         id_presence = presence?.id.ToString() ?? "-",
                         nis = s.nis ?? "-",
                         name = s.User.fullname ?? "-",
-                        classroom_name = s.Classroom != null ? s.Classroom.name ?? "-" : "-",
+                        classroom_name = s.Classroom?.name ?? "-",
                         date = ToIndonesianLongDate(filterDate),
                         time = presence != null ? presence.time.ToString("HH:mm:ss") : "-",
                         presence_type = presence?.PresenceType?.name ?? "-",
                         id_detail = presence?.PresenceDetailid.ToString() ?? "-",
                         feedback = presence?.feedback ?? "-",
                         isPresence = presence != null ? "✔️" : "❌",
-                        lat = presence?.Detail != null ? presence.Detail.lat.ToString() : "-",
+                        lat = presence?.Detail?.lat.ToString() ?? "-",
                         longitude = presence?.Detail?.longitude?.ToString() ?? "-",
+                        report = presence?.Detail?.daily_report ?? "-",
                         isComplete = GetPresenceCompleteSymbol(presence)
                     };
-                }).ToList();
+                });
 
-                var totalCount = result.Count;
-                var pagedResult = result.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+                // Search di hasil join (nama, nis, status)
+                if (!string.IsNullOrWhiteSpace(search))
+                {
+                    var searchLower = search.ToLower();
+                    result = result.Where(r =>
+                        (r.name.ToLower().Contains(searchLower)) ||
+                        (r.nis.ToLower().Contains(searchLower)) ||
+                        (r.presence_type.ToLower().Contains(searchLower))
+                    );
+                }
+
+                var resultList = result.ToList();
+                var totalCount = resultList.Count;
+                var pagedResult = resultList.Skip((page - 1) * pageSize).Take(pageSize).ToList();
 
                 return Ok(new
                 {
@@ -308,39 +319,32 @@ namespace PKL_API.Controllers
             }
 
             // For Wali Kelas (roleId == 5)
-            else if (roleId == 5) // Wali Kelas
+            else if (roleId == 5)
             {
                 var waliKelas = await _db.WaliKelas.FirstOrDefaultAsync(wk => wk.Userid == userId);
                 if (waliKelas == null)
                     return BadRequest("Homeroom teacher data not found.");
 
-                var filterDate = date ?? DateOnly.FromDateTime(DateTime.Now);
-
                 var classroom = await _db.Classrooms.FirstOrDefaultAsync(c => c.WaliKelasid == waliKelas.id);
                 if (classroom == null)
                     return BadRequest("Classroom for this homeroom teacher not found.");
 
+                var filterDate = date ?? DateOnly.FromDateTime(DateTime.Now);
+
                 var studentsQuery = _db.Students
                     .Include(s => s.User)
                     .Include(s => s.Classroom)
-                    .Where(s => s.Classroomid == classroom.id && s.isPKL.HasValue && s.isPKL.Value);
+                    .Where(s => s.Classroomid == classroom.id && s.isPKL == true);
 
                 if (classId.HasValue)
                     studentsQuery = studentsQuery.Where(s => s.Classroomid == classId.Value);
 
-                if (!string.IsNullOrWhiteSpace(search))
-                {
-                    var searchLower = search.ToLower();
-                    studentsQuery = studentsQuery.Where(s => s.User.fullname.ToLower().Contains(searchLower));
-                }
-
                 var students = await studentsQuery.ToListAsync();
-
                 var studentIds = students.Select(s => s.id).ToList();
 
                 var presencesOnDate = await _db.Presences
-                    .Include(p => p.Detail)
                     .Include(p => p.PresenceType)
+                    .Include(p => p.Detail)
                     .Where(p => studentIds.Contains(p.Studentid) && p.date == filterDate)
                     .ToListAsync();
 
@@ -352,20 +356,32 @@ namespace PKL_API.Controllers
                         id_presence = presence?.id.ToString() ?? "-",
                         nis = s.nis ?? "-",
                         name = s.User.fullname ?? "-",
-                        classroom_name = s.Classroom != null ? s.Classroom.name ?? "-" : "-",
+                        classroom_name = s.Classroom?.name ?? "-",
                         date = ToIndonesianLongDate(filterDate),
                         time = presence != null ? presence.time.ToString("HH:mm:ss") : "-",
                         presence_type = presence?.PresenceType?.name ?? "-",
                         feedback = presence?.feedback ?? "-",
                         isPresence = presence != null ? "✔️" : "❌",
-                        lat = presence?.Detail != null ? presence.Detail.lat.ToString() : "-",
-                        longitude = presence?.Detail != null ? presence.Detail.longitude.ToString() : "-",
+                        lat = presence?.Detail?.lat.ToString() ?? "-",
+                        longitude = presence?.Detail?.longitude?.ToString() ?? "-",
+                        report = presence?.Detail?.daily_report ?? "-",
                         isComplete = GetPresenceCompleteSymbol(presence)
                     };
-                }).ToList();
+                });
 
-                var totalCount = result.Count;
-                var pagedResult = result.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+                if (!string.IsNullOrWhiteSpace(search))
+                {
+                    var searchLower = search.ToLower();
+                    result = result.Where(r =>
+                        (r.name.ToLower().Contains(searchLower)) ||
+                        (r.nis.ToLower().Contains(searchLower)) ||
+                        (r.presence_type.ToLower().Contains(searchLower))
+                    );
+                }
+
+                var resultList = result.ToList();
+                var totalCount = resultList.Count;
+                var pagedResult = resultList.Skip((page - 1) * pageSize).Take(pageSize).ToList();
 
                 return Ok(new
                 {
@@ -373,47 +389,29 @@ namespace PKL_API.Controllers
                     pageSize,
                     totalCount,
                     totalPages = (int)Math.Ceiling(totalCount / (double)pageSize),
-                    data = pagedResult,
+                    data = pagedResult
                 });
             }
 
+            // For Admin/Umum
             else
             {
+                var filterDate = date ?? DateOnly.FromDateTime(DateTime.Now);
+
                 var studentsQuery = _db.Students
                     .Include(s => s.User)
                     .Include(s => s.Classroom)
-                    .Where(s => s.isPKL.HasValue && s.isPKL.Value);
+                    .Where(s => s.isPKL == true);
 
                 if (classId.HasValue)
-                {
                     studentsQuery = studentsQuery.Where(s => s.Classroomid == classId.Value);
-                }
-                if (!string.IsNullOrWhiteSpace(search))
-                {
-                    var searchLower = search.ToLower();
-                    studentsQuery = studentsQuery.Where(s => s.User != null && EF.Functions.Like(s.User.fullname, $"%{searchLower}%"));
-                }
 
                 var students = await studentsQuery.ToListAsync();
-                foreach (var s in students)
-                {
-                    try
-                    {
-                        var val = s.isPKL; // force read
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Student ID {s.id} gagal dibaca: {ex.Message}");
-                    }
-                }
-
                 var studentIds = students.Select(s => s.id).ToList();
 
-                var filterDate = date ?? DateOnly.FromDateTime(DateTime.Now);
-
                 var presencesOnDate = await _db.Presences
-                    .Include(p => p.Detail)
                     .Include(p => p.PresenceType)
+                    .Include(p => p.Detail)
                     .Where(p => studentIds.Contains(p.Studentid) && p.date == filterDate)
                     .ToListAsync();
 
@@ -434,12 +432,24 @@ namespace PKL_API.Controllers
                         isPresence = presence != null ? "✔️" : "❌",
                         lat = presence?.Detail?.lat.ToString() ?? "-",
                         longitude = presence?.Detail?.longitude.ToString() ?? "-",
+                        report = presence?.Detail?.daily_report ?? "-",
                         isComplete = GetPresenceCompleteSymbol(presence)
                     };
-                }).ToList();
+                });
 
-                var totalCount = result.Count;
-                var pagedResult = result.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+                if (!string.IsNullOrWhiteSpace(search))
+                {
+                    var searchLower = search.ToLower();
+                    result = result.Where(r =>
+                        (r.name.ToLower().Contains(searchLower)) ||
+                        (r.nis.ToLower().Contains(searchLower)) ||
+                        (r.presence_type.ToLower().Contains(searchLower))
+                    );
+                }
+
+                var resultList = result.ToList();
+                var totalCount = resultList.Count;
+                var pagedResult = resultList.Skip((page - 1) * pageSize).Take(pageSize).ToList();
 
                 return Ok(new
                 {

@@ -70,6 +70,7 @@ body {
     min-height: 1px;
     scrollbar-width: thin; /* Firefox */
     scrollbar-color: #C4C4C4 #E0E0E0;
+    width: 100%;
 }
 
     .scrollable-x::-webkit-scrollbar {
@@ -227,10 +228,179 @@ input[type="radio"].presence-radio-input {
     display: block;
 }
 
-.confirm-report-modal{
+.confirm-report-modal {
     display: grid;
     grid-template-columns: 135px 18px 1fr;
     row-gap: 5px;
     font-size: 1rem;
     color: black;
+}
+
+
+/* Untuk Admin */
+.table.admin-table th:nth-child(1), .table.admin-table td:nth-child(1) {
+    width: 3%;
+}
+
+.table.admin-table th:nth-child(2), .table.admin-table td:nth-child(2) {
+    width: 6%;
+}
+
+.table.admin-table th:nth-child(3), .table.admin-table td:nth-child(3) {
+    width: 13%;
+}
+
+.table.admin-table th:nth-child(4), .table.admin-table td:nth-child(4) {
+    width: 8%;
+}
+
+.table.admin-table th:nth-child(5), .table.admin-table td:nth-child(5) {
+    width: 11%;
+}
+
+.table.admin-table th:nth-child(6), .table.admin-table td:nth-child(6) {
+    width: 5%;
+}
+
+.table.admin-table th:nth-child(7), .table.admin-table td:nth-child(7) {
+    width: 12%;
+}
+
+.table.admin-table th:nth-child(8), .table.admin-table td:nth-child(8) {
+    width: 23%;
+}
+
+.table.admin-table th:nth-child(9), .table.admin-table td:nth-child(9) {
+    width: 12%;
+}
+
+.table.admin-table th:nth-child(10), .table.admin-table td:nth-child(10) {
+    width: 7%;
+}
+
+/* Untuk Mentor, Wali Kelas, Kepala Jurusan */
+.table.mentor-table th:nth-child(1), .table.mentor-table td:nth-child(1) {
+    width: 3%;
+}
+
+.table.mentor-table th:nth-child(2), .table.mentor-table td:nth-child(2) {
+    width: 6%;
+}
+
+.table.mentor-table th:nth-child(3), .table.mentor-table td:nth-child(3) {
+    width: 13%;
+}
+
+.table.mentor-table th:nth-child(4), .table.mentor-table td:nth-child(4) {
+    width: 8%;
+}
+
+.table.mentor-table th:nth-child(5), .table.mentor-table td:nth-child(5) {
+    width: 11%;
+}
+
+.table.mentor-table th:nth-child(6), .table.mentor-table td:nth-child(6) {
+    width: 5%;
+}
+
+.table.mentor-table th:nth-child(7), .table.mentor-table td:nth-child(7) {
+    width: 12%;
+}
+
+.table.mentor-table th:nth-child(8), .table.mentor-table td:nth-child(8) {
+    width: 18%;
+}
+
+.table.mentor-table th:nth-child(9), .table.mentor-table td:nth-child(9) {
+    width: 10%;
+}
+
+.table.mentor-table th:nth-child(10), .table.mentor-table td:nth-child(10) {
+    width: 7%;
+}
+
+.table.mentor-table th:nth-child(11), .table.mentor-table td:nth-child(11) {
+    width: 7%;
+}
+
+/* Untuk Student */
+.table.student-table th:nth-child(1), .table.student-table td:nth-child(1) {
+    width: 5%;
+}
+
+.table.student-table th:nth-child(2), .table.student-table td:nth-child(2) {
+    width: 15%;
+}
+
+.table.student-table th:nth-child(3), .table.student-table td:nth-child(3) {
+    width: 10%;
+}
+
+.table.student-table th:nth-child(4), .table.student-table td:nth-child(4) {
+    width: 45%;
+}
+
+.table.student-table th:nth-child(5), .table.student-table td:nth-child(5) {
+    width: 25%;
+}
+
+.table th, .table td {
+    word-break: break-word;
+    white-space: normal;
+}
+
+.scrollable-x > .table {
+    min-width: 1400px; /* opsional, agar tabel tidak terlalu kecil di layar kecil */
+    max-width: 1900px; /* ganti sesuai kebutuhan */
+    width: 100%;
+    table-layout: fixed;
+    margin: 0 auto;
+}
+
+    .scrollable-x > .table.student-table {
+        min-width: 900px;
+        max-width: 1900px; /* atau sesuai kebutuhan */
+        width: 100%;
+        table-layout: fixed;
+        margin: 0 auto;
+    }
+
+.position-relative {
+    position: relative;
+}
+
+.char-counter {
+    position: absolute;
+    right: 12px;
+    bottom: 8px;
+    font-size: 0.85rem;
+    color: #888;
+    background: #fff;
+    padding: 0 4px;
+    pointer-events: none;
+}
+
+.char-counter-outer {
+    display: flex;
+    justify-content: flex-end;
+    font-size: 0.85rem;
+    color: #888;
+    margin-top: 2px;
+    margin-right: 2px;
+}
+
+.photo-wrapper {
+    cursor: pointer;
+    width: 75px;
+    height: 75px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 2px solid white;
+    flex-shrink: 0;
+}
+
+.profile-photo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }

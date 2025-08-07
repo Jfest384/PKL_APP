@@ -30,7 +30,6 @@
         <a href="" class="reload">Reload</a>
         <a class="dismiss">🗙</a>
     </div>
-    <script src="_framework/blazor.webassembly.js"></script>
     <script>
         window.triggerFileInput = function (id) {
             document.getElementById(id).click();
@@ -38,6 +37,12 @@
     </script>
     <script src="js/map.js"></script>
     <script src="js/webrtc.js"></script>
+    <script>
+        window.goBack = function () {
+            window.history.back();
+        }
+    </script>
+    <script src="_framework/blazor.webassembly.js"></script>
 </body>
 
 </html>

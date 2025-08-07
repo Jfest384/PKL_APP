@@ -101,7 +101,6 @@
         Navigation.NavigateTo("/");
     }
 
-    private void GoBack() => Navigation.NavigateTo("/home");
-
     public record MenuItemData(string icon, string text, string link);
+    private async void GoBack() => await JS.InvokeVoidAsync("goBack");
 }
