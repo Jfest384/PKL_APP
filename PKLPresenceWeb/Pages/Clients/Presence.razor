@@ -879,7 +879,7 @@
                 foreach (var field in PreviewPresenceFields)
                 {
                     var photo = photos.FirstOrDefault(p => MapPhotoTypeToField(p.type) == field.Field);
-                    var apiBase = "http://localhost:5027";
+                    var apiBase = "https://presensi.smksabdev.my.id";
                     if (photo != null)
                     {
                         // Ganti http ke https jika frontend diakses via https
