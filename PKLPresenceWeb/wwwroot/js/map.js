@@ -19,12 +19,22 @@ window.renderPresenceMapWithMarker = function (elementId, lat, lng, dotnetHelper
     }
     var map = L.map(elementId).setView([lat, lng], 16);
     window.presenceMapInstance = map;
+
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors'
     }).addTo(map);
+
     // Marker tidak draggable
     var marker = L.marker([lat, lng], { draggable: false }).addTo(map);
-    // Tidak perlu event dragend
+
+    // Saat map diklik, buka Google Maps berdasarkan koordinat marker
+    map.on('click', function () {
+        if (!marker) return;
+
+        var markerLatLng = marker.getLatLng();
+        var url = `https://www.google.com/maps/search/?api=1&query=${markerLatLng.lat},${markerLatLng.lng}`;
+        window.open(url, '_blank');
+    });
 };
 
 window.triggerFileInput = function (inputId) {
@@ -35,21 +45,4 @@ window.triggerFileInput = function (inputId) {
 window.resetInputFile = function (id) {
     var input = document.getElementById(id);
     if (input) input.value = "";
-};
-
-window.registerMapClickForGoogleMaps = function (mapElementId, lat, lng) {
-    if (!window.L) return;
-    var map = window.L.map(mapElementId);
-    map.setView([lat, lng], 16);
-
-    // Hapus event click sebelumnya agar tidak dobel
-    map.off('click');
-
-    map.on('click', function () {
-        var url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
-        window.open(url, '_blank');
-    });
-
-    // Tambahkan marker
-    window.L.marker([lat, lng]).addTo(map);
 };

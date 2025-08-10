@@ -21,13 +21,21 @@ namespace PKL_API.Models
         public TimeOnly time { get; set; }
 
         [DataType(DataType.MultilineText)]
-        public required string content { get; set; }
+        public required string description { get; set; }
 
         [DataType(DataType.MultilineText)]
         public string? feedback { get; set; }
 
+        [Column("id_file")]
+        public Guid? ReportFileid { get; set; }
+
+        [Column("id_photo")]
+        public Guid? ReportPhotoid { get; set; }
+
         public Student Student { get; set; }
         public Mentor Mentor { get; set; }
         public Classroom Classroom { get; set; }
+        public ReportFile? ReportFile { get; set; }
+        public ReportFile? ReportPhoto { get; set; }
     }
 }

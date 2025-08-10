@@ -23,7 +23,7 @@ namespace PKL_API
         public DbSet<PresencePhoto> PresencePhotos { get; set; }
         public DbSet<WaliKelas> WaliKelas { get; set; }
         public DbSet<WeeklyGuidance> WeeklyGuidances { get; set; }
-
+        public DbSet<ReportFile> ReportFiles { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -85,6 +85,18 @@ namespace PKL_API
                       .HasForeignKey(d => d.HolidayFromCompanyPhotoid)
                       .OnDelete(DeleteBehavior.Restrict);
             });
+
+            modelBuilder.Entity<Report>()
+                .HasOne(r => r.ReportFile)
+                .WithMany()
+                .HasForeignKey(r => r.ReportFileid)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Report>()
+                .HasOne(r => r.ReportPhoto)
+                .WithMany()
+                .HasForeignKey(r => r.ReportPhotoid)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

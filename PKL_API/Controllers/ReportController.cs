@@ -30,7 +30,8 @@ namespace PKL_API.Controllers
 
         [Authorize]
         [HttpPost]
-        public async Task<IActionResult> SubmitReport(ReportDTO dto)
+        [RequestSizeLimit(3_000_000)] // Batas 3MB total
+        public async Task<IActionResult> SubmitReport([FromForm] ReportDTO dto)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
@@ -40,6 +41,7 @@ namespace PKL_API.Controllers
                 return Unauthorized("Invalid user ID in token.");
 
             var student = await _db.Students
+                .Include(s => s.User)
                 .Include(s => s.Classroom)
                 .Include(s => s.Company)
                 .FirstOrDefaultAsync(s => s.Userid == userId);
@@ -47,10 +49,49 @@ namespace PKL_API.Controllers
             if (student == null || !(student.isPKL ?? false))
                 return StatusCode(403, "Only active PKL students can submit reports.");
 
-            if (string.IsNullOrWhiteSpace(dto.content))
-                return BadRequest("Content is required.");
+            if (string.IsNullOrWhiteSpace(dto.description))
+                return BadRequest("Description is required.");
+
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".docx", ".pdf" };
+
+            bool IsValidFile(IFormFile? file)
+            {
+                if (file == null) return true;
+                var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+                return allowedExtensions.Contains(ext);
+            }
+
+            if (!IsValidFile(dto.GuidancePhoto) || !IsValidFile(dto.ReportFile))
+                return BadRequest("Only PNG, JPG, JPEG, DOCX, or PDF files are allowed.");
+
+            async Task<ReportFile?> SaveFileAsync(IFormFile? file)
+            {
+                if (file == null || file.Length == 0)
+                    return null;
+
+                using var ms = new MemoryStream();
+                await file.CopyToAsync(ms);
+
+                return new ReportFile
+                {
+                    id = Guid.NewGuid(),
+                    files = ms.ToArray(),
+                    extension = Path.GetExtension(file.FileName)
+                };
+            }
 
             var now = DateTime.Now;
+
+            var photoEntity = await SaveFileAsync(dto.GuidancePhoto);
+            var fileEntity = await SaveFileAsync(dto.ReportFile);
+
+            if (photoEntity != null)
+                _db.ReportFiles.Add(photoEntity);
+            if (fileEntity != null)
+                _db.ReportFiles.Add(fileEntity);
+
+            await _db.SaveChangesAsync(); // simpan file lebih dulu untuk dapat ID-nya
+
             var report = new Report
             {
                 Studentid = student.id,
@@ -58,7 +99,9 @@ namespace PKL_API.Controllers
                 time = TimeOnly.FromDateTime(now),
                 Mentorid = student.Mentorid ?? throw new Exception("No mentor assigned."),
                 Classroomid = student.Classroomid ?? throw new Exception("No classroom assigned."),
-                content = dto.content
+                description = dto.description,
+                ReportPhotoid = photoEntity?.id,
+                ReportFileid = fileEntity?.id
             };
 
             _db.Reports.Add(report);
@@ -71,9 +114,10 @@ namespace PKL_API.Controllers
                 name = student.User?.fullname,
                 classroom = student.Classroom?.name,
                 company = student.Company?.name,
-                content = dto.content
+                description = dto.description
             });
         }
+
 
         [Authorize]
         [HttpPut("feedback/{reportId}")]
@@ -141,7 +185,7 @@ namespace PKL_API.Controllers
                 name = report.Student.User?.fullname,
                 classroom_name = classroom?.name,
                 company_name = company?.name,
-                content = report.content,
+                content = report.description,
                 feedback = report.feedback
             });
         }
@@ -170,7 +214,9 @@ namespace PKL_API.Controllers
                 .Include(r => r.Student).ThenInclude(s => s.Classroom)
                 .Include(r => r.Student).ThenInclude(s => s.User)
                 .Include(r => r.Student).ThenInclude(s => s.Company)
-                .Include(r => r.Student).ThenInclude(s => s.Mentor).ThenInclude(m => m.User);
+                .Include(r => r.Student).ThenInclude(s => s.Mentor).ThenInclude(m => m.User)
+                .Include(r => r.ReportFile)
+                .Include(r => r.ReportPhoto);
 
             // Role-based filtering
             if (roleId == 2)
@@ -194,14 +240,14 @@ namespace PKL_API.Controllers
                 query = query.Where(r => r.Student.Classroomid == classroom.id);
             }
 
-            // Filter by name (case-insensitive, contains)
+            // Filter by name
             if (!string.IsNullOrWhiteSpace(name))
             {
                 var loweredName = name.ToLower();
                 query = query.Where(r => r.Student.User.fullname.ToLower().Contains(loweredName));
             }
 
-            // Filter by classId
+            // Filter by class
             if (classId.HasValue)
             {
                 query = query.Where(r => r.Classroomid == classId.Value);
@@ -227,8 +273,11 @@ namespace PKL_API.Controllers
                 classroom_name = r.Student.Classroom?.name,
                 company_name = r.Student.Company?.name,
                 mentor = r.Student.Mentor?.User?.fullname ?? "-",
-                content = r.content,
+                description = r.description,
                 feedback = r.feedback ?? "-",
+                reportFileId = r.ReportFileid,
+                reportPhotoId = r.ReportPhotoid,
+                hasAttachment = (r.ReportFileid != null || r.ReportPhotoid != null),
                 isGuidance = _db.WeeklyGuidances.Any(w =>
                     w.Studentid == r.Studentid &&
                     w.WeekStartDate.Date == GetStartOfWeek(r.date).Date)
@@ -249,6 +298,55 @@ namespace PKL_API.Controllers
         {
             int diff = (7 + (date.DayOfWeek - DayOfWeek.Monday)) % 7;
             return date.AddDays(-diff).ToDateTime(TimeOnly.MinValue).Date;
+        }
+
+        [HttpGet("preview/{id}")]
+        public async Task<IActionResult> PreviewReportFile(Guid id)
+        {
+            var fileEntity = await _db.ReportFiles.FindAsync(id);
+
+            if (fileEntity == null)
+                return NotFound("File tidak ditemukan");
+
+            var extension = fileEntity.extension.Trim().ToLower();
+
+            byte[] fileBytes = fileEntity.files;
+            string contentType;
+
+            switch (extension)
+            {
+                case ".jpg":
+                case ".jpeg":
+                    contentType = "image/jpeg";
+                    break;
+                case ".png":
+                    contentType = "image/png";
+                    break;
+                case ".pdf":
+                    contentType = "application/pdf";
+                    break;
+                case ".doc":
+                case ".docx":
+                    fileBytes = ConvertDocxToPdf(fileBytes); // Konversi Word ke PDF
+                    contentType = "application/pdf";
+                    break;
+                default:
+                    return BadRequest("Format file tidak didukung untuk preview");
+            }
+
+            return File(fileBytes, contentType);
+        }
+
+        private byte[] ConvertDocxToPdf(byte[] docxBytes)
+        {
+            using var inputStream = new MemoryStream(docxBytes);
+            using var wordDocument = new Syncfusion.DocIO.DLS.WordDocument(inputStream, Syncfusion.DocIO.FormatType.Docx);
+            using var renderer = new Syncfusion.DocIORenderer.DocIORenderer();
+            using var pdfDocument = renderer.ConvertToPDF(wordDocument);
+
+            using var outputStream = new MemoryStream();
+            pdfDocument.Save(outputStream);
+            return outputStream.ToArray();
         }
 
         [Authorize]
@@ -481,7 +579,7 @@ namespace PKL_API.Controllers
                             {
                                 table.Cell().Element(CellStyle).Text(r.date.ToString("yyyy-MM-dd"));
                                 table.Cell().Element(CellStyle).Text(r.Student?.Company?.name ?? "-");
-                                table.Cell().Element(CellStyle).Text(r.content ?? "-");
+                                table.Cell().Element(CellStyle).Text(r.description ?? "-");
                                 table.Cell().Element(CellStyle).Text(r.feedback ?? "-");
                             }
 
@@ -653,7 +751,7 @@ namespace PKL_API.Controllers
                                 table.Cell().Element(CellStyle).Text(r.date.ToString("yyyy-MM-dd"));
                                 table.Cell().Element(CellStyle).Text(r.Mentor?.User?.fullname ?? "-");
                                 table.Cell().Element(CellStyle).Text(r.Student?.Company?.name ?? "-");
-                                table.Cell().Element(CellStyle).Text(r.content ?? "-");
+                                table.Cell().Element(CellStyle).Text(r.description ?? "-");
                                 table.Cell().Element(CellStyle).Text(r.feedback ?? "-");
                             }
 
@@ -798,7 +896,7 @@ namespace PKL_API.Controllers
                                 table.Cell().Element(CellStyle).Text(r.Student?.Classroom?.name ?? "-");
                                 table.Cell().Element(CellStyle).Text(r.date.ToString("yyyy-MM-dd"));
                                 table.Cell().Element(CellStyle).Text(r.Student?.Company?.name ?? "-");
-                                table.Cell().Element(CellStyle).Text(r.content ?? "-");
+                                table.Cell().Element(CellStyle).Text(r.description ?? "-");
                                 table.Cell().Element(CellStyle).Text(r.feedback ?? "-");
                             }
 

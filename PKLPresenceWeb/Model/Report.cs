@@ -20,8 +20,11 @@
         public int classId { get; set; }
         public string classroom_name { get; set; }
         public string company_name { get; set; }
-        public string content { get; set; }
+        public string mentor { get; set; }
+        public string description { get; set; }
         public string feedback { get; set; }
+        public string reportFileId { get; set; }
+        public string reportPhotoId { get; set; }
         public string isGuidance { get; set; }
     }
 }

@@ -14,6 +14,9 @@
           "Microsoft.EntityFrameworkCore.SqlServer": "9.0.6",
           "QuestPDF": "2025.5.1",
           "Swashbuckle.AspNetCore": "9.0.1",
+          "Syncfusion.DocIO.Net.Core": "30.2.4",
+          "Syncfusion.DocIORenderer.Net.Core": "30.2.4",
+          "Syncfusion.Pdf.Net.Core": "30.2.4",
           "System.IdentityModel.Tokens.Jwt": "8.12.1"
         },
         "runtime": {
@@ -52,6 +55,54 @@
           "lib/netstandard2.0/Azure.Identity.dll": {
             "assemblyVersion": "1.11.4.0",
             "fileVersion": "1.1100.424.31005"
+          }
+        }
+      },
+      "BitMiracle.LibTiff.NET/2.4.649": {
+        "runtime": {
+          "lib/netstandard2.0/BitMiracle.LibTiff.NET.dll": {
+            "assemblyVersion": "2.4.649.0",
+            "fileVersion": "2.4.649.0"
+          }
+        }
+      },
+      "HarfBuzzSharp/8.3.0.1": {
+        "dependencies": {
+          "HarfBuzzSharp.NativeAssets.Win32": "8.3.0.1",
+          "HarfBuzzSharp.NativeAssets.macOS": "8.3.0.1"
+        },
+        "runtime": {
+          "lib/net8.0/HarfBuzzSharp.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "8.3.0.1"
+          }
+        }
+      },
+      "HarfBuzzSharp.NativeAssets.macOS/8.3.0.1": {
+        "runtimeTargets": {
+          "runtimes/osx/native/libHarfBuzzSharp.dylib": {
+            "rid": "osx",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          }
+        }
+      },
+      "HarfBuzzSharp.NativeAssets.Win32/8.3.0.1": {
+        "runtimeTargets": {
+          "runtimes/win-arm64/native/libHarfBuzzSharp.dll": {
+            "rid": "win-arm64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/win-x64/native/libHarfBuzzSharp.dll": {
+            "rid": "win-x64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/win-x86/native/libHarfBuzzSharp.dll": {
+            "rid": "win-x86",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
           }
         }
       },
@@ -690,6 +741,58 @@
           }
         }
       },
+      "SkiaSharp/3.116.1": {
+        "dependencies": {
+          "SkiaSharp.NativeAssets.Win32": "3.116.1",
+          "SkiaSharp.NativeAssets.macOS": "3.116.1"
+        },
+        "runtime": {
+          "lib/net8.0/SkiaSharp.dll": {
+            "assemblyVersion": "3.116.0.0",
+            "fileVersion": "3.116.1.0"
+          }
+        }
+      },
+      "SkiaSharp.HarfBuzz/3.116.1": {
+        "dependencies": {
+          "HarfBuzzSharp": "8.3.0.1",
+          "SkiaSharp": "3.116.1"
+        },
+        "runtime": {
+          "lib/net8.0/SkiaSharp.HarfBuzz.dll": {
+            "assemblyVersion": "3.116.0.0",
+            "fileVersion": "3.116.1.0"
+          }
+        }
+      },
+      "SkiaSharp.NativeAssets.macOS/3.116.1": {
+        "runtimeTargets": {
+          "runtimes/osx/native/libSkiaSharp.dylib": {
+            "rid": "osx",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          }
+        }
+      },
+      "SkiaSharp.NativeAssets.Win32/3.116.1": {
+        "runtimeTargets": {
+          "runtimes/win-arm64/native/libSkiaSharp.dll": {
+            "rid": "win-arm64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/win-x64/native/libSkiaSharp.dll": {
+            "rid": "win-x64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/win-x86/native/libSkiaSharp.dll": {
+            "rid": "win-x86",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          }
+        }
+      },
       "Swashbuckle.AspNetCore/9.0.1": {
         "dependencies": {
           "Microsoft.Extensions.ApiDescription.Server": "8.0.0",
@@ -725,6 +828,118 @@
           "lib/net8.0/Swashbuckle.AspNetCore.SwaggerUI.dll": {
             "assemblyVersion": "9.0.1.0",
             "fileVersion": "9.0.1.1541"
+          }
+        }
+      },
+      "Syncfusion.Compression.Net.Core/30.2.4": {
+        "runtime": {
+          "lib/net8.0/Syncfusion.Compression.Portable.dll": {
+            "assemblyVersion": "30.2.4.0",
+            "fileVersion": "30.2.4.0"
+          }
+        }
+      },
+      "Syncfusion.DocIO.Net.Core/30.2.4": {
+        "dependencies": {
+          "Syncfusion.Compression.Net.Core": "30.2.4",
+          "Syncfusion.Licensing": "30.2.4",
+          "Syncfusion.OfficeChart.Net.Core": "30.2.4",
+          "System.Text.Encoding.CodePages": "6.0.0"
+        },
+        "runtime": {
+          "lib/net8.0/Syncfusion.DocIO.Portable.dll": {
+            "assemblyVersion": "30.2.4.0",
+            "fileVersion": "30.2.4.0"
+          }
+        }
+      },
+      "Syncfusion.DocIORenderer.Net.Core/30.2.4": {
+        "dependencies": {
+          "SkiaSharp.HarfBuzz": "3.116.1",
+          "Syncfusion.Compression.Net.Core": "30.2.4",
+          "Syncfusion.DocIO.Net.Core": "30.2.4",
+          "Syncfusion.MetafileRenderer.Net.Core": "30.2.4",
+          "Syncfusion.OfficeChart.Net.Core": "30.2.4",
+          "Syncfusion.Pdf.Imaging.Net.Core": "30.2.4",
+          "Syncfusion.Pdf.Net.Core": "30.2.4",
+          "Syncfusion.SkiaSharpHelper.Net.Core": "30.2.4"
+        },
+        "runtime": {
+          "lib/net8.0/Syncfusion.DocIORenderer.Portable.dll": {
+            "assemblyVersion": "30.2.4.0",
+            "fileVersion": "30.2.4.0"
+          }
+        }
+      },
+      "Syncfusion.Licensing/30.2.4": {
+        "runtime": {
+          "lib/net8.0/Syncfusion.Licensing.dll": {
+            "assemblyVersion": "30.2.4.0",
+            "fileVersion": "30.2.4.0"
+          }
+        }
+      },
+      "Syncfusion.MetafileRenderer.Net.Core/30.2.4": {
+        "dependencies": {
+          "SkiaSharp": "3.116.1",
+          "Syncfusion.Compression.Net.Core": "30.2.4",
+          "Syncfusion.Licensing": "30.2.4",
+          "Syncfusion.Pdf.Net.Core": "30.2.4"
+        },
+        "runtime": {
+          "lib/net8.0/Syncfusion.MetafileRenderer.Portable.dll": {
+            "assemblyVersion": "30.2.4.0",
+            "fileVersion": "30.2.4.0"
+          }
+        }
+      },
+      "Syncfusion.OfficeChart.Net.Core/30.2.4": {
+        "dependencies": {
+          "Syncfusion.Compression.Net.Core": "30.2.4"
+        },
+        "runtime": {
+          "lib/net8.0/Syncfusion.OfficeChart.Portable.dll": {
+            "assemblyVersion": "30.2.4.0",
+            "fileVersion": "30.2.4.0"
+          }
+        }
+      },
+      "Syncfusion.Pdf.Imaging.Net.Core/30.2.4": {
+        "dependencies": {
+          "BitMiracle.LibTiff.NET": "2.4.649",
+          "SkiaSharp": "3.116.1",
+          "Syncfusion.Compression.Net.Core": "30.2.4",
+          "Syncfusion.Pdf.Net.Core": "30.2.4"
+        },
+        "runtime": {
+          "lib/net8.0/Syncfusion.Pdf.Imaging.Portable.dll": {
+            "assemblyVersion": "30.2.4.0",
+            "fileVersion": "30.2.4.0"
+          }
+        }
+      },
+      "Syncfusion.Pdf.Net.Core/30.2.4": {
+        "dependencies": {
+          "Syncfusion.Compression.Net.Core": "30.2.4",
+          "Syncfusion.Licensing": "30.2.4",
+          "System.Text.Encoding.CodePages": "6.0.0"
+        },
+        "runtime": {
+          "lib/net8.0/Syncfusion.Pdf.Portable.dll": {
+            "assemblyVersion": "30.2.4.0",
+            "fileVersion": "30.2.4.0"
+          }
+        }
+      },
+      "Syncfusion.SkiaSharpHelper.Net.Core/30.2.4": {
+        "dependencies": {
+          "SkiaSharp.HarfBuzz": "3.116.1",
+          "Syncfusion.Compression.Net.Core": "30.2.4"
+        },
+        "runtime": {
+          "lib/net8.0/Syncfusion.SkiaSharpHelper.Portable.dll": {
+            "assemblyVersion": "30.2.4.0",
+            "fileVersion": "30.2.4.0"
           }
         }
       },
@@ -992,6 +1207,34 @@
       "sha512": "sha512-Sf4BoE6Q3jTgFkgBkx7qztYOFELBCo+wQgpYDwal/qJ1unBH73ywPztIJKXBXORRzAeNijsuxhk94h0TIMvfYg==",
       "path": "azure.identity/1.11.4",
       "hashPath": "azure.identity.1.11.4.nupkg.sha512"
+    },
+    "BitMiracle.LibTiff.NET/2.4.649": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-XCEdfCphKo0UAvSg1h/OzOFWtjkIGnPMAziYkNqV7NVrqb/tZJTBxJhxIEX7gpvQwg8GIRYt133SUncfkKfjLA==",
+      "path": "bitmiracle.libtiff.net/2.4.649",
+      "hashPath": "bitmiracle.libtiff.net.2.4.649.nupkg.sha512"
+    },
+    "HarfBuzzSharp/8.3.0.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-rwLpl+W6uqu0DuvzqNhTMuFcXfy1Vc0uq0YXgPEmtTSfeUSAye1FcARrm2YIPOSiCBwBOGu3cLvMX5Fp6OKe2g==",
+      "path": "harfbuzzsharp/8.3.0.1",
+      "hashPath": "harfbuzzsharp.8.3.0.1.nupkg.sha512"
+    },
+    "HarfBuzzSharp.NativeAssets.macOS/8.3.0.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-2o6U05LAmK+rwX7TvmJ2X0anXJG2hSE7kHVmCshhHy0tKfByJ5ykBacvhmmooHchlOwq15KBZeROGafCT8nN+g==",
+      "path": "harfbuzzsharp.nativeassets.macos/8.3.0.1",
+      "hashPath": "harfbuzzsharp.nativeassets.macos.8.3.0.1.nupkg.sha512"
+    },
+    "HarfBuzzSharp.NativeAssets.Win32/8.3.0.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-ow0DtGEUjo65qhiI22of7qiVbN1xDFsZ5P5xJljRmGZ5WSxNy+1batLNJFGxahqhB1MTHYV8kAXf0GqC8WaevQ==",
+      "path": "harfbuzzsharp.nativeassets.win32/8.3.0.1",
+      "hashPath": "harfbuzzsharp.nativeassets.win32.8.3.0.1.nupkg.sha512"
     },
     "Humanizer.Core/2.14.1": {
       "type": "package",
@@ -1329,6 +1572,34 @@
       "path": "questpdf/2025.5.1",
       "hashPath": "questpdf.2025.5.1.nupkg.sha512"
     },
+    "SkiaSharp/3.116.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-DNDwbRjP+aMo27dV2h/uHCVTcWubWWxHnPLiePNyl24f4Pv43mQ8AQQeseOrKR+J3AOCEs6t0sUjo0aa3j3RWQ==",
+      "path": "skiasharp/3.116.1",
+      "hashPath": "skiasharp.3.116.1.nupkg.sha512"
+    },
+    "SkiaSharp.HarfBuzz/3.116.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-ibDG1+quN86vBd9ztjDAC9wnvS1nRZ6ydTUOSod4NsRHWdLLGzWYn1IOF4Cg9iJh5cQHdpzhUZBQE0JMKznrow==",
+      "path": "skiasharp.harfbuzz/3.116.1",
+      "hashPath": "skiasharp.harfbuzz.3.116.1.nupkg.sha512"
+    },
+    "SkiaSharp.NativeAssets.macOS/3.116.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-3KPvpKysDmEMt0NnAZPX5U6KFk0LmG/72/IjAIJemIksIZ0Tjs9pGpr3L+zboVCv1MLVoJLKl3nJDXUG6Jda6A==",
+      "path": "skiasharp.nativeassets.macos/3.116.1",
+      "hashPath": "skiasharp.nativeassets.macos.3.116.1.nupkg.sha512"
+    },
+    "SkiaSharp.NativeAssets.Win32/3.116.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-dRQ75MCI8oz6zAs2Y1w6pq6ARs4MhdNG+gf3doOxOxdnueDXffQLGQIxON54GDoxc0WjKOoHMKBR4DhaduwwQw==",
+      "path": "skiasharp.nativeassets.win32/3.116.1",
+      "hashPath": "skiasharp.nativeassets.win32.3.116.1.nupkg.sha512"
+    },
     "Swashbuckle.AspNetCore/9.0.1": {
       "type": "package",
       "serviceable": true,
@@ -1356,6 +1627,69 @@
       "sha512": "sha512-UuU+RvZbJZmnciVzi8G0jb3c6xeA4O8pQGrxl30eCK3pRNvurzZgS6shEei27q9wgvp0/UrTUNUM/a1kSlTfzw==",
       "path": "swashbuckle.aspnetcore.swaggerui/9.0.1",
       "hashPath": "swashbuckle.aspnetcore.swaggerui.9.0.1.nupkg.sha512"
+    },
+    "Syncfusion.Compression.Net.Core/30.2.4": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-miiTaJjwaWVY+25wLT7OIA3EhWGmrc+WY4XTcwgGkXZVIh6qA8LqLYoc/D5FFW+n0xtgaZw0yObQ94eZjWLlSw==",
+      "path": "syncfusion.compression.net.core/30.2.4",
+      "hashPath": "syncfusion.compression.net.core.30.2.4.nupkg.sha512"
+    },
+    "Syncfusion.DocIO.Net.Core/30.2.4": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-RiuPIiv2cS44warttZSIybzF31GGdj30Y5gJj33AqerB4uctTp2gFapCw+W6v2I5XuDtaTySrXJuATtjq3O9zw==",
+      "path": "syncfusion.docio.net.core/30.2.4",
+      "hashPath": "syncfusion.docio.net.core.30.2.4.nupkg.sha512"
+    },
+    "Syncfusion.DocIORenderer.Net.Core/30.2.4": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-3/EkfQzvbjkachTJMOQnJKU8LjM+Ai5oD0iw71xT3KRXE70zqJxBmIOgwH9pn/1LoyC7g1Jt7VkwR6Zv/KS/5g==",
+      "path": "syncfusion.dociorenderer.net.core/30.2.4",
+      "hashPath": "syncfusion.dociorenderer.net.core.30.2.4.nupkg.sha512"
+    },
+    "Syncfusion.Licensing/30.2.4": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-bFQgrpgHmlYFhBLGW18IMSwZ9ZxkU7fV1WxO6/+Cmp9Wq1zisKwCuRQOBcvNvdTTyHyFHZM22pq9G72qJ7wfGQ==",
+      "path": "syncfusion.licensing/30.2.4",
+      "hashPath": "syncfusion.licensing.30.2.4.nupkg.sha512"
+    },
+    "Syncfusion.MetafileRenderer.Net.Core/30.2.4": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-DOjt/kV5uoDMuk+zYvjE1FfCM//oo92FerENPNEI5TBjl327oF/6Mluw9fcu3dcEIZY5j78pZ19TbI3hcNC6bg==",
+      "path": "syncfusion.metafilerenderer.net.core/30.2.4",
+      "hashPath": "syncfusion.metafilerenderer.net.core.30.2.4.nupkg.sha512"
+    },
+    "Syncfusion.OfficeChart.Net.Core/30.2.4": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-xzCSFDC2IYOUova3FATfb8FLcu1S3Sl017bBdpUzznSmiLraOfxPL378WkxwGBYY+1EATu6fQKmWOn6fg+M4CQ==",
+      "path": "syncfusion.officechart.net.core/30.2.4",
+      "hashPath": "syncfusion.officechart.net.core.30.2.4.nupkg.sha512"
+    },
+    "Syncfusion.Pdf.Imaging.Net.Core/30.2.4": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-RA6EjdkO/KfVrV9xA0vGv7L6kJYWqKphS6kmiD3VOdO8XV+b8IsJ1wxuoTYbm+HRVqyMtie2gkgOfTZRRtblVQ==",
+      "path": "syncfusion.pdf.imaging.net.core/30.2.4",
+      "hashPath": "syncfusion.pdf.imaging.net.core.30.2.4.nupkg.sha512"
+    },
+    "Syncfusion.Pdf.Net.Core/30.2.4": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-vvD4YJCS6xv9lnFkkoOMZl88d5urqo+rlkT+L42Xhmjug5MSfcKtHqXFAubqoVqAUPIfTosa6gQsfCRtHARaOQ==",
+      "path": "syncfusion.pdf.net.core/30.2.4",
+      "hashPath": "syncfusion.pdf.net.core.30.2.4.nupkg.sha512"
+    },
+    "Syncfusion.SkiaSharpHelper.Net.Core/30.2.4": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-jmpD9xIpZMhJMYlosQxtzC4Tv1MwxgOuaAtD55XX257ImVGwaVyF94n3RRkEu5qsKqx2NwUqO141/tKRX0PUAQ==",
+      "path": "syncfusion.skiasharphelper.net.core/30.2.4",
+      "hashPath": "syncfusion.skiasharphelper.net.core.30.2.4.nupkg.sha512"
     },
     "System.ClientModel/1.0.0": {
       "type": "package",

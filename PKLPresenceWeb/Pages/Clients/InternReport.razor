@@ -39,6 +39,7 @@
                             <th class="text-center">Jam</th>
                             <th class="text-center">Ringkasan</th>
                             <th class="text-center">Feedback</th>
+                            <th class="text-center">Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -52,15 +53,21 @@
                                     <td class="text-center">@rowIndex</td>
                                     <td>@item.date</td>
                                     <td>@item.time</td>
-                                    <td>@item.content</td>
+                                    <td>@item.description</td>
                                     <td>@item.feedback</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-info" style="padding-left: 1.15rem; padding-right: 1.15rem;"
+                                                @onclick="() => ShowReportDetail(item)">
+                                            Detail
+                                        </button>
+                                    </td>
                                 </tr>
                             }
                         }
                         else
                         {
                             <tr>
-                                <td colspan="5" class="text-center text-muted">Tidak ada data laporan PKL.</td>
+                                <td colspan="6" class="text-center text-muted">Tidak ada data laporan PKL.</td>
                             </tr>
                         }
                     </tbody>
@@ -110,18 +117,39 @@
             @if (ShowReportModal)
             {
                 <Modal IsVisible="true" Title="Submit Report">
-                    <div class="report-modal-label mb-2 mt-3 text-start">
-                        Ringkasan Pekerjaan di Industri
+                    <div class="mb-2">
+                        <label class="my-2">Foto Saat Bimbingan</label>
+                        <div style="display: flex; justify-content: center;">
+                            <div class="custom-upload-box @(WebRTCPhotoDataUrl == null ? "no-photo" : "has-photo")" @onclick="OpenWebRTCModal">
+                                @if (WebRTCPhotoDataUrl != null)
+                                {
+                                    <img src="@WebRTCPhotoDataUrl" class="uploaded-photo-preview" />
+                                }
+                                else
+                                {
+                                    <span class="bi bi-image custom-upload-icon"></span>
+                                    <div class="custom-upload-text">Upload Foto</div>
+                                }
+                            </div>
+                        </div>
                     </div>
-                    <div class="mb-3">
+                    <div class="mb-2">
+                        <label>Deskripsi Kegiatan</label>
                         <textarea id="ContentInput"
-                                  class="form-control"
-                                  placeholder="Masukkan report..."
+                                  class="form-control mt-2"
+                                  placeholder="Deskripsi..."
                                   @bind="ContentInput"
                                   @oninput="OnContentInput"
                                   maxlength="200"
                                   rows="3"></textarea>
                         <div class="char-counter-outer">@ContentInput.Length/200</div>
+                    </div>
+                    <div class="mb-3 text-center">
+                        <label class="mb-2">File Laporan</label>
+                        <div class="file-upload-center">
+                            <InputFile OnChange="OnReportFileSelected" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                                    style="max-width: 300px; width: 90%;" />
+                        </div>
                     </div>
                     <div class="d-flex justify-content-around mt-2">
                         <button class="btn btn-danger px-4" @onclick="CancelReport">Cancel</button>
@@ -130,6 +158,19 @@
                                 disabled="@string.IsNullOrWhiteSpace(ContentInput)">
                             Confirm
                         </button>
+                    </div>
+                </Modal>
+            }
+
+            @if (ShowWebRTCModal)
+            {
+                <Modal IsVisible="true" Title="Ambil Foto">
+                    <div class="d-flex flex-column align-items-center">
+                        <video id="webrtc_capture" autoplay playsinline style="width:240px;height:160px;object-fit:cover;border-radius:8px;background:#222;"></video>
+                        <div class="d-flex gap-2 mt-3">
+                            <button class="btn btn-danger px-4" @onclick="CloseWebRTCModal">Cancel</button>
+                            <button class="btn btn-success px-4" @onclick="CaptureWebRTCPhoto">Capture</button>
+                        </div>
                     </div>
                 </Modal>
             }
@@ -174,7 +215,7 @@
                                     <th class="text-center">Hari/Tanggal</th>
                                     <th class="text-center">Jam</th>
                                     <th class="text-center">Nama PT</th>
-                                    <th class="text-center">Ringkasan Pekerjaan</th>
+                                    <th class="text-center">Deskripsi</th>
                                     <th class="text-center">Feedback</th>
                                     <th class="text-center">Bimbingan</th>
                                     <th class="text-center">Action</th>
@@ -195,7 +236,7 @@
                                             <td>@item.date</td>
                                             <td>@item.time</td>
                                             <td>@item.company_name</td>
-                                            <td>@item.content</td>
+                                            <td>@item.description</td>
                                             <td>@item.feedback</td>
                                             <td class="text-center">
                                                 @if (item.isGuidance == "✔️")
@@ -219,6 +260,10 @@
                                                             Bimbingan
                                                         </button>
                                                     }
+                                                    <button class="btn btn-sm btn-info" style="padding-left: 1.15rem; padding-right: 1.15rem;"
+                                                            @onclick="() => ShowReportDetail(item)">
+                                                        Detail
+                                                    </button>
                                                 </div>
                                             </td>
                                         </tr>
@@ -246,7 +291,7 @@
                                     <th class="text-center">Hari/Tanggal</th>
                                     <th class="text-center">Jam</th>
                                     <th class="text-center">Nama PT</th>
-                                    <th class="text-center">Ringkasan Pekerjaan</th>
+                                    <th class="text-center">Deskripsi</th>
                                     <th class="text-center">Feedback</th>
                                     <th class="text-center">Bimbingan</th>
                                 </tr>
@@ -266,7 +311,7 @@
                                             <td>@item.date</td>
                                             <td>@item.time</td>
                                             <td>@item.company_name</td>
-                                            <td>@item.content</td>
+                                            <td>@item.description</td>
                                             <td>@item.feedback</td>
                                             <td class="text-center">
                                                 @if (item.isGuidance == "✔️")
@@ -284,7 +329,7 @@
                                 else
                                 {
                                     <tr>
-                                        <td colspan="11" class="text-center text-muted">Tidak ada data laporan PKL.</td>
+                                        <td colspan="10" class="text-center text-muted">Tidak ada data laporan PKL.</td>
                                     </tr>
                                 }
                             </tbody>
@@ -379,6 +424,57 @@
             }
         }
 
+        @if (ShowReportDetailModal && SelectedReportDetail != null)
+        {
+            <Modal IsVisible="true" Title="Report Detail">
+                <div class="modal-scrollable-content">
+                    <div class="report-modal-grid mb-3 mt-3 text-start">
+                        <div class="report-modal-label">NIS</div>
+                        <div class="report-modal-colon">:</div>
+                        <div class="report-modal-value">@SelectedReportDetail.nis</div>
+
+                        <div class="report-modal-label">Nama Lengkap</div>
+                        <div class="report-modal-colon">:</div>
+                        <div class="report-modal-value">@SelectedReportDetail.name</div>
+
+                        <div class="report-modal-label">Kelas</div>
+                        <div class="report-modal-colon">:</div>
+                        <div class="report-modal-value">@SelectedReportDetail.classroom_name</div>
+
+                        <div class="report-modal-label">Hari/Tanggal</div>
+                        <div class="report-modal-colon">:</div>
+                        <div class="report-modal-value">@SelectedReportDetail.date</div>
+
+                        <div class="report-modal-label">Jam</div>
+                        <div class="report-modal-colon">:</div>
+                        <div class="report-modal-value">@SelectedReportDetail.time WIB</div>
+
+                        <div class="report-modal-label">Nama PT</div>
+                        <div class="report-modal-colon">:</div>
+                        <div class="report-modal-value">@SelectedReportDetail.company_name</div>
+
+                        <div class="report-modal-label">Feedback</div>
+                        <div class="report-modal-colon">:</div>
+                        <div class="report-modal-value">@SelectedReportDetail.feedback</div>
+
+                        <div class="report-modal-label">Detail</div>
+                        <div class="report-modal-colon">:</div>
+                        <div class="report-modal-value">
+                            @if (!string.IsNullOrEmpty(SelectedReportDetail.reportPhotoId))
+                            {
+                                <button class="btn btn-link text-primary p-0" @onclick="ShowPreviewModalHandler">Preview</button>
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </div>
+                    </div>
+                    <button class="btn btn-primary w-100 mb-2" @onclick="CloseReportDetailModal">Close</button>
+                </div>
+            </Modal>
+        }
+
         @if (ShowFeedbackModal && SelectedReportDetail != null)
         {
             <Modal IsVisible="true" Title="Give Feedback">
@@ -408,26 +504,48 @@
                         <div class="report-modal-colon">:</div>
                         <div class="report-modal-value">@SelectedReportDetail.company_name</div>
 
-                        <div class="report-modal-label">Ringkasan Pekerjaan</div>
-                        <div class="report-modal-colon">:</div>
-                        <div class="report-modal-value">@SelectedReportDetail.content</div>
-
                         <div class="report-modal-label">Feedback</div>
                         <div class="report-modal-colon">:</div>
                     </div>
-                    <div class="mb-3">
+                    <div class="mb-3 mx-1">
                         <textarea id="feedbackInput"
                                   class="form-control"
                                   placeholder="Masukkan Feedback"
                                   @bind="FeedbackInput"
-                                  @oninput="e => FeedbackInput = ((ChangeEventArgs)e).Value?.ToString() ?? string.Empty"
+                                  @oninput="OnFeedbackInput"
+                                  maxlength="100"
                                   rows="3"></textarea>
+                        <div class="char-counter-outer">@FeedbackInput.Length/100</div>
                     </div>
                     <button class="btn btn-primary w-100 mb-2"
                             @onclick="OnFeedbackButtonClick"
                             disabled="@IsSubmittingFeedback">
                         @(string.IsNullOrWhiteSpace(FeedbackInput) ? "Close" : "Confirm")
                     </button>
+                </div>
+            </Modal>
+        }
+
+        @if (ShowPreviewModal && SelectedReportDetail != null)
+        {
+            <Modal IsVisible="true" Title="Detail">
+                <div class="modal-scrollable-content text-center mx-1">
+                    <div class="mb-2">Foto Saat Bimbingan</div>
+                    <img src="@APIUrl.Endpoint($"repots/preview/{SelectedReportDetail.reportPhotoId}")"
+                         alt="Foto Saat Bimbingan"
+                         style="max-width: 220px; width: 100%; border-radius: 8px; margin-bottom: 1rem;" />
+                    <div class="mb-2">Deskripsi Kegiatan</div>
+                    <div class="mb-3 mx-2">
+                        <textarea class="form-control" readonly rows="3">@SelectedReportDetail.description</textarea>
+                    </div>
+                    <div class="mb-2">File Laporan</div>
+                    <button class="btn btn-outline-primary btn-sm"
+                            @onclick="() => OpenFileInNewTab(SelectedReportDetail.reportFileId)">
+                        Preview
+                    </button>
+                    <div class="mb-2 mt-3 mx-2">
+                        <button class="btn btn-danger w-100" @onclick="ClosePreviewModal">Close</button>
+                    </div>
                 </div>
             </Modal>
         }
@@ -708,6 +826,8 @@
     {
         ShowReportModal = false;
         ContentInput = "";
+        WebRTCPhotoDataUrl = null;
+        UploadedReportFile = null;
     }
 
     async Task ConfirmReport()
@@ -719,13 +839,44 @@
         }
 
         IsSubmittingReport = true;
-        var contentObj = new { content = ContentInput };
-        var content = new StringContent(
-            System.Text.Json.JsonSerializer.Serialize(contentObj),
-            System.Text.Encoding.UTF8,
-            "application/json"
-        );
-        var response = await Http.PostAsync(APIUrl.Endpoint("repots"), content);
+
+        var formData = new MultipartFormDataContent();
+
+        // Deskripsi kegiatan
+        formData.Add(new StringContent(ContentInput), "description");
+
+        // Foto bimbingan dari WebRTC
+        if (WebRTCPhotoDataUrl != null)
+        {
+            // Ambil base64 dari dataUrl
+            var base64 = WebRTCPhotoDataUrl.Substring(WebRTCPhotoDataUrl.IndexOf(",") + 1);
+            var bytes = Convert.FromBase64String(base64);
+
+            // Tentukan mimeType dan ekstensi
+            var mimeType = WebRTCPhotoDataUrl.Substring(5, WebRTCPhotoDataUrl.IndexOf(";") - 5);
+            var ext = mimeType switch
+            {
+                "image/png" => ".png",
+                "image/jpeg" => ".jpg",
+                "image/jpg" => ".jpg",
+                _ => ".jpg"
+            };
+
+            var fileContent = new ByteArrayContent(bytes);
+            fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(mimeType);
+            formData.Add(fileContent, "guidancePhoto", $"guidance{ext}");
+        }
+
+        // File laporan (upload)
+        if (UploadedReportFile != null)
+        {
+            var stream = UploadedReportFile.OpenReadStream(10 * 1024 * 1024); // max 10MB
+            var fileContent = new StreamContent(stream);
+            fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(UploadedReportFile.ContentType);
+            formData.Add(fileContent, "reportFile", UploadedReportFile.Name);
+        }
+
+        var response = await Http.PostAsync(APIUrl.Endpoint("repots"), formData);
         IsSubmittingReport = false;
 
         if (response.IsSuccessStatusCode)
@@ -733,7 +884,10 @@
             CloseDetailModal();
             await LoadReports();
         }
-        else await JS.InvokeVoidAsync("alert", "Gagal submit report.");
+        else
+        {
+            await JS.InvokeVoidAsync("alert", "Gagal submit report.");
+        }
     }
 
     async Task OnFeedbackButtonClick()
@@ -775,4 +929,104 @@
 
     private void GoToProfile() => Navigation.NavigateTo("/home/profile");
     private string photoUrl = "/images/default_profile.jpg";
+
+    private bool ShowWebRTCModal = false;
+    private string? WebRTCPhotoDataUrl = null;
+    private DotNetObjectReference<InternReport>? dotNetRef;
+
+    private void OpenWebRTCModal()
+    {
+        ShowWebRTCModal = true;
+        StateHasChanged();
+    }
+
+    private async void CloseWebRTCModal()
+    {
+        await JS.InvokeVoidAsync("webrtcPhoto.stop", "webrtc_capture");
+        ShowWebRTCModal = false;
+        StateHasChanged();
+    }
+
+    private async void CaptureWebRTCPhoto()
+    {
+        await JS.InvokeVoidAsync("webrtcPhoto.capture", "webrtc_capture", "image/jpeg", 0.92);
+    }
+
+    [JSInvokable]
+    public async Task OnWebRTCCapture(string elementId, string dataUrl)
+    {
+        var mimeType = dataUrl.Substring(5, dataUrl.IndexOf(";") - 5); // e.g. image/png
+        var ext = mimeType switch
+        {
+            "image/png" => ".png",
+            "image/jpeg" => ".jpg",
+            "image/jpg" => ".jpg",
+            _ => ".jpg"
+        };
+        var field = elementId.Replace("webrtc_", "");
+        var base64 = dataUrl.Substring(dataUrl.IndexOf(",") + 1);
+        var bytes = Convert.FromBase64String(base64);
+        var file = new BlazorInputFileStreamFile(field + ext, mimeType, bytes);
+
+        WebRTCPhotoDataUrl = dataUrl;
+        ShowWebRTCModal = false;
+        StateHasChanged();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (ShowWebRTCModal)
+        {
+            dotNetRef ??= DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("webrtcPhoto.start", "webrtc_capture", dotNetRef);
+        }
+    }
+
+    private IBrowserFile? UploadedReportFile = null;
+    private string UploadedReportFileName => UploadedReportFile != null ? $"{UploadedReportFile.Name} ({UploadedReportFile.ContentType})" : "No file choosen";
+
+    private void OnReportFileSelected(InputFileChangeEventArgs e)
+    {
+        UploadedReportFile = e.File;
+    }
+
+    private void OnFeedbackInput(ChangeEventArgs e)
+    {
+        var value = e.Value?.ToString() ?? string.Empty;
+        if (value.Length > 100)
+            value = value.Substring(0, 100);
+        FeedbackInput = value;
+    }
+
+    bool ShowReportDetailModal = false;
+
+    void ShowReportDetail(ReportItem item)
+    {
+        SelectedReportDetail = item;
+        ShowReportDetailModal = true;
+    }
+
+    void CloseReportDetailModal()
+    {
+        ShowReportDetailModal = false;
+        SelectedReportDetail = null;
+    }
+
+    bool ShowPreviewModal = false;
+
+    void ShowPreviewModalHandler()
+    {
+        ShowPreviewModal = true;
+    }
+
+    void ClosePreviewModal()
+    {
+        ShowPreviewModal = false;
+    }
+
+    void OpenFileInNewTab(string fileId)
+    {
+        var url = APIUrl.Endpoint($"repots/preview/{fileId}");
+        JS.InvokeVoidAsync("window.open", url, "_blank");
+    }
 }

@@ -837,26 +837,18 @@
             if (double.TryParse(SelectedPresenceDetail.lat, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var lat) &&
                 double.TryParse(SelectedPresenceDetail.longitude, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var lng))
             {
-                // Render map seperti biasa
                 await JS.InvokeVoidAsync("renderPresenceMapWithMarker", "detailPresenceMap", lat, lng, null);
-
-                // Daftarkan event click untuk buka Google Maps
-                await JS.InvokeVoidAsync("registerMapClickForGoogleMaps", "detailPresenceMap", lat, lng);
             }
         }
     }
 
     private bool HasPresenceTodayGlobal = false;
-
-    // Mapping presence type ke field foto
     readonly Dictionary<int, List<(string Label, string Field)>> PresenceTypeFields = new()
     {
-        // Sesuaikan id dengan id presenceType Anda
         { 1, new() { ("Foto Full Body", "FullBodyPhoto"), ("Location", "Location") } }, // Hadir
         { 2, new() { ("Saat Berobat", "Treatment") } }, // Sakit
         { 3, new() { ("Izin ke Perusahaan", "PermitToCompany"), ("Izin ke Pembimbing Sekolah", "PermitToMentor"), ("Izin ke Walas", "PermitToWalas") } }, // Izin
         { 4, new() { ("Info Libur dari Perusahaan", "HolidayFromCompany") } }, // Libur
-        // Tambahkan mapping lain jika ada
     };
 
     private async Task ShowPresencePhotoModalForPresence(PresenceItem item)
@@ -985,7 +977,7 @@
             var base64 = Convert.ToBase64String(bytes);
             photoUrl = $"data:{contentType};base64,{base64}";
         }
-        
+
 
         if (UserRole == "Student")
         {
@@ -1137,6 +1129,8 @@
         SelectedPresenceDetail = null;
         FeedbackInput = "";
         IsSubmittingFeedback = false;
+        // isMapRendered = false;
+        //JS.InvokeVoidAsync("renderPresenceMapWithMarker", "detailPresenceMap", 0, 0, null);
     }
 
     async void PreviewFoto()
