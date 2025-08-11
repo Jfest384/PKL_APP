@@ -1,7 +1,7 @@
 {
   "mainAssemblyName": "PKLPresenceWeb",
   "resources": {
-    "hash": "sha256-0uBGm9uwjw+p2tsPp2nLm0L4lTmsi23FMItk8ynmAM8=",
+    "hash": "sha256-fXVmqKWWF4XapJvROA9p32YOygySi2foZ2DQ6T4VVeE=",
     "jsModuleNative": {
       "dotnet.native.js": "sha256-1QpKPnxEuRCElzcp+e3MrovJeAJkuzqKmRQay/6Aa08="
     },
@@ -62,7 +62,7 @@
       "System.Web.HttpUtility.wasm": "sha256-W4q3rOY3MmLSzt6kUm/a+yg7x/Y59MVQrk0od/5ECYY=",
       "System.wasm": "sha256-n/f5afy4u9cEBgTcizWUZ+dkLRFdsZkcUvyhNiEyiq8=",
       "System.Private.CoreLib.wasm": "sha256-POFzbDV04i1FeW7EEdBK32H7PI6o3ZksTAdfmoH0Qgk=",
-      "PKLPresenceWeb.wasm": "sha256-GtBZdhYUcB2eS9Qi6lqM7eP5gcEvZemgJfAl+SlvdAg="
+      "PKLPresenceWeb.wasm": "sha256-4jFyV560w7UdXEoXf6ins3I3ijseWEjHuZv8kBCzXxk="
     }
   },
   "cacheBootResources": true,
