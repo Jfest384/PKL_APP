@@ -1,16 +1,17 @@
-﻿@page "/home/profile/me"
-@attribute [Authorize]
+﻿@attribute [Authorize]
+@page "/home/profile/me"
 @inject HttpClient Http
 @inject IJSRuntime JS
 @inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+
 @using System.Text.Json
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.AspNetCore.Components.Forms
 @using PKLPresenceWeb.Model
 
 <div class="myprofile-wrapper">
-
-    <!-- Back Header -->
     <div class="header-section d-flex align-items-center">
         <button class="btn btn-link text-white fw-bold p-0 me-2" @onclick="GoBack">
             <i class="bi-chevron-left fw-bold"></i>
@@ -20,7 +21,6 @@
 
     <div class="content-section d-flex flex-column align-items-center">
         <div class="card w-100 shadow-sm d-flex flex-column align-items-center p-4">
-            <!-- Profile Photo -->
             <div class="profile-photo-container position-relative mb-3">
                 <img src="@profilePhotoPreview" class="profile-photo" @onclick="TriggerPhotoInput" />
                 <InputFile id="profilePhotoInput" class="d-none" OnChange="OnPhotoChanged" accept="image/*" />
@@ -29,7 +29,6 @@
                 </span>
             </div>
 
-            <!-- NIS/NIP - Nama Lengkap -->
             <div class="mb-3 w-100" style="max-width:450px;">
                 <label class="form-label fw-bold">@IdLabel - Nama Lengkap</label>
                 <input class="form-control"
@@ -132,6 +131,12 @@
 
     protected override async Task OnInitializedAsync()
     {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        if (!authState.User.Identity.IsAuthenticated)
+        {
+            Navigation.NavigateTo("/login", true);
+        }
+
         try
         {
             var token = await JS.InvokeAsync<string>("localStorage.getItem", "authToken");

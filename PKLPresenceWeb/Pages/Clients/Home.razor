@@ -1,11 +1,13 @@
-﻿@page "/home"
-@attribute [Authorize]
+﻿@attribute [Authorize]
+@page "/home"
 @inject HttpClient Http
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
 @using System.Text.Json
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
 @using PKLPresenceWeb.Model
+@inject AuthenticationStateProvider AuthStateProvider
 
 <div class="home-wrapper">
     <div class="header-section d-flex justify-content-between align-items-center">
@@ -68,6 +70,12 @@
 
     protected override async Task OnInitializedAsync()
     {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        if (!authState.User.Identity.IsAuthenticated)
+        {
+            Navigation.NavigateTo("/login", true);
+        }
+
         try
         {
             var token = await JS.InvokeAsync<string>("localStorage.getItem", "authToken");

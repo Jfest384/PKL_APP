@@ -1,8 +1,13 @@
-﻿@page "/presence"
-@using PKLPresenceWeb.Model
+﻿@attribute [Authorize]
+@page "/presence"
 @inject HttpClient Http
 @inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
 @inject IJSRuntime JS
+
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using PKLPresenceWeb.Model
 @using Microsoft.AspNetCore.Components.Forms
 @using System.Globalization
 @using System.Text.Json
@@ -956,6 +961,12 @@
 
     protected override async Task OnInitializedAsync()
     {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        if (!authState.User.Identity.IsAuthenticated)
+        {
+            Navigation.NavigateTo("/login", true);
+        }
+
         var token = await JS.InvokeAsync<string>("localStorage.getItem", "authToken");
         if (!string.IsNullOrEmpty(token))
         {

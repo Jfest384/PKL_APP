@@ -1,10 +1,13 @@
-﻿@page "/home/profile"
-@attribute [Authorize]
+﻿@attribute [Authorize]
+@page "/home/profile"
 @inject HttpClient Http
 @inject IJSRuntime JS
 @inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+
 @using System.Text.Json
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
 @using PKLPresenceWeb.Model
 
 <div class="profile-page">
@@ -52,6 +55,12 @@
 
     protected override async Task OnInitializedAsync()
     {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        if (!authState.User.Identity.IsAuthenticated)
+        {
+            Navigation.NavigateTo("/login", true);
+        }
+
         try
         {
             var token = await JS.InvokeAsync<string>("localStorage.getItem", "authToken");

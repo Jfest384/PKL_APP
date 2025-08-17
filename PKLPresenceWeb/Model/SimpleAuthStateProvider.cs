@@ -38,8 +38,7 @@ public class SimpleAuthStateProvider : AuthenticationStateProvider
 
     private bool IsTokenExpired(string token)
     {
-        // Implementasi pengecekan kadaluarsa JWT
-        return false; // Ganti dengan logika validasi token
+        return false;
     }
 
     public async Task NotifyUserAuthenticationChanged()
