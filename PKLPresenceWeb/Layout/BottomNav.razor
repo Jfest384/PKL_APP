@@ -110,6 +110,15 @@
                     APIUrl.Endpoint($"students/pkl?userIdFilter={userId}")
                 );
                 var studentResponse = response?.students?.FirstOrDefault();
+
+                // Cek kelengkapan data
+                isDataComplete = studentResponse != null
+                    && !string.IsNullOrWhiteSpace(studentResponse.email)
+                    && !string.IsNullOrWhiteSpace(studentResponse.company_name);
+            }
+            else
+            {
+                isDataComplete = true;
             }
         }
         catch
