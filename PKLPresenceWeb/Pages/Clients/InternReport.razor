@@ -160,7 +160,7 @@
                         <button class="btn btn-danger px-4" @onclick="CancelReport">Cancel</button>
                         <button class="btn btn-success px-4"
                                 @onclick="ConfirmReport"
-                                disabled="@string.IsNullOrWhiteSpace(ContentInput)">
+                                disabled="@( !IsReportFormValid )">
                             Confirm
                         </button>
                     </div>
@@ -1040,4 +1040,9 @@
         var url = APIUrl.Endpoint($"repots/preview/{fileId}");
         JS.InvokeVoidAsync("window.open", url, "_blank");
     }
+
+    private bool IsReportFormValid =>
+    !string.IsNullOrWhiteSpace(ContentInput)
+    && WebRTCPhotoDataUrl != null
+       && UploadedReportFile != null;
 }

@@ -17,8 +17,8 @@ namespace PKL_API.Controllers
         }
 
         [Authorize]
-        [HttpPut("{studentId}")]
-        public async Task<IActionResult> EditStudentData(int studentId, [FromBody] EditStudentDTO dto)
+        [HttpPut("batch")]
+        public async Task<IActionResult> EditStudentsBatch([FromBody] List<EditStudentBatchDTO> dtos)
         {
             var user = await AuthHelper.GetCurrentUser(HttpContext, _db);
             if (user == null)
@@ -32,34 +32,43 @@ namespace PKL_API.Controllers
             if (roleId != 1 && roleId != 4)
                 return StatusCode(403, "You do not have permission to edit this data.");
 
-            var student = await _db.Students.FindAsync(studentId);
-            if (student == null)
-                return NotFound("Student not found.");
+            if (dtos == null || dtos.Count == 0)
+                return BadRequest("No student data provided.");
 
-            // Ubah hanya jika dto.idClass dikirim
-            if (dto.idClass.HasValue)
+            var studentIds = dtos.Select(d => d.studentId).ToList();
+            var students = await _db.Students.Where(s => studentIds.Contains(s.id)).ToListAsync();
+
+            var notFoundIds = studentIds.Except(students.Select(s => s.id)).ToList();
+            if (notFoundIds.Count > 0)
+                return NotFound($"Student(s) not found: {string.Join(", ", notFoundIds)}");
+
+            foreach (var dto in dtos)
             {
-                var classroom = await _db.Classrooms.FindAsync(dto.idClass.Value);
-                if (classroom == null)
-                    return BadRequest($"Classroom with id {dto.idClass} does not exist.");
+                var student = students.FirstOrDefault(s => s.id == dto.studentId);
+                if (student == null) continue;
 
-                student.Classroomid = dto.idClass.Value;
-            }
-
-            // Ubah hanya jika dto.isPKL dikirim
-            if (dto.isPKL.HasValue)
-            {
-                student.isPKL = dto.isPKL.Value;
-
-                // Jika isPKL = false, kosongkan mentor & company
-                if (!dto.isPKL.Value)
+                // Ubah hanya jika idClass dikirim
+                if (dto.idClass.HasValue)
                 {
-                    student.Mentorid = null;
-                    student.Companyid = null;
+                    var classroom = await _db.Classrooms.FindAsync(dto.idClass.Value);
+                    if (classroom == null)
+                        return BadRequest($"Classroom with id {dto.idClass} does not exist.");
+                    student.Classroomid = dto.idClass.Value;
+                }
+
+                // Ubah hanya jika isPKL dikirim
+                if (dto.isPKL.HasValue)
+                {
+                    student.isPKL = dto.isPKL.Value;
+                    if (!dto.isPKL.Value)
+                    {
+                        student.Mentorid = null;
+                        student.Companyid = null;
+                    }
                 }
             }
 
-            _db.Students.Update(student);
+            _db.Students.UpdateRange(students);
             await _db.SaveChangesAsync();
 
             return Ok(new { message = "Student data updated successfully." });

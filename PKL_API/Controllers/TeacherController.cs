@@ -17,13 +17,29 @@ namespace PKL_API.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetTeachers()
+        public async Task<IActionResult> GetTeachers(
+            [FromQuery] string? name,
+            [FromQuery] string? nip)
         {
-            // Get all teachers and their roles via User -> UserRoles -> Role
-            var teachersList = await _db.Teachers
+            var query = _db.Teachers
                 .Include(t => t.User)
                     .ThenInclude(u => u.UserRoles)
                         .ThenInclude(ur => ur.Role)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(name))
+            {
+                var lowered = name.ToLower();
+                query = query.Where(t => t.User.fullname.ToLower().Contains(lowered));
+            }
+
+            if (!string.IsNullOrWhiteSpace(nip))
+            {
+                var loweredNip = nip.ToLower();
+                query = query.Where(t => t.nip.ToLower().Contains(loweredNip));
+            }
+
+            var teachersList = await query
                 .Select(t => new
                 {
                     t.id,
@@ -34,7 +50,21 @@ namespace PKL_API.Controllers
                 })
                 .ToListAsync();
 
-            return Ok(teachersList);
+            var result = teachersList.Select(t => new
+            {
+                t.id,
+                t.Userid,
+                t.fullname,
+                t.nip,
+                roles = t.roles.Count switch
+                {
+                    0 => "-",
+                    1 => t.roles[0],
+                    _ => string.Join(" & ", t.roles)
+                }
+            });
+
+            return Ok(result);
         }
 
         [HttpGet("{teacherId}/print")]

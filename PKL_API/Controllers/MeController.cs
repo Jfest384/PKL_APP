@@ -45,14 +45,13 @@ namespace PKL_API.Controllers
                 return NotFound("User not found");
             }
 
-            // Ambil role pertama (jika ada)
-            var userRole = selectedUser.UserRoles.FirstOrDefault();
-            var roleName = userRole?.Role.name ?? "";
-            var roleId = userRole?.Role.id ?? 0;
+            // Ambil semua role user
+            var userRoles = selectedUser.UserRoles.Select(ur => ur.Role.name).ToList();
+            var rolesText = userRoles.Count > 0 ? string.Join(" & ", userRoles) : "-";
 
             object? extraData = null;
 
-            if (roleId == 2)
+            if (selectedUser.UserRoles.Any(ur => ur.Role.id == 2))
             {
                 // Tampilkan semua data student, ganti id_class, id_department, id_mentor, id_company menjadi nama
                 var students = _db.Students
@@ -75,7 +74,7 @@ namespace PKL_API.Controllers
                     .ToList();
                 extraData = students;
             }
-            else if (roleId != 2 && roleId != 1)
+            else if (!selectedUser.UserRoles.Any(ur => ur.Role.id == 2) && !selectedUser.UserRoles.Any(ur => ur.Role.id == 1))
             {
                 // Tampilkan data teacher
                 var teacher = _db.Teachers
@@ -96,7 +95,7 @@ namespace PKL_API.Controllers
                 username = selectedUser.username,
                 fullname = selectedUser.fullname,
                 password = selectedUser.password,
-                role = roleName,
+                role = rolesText,
                 email = string.IsNullOrEmpty(selectedUser.email) ? "-" : selectedUser.email,
                 profile = selectedUser.Photoid,
                 gender = selectedUser.gender,
@@ -223,13 +222,16 @@ namespace PKL_API.Controllers
             var selectedUserId = Convert.ToInt32(User.Claims.FirstOrDefault(q => q.Type == "id")?.Value);
             var selectedUser = await _db.Users.FirstOrDefaultAsync(u => u.id == selectedUserId);
 
-            if (selectedUser == null || selectedUser.Photoid == null)
-                return NotFound("Photo not found");
+            if (selectedUser == null)
+                return NotFound("User not found");
+
+            if (selectedUser.Photoid == null)
+                return Ok(null);
 
             var photo = await _db.Photos.FirstOrDefaultAsync(p => p.id == selectedUser.Photoid);
 
             if (photo == null || photo.photo == null)
-                return NotFound("Photo not found");
+                return Ok(null);
 
             var contentType = photo.extension.Contains("png") ? "image/png" : "image/jpeg";
 

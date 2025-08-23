@@ -121,4 +121,26 @@ namespace PKLPresenceWeb.Model
         public string address { get; set; }
         public string phone { get; set; }
     }
+
+    public class TeacherItem
+    {
+        public int id { get; set; }
+        public int userid { get; set; }
+        public string fullname { get; set; }
+        public string nip { get; set; }
+        public string roles { get; set; }
+    }
+
+    public class MentorDTO
+    {
+        public int id_user { get; set; }
+        public int id_teacher { get; set; }
+    }
+
+    public class EditStudentBatchDTO
+    {
+        public int studentId { get; set; }
+        public bool? isPKL { get; set; }
+        public int? idClass { get; set; }
+    }
 }

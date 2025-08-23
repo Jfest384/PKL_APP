@@ -1316,23 +1316,27 @@ body[b-u6vybu44w0] {
 
 /* Untuk Admin, Kajur */
 .table.tkj-admin th:nth-child(1)[b-u6vybu44w0], .table.tkj-admin td:nth-child(1)[b-u6vybu44w0] {
+    width: 5%;
+}
+
+.table.tkj-admin th:nth-child(2)[b-u6vybu44w0], .table.tkj-admin td:nth-child(2)[b-u6vybu44w0] { 
     width: 10%;
 }
 
-.table.tkj-admin th:nth-child(2)[b-u6vybu44w0], .table.tkj-admin td:nth-child(2)[b-u6vybu44w0] {
+.table.tkj-admin th:nth-child(3)[b-u6vybu44w0], .table.tkj-admin td:nth-child(3)[b-u6vybu44w0] { 
     width: 13%;
 }
 
-.table.tkj-admin th:nth-child(3)[b-u6vybu44w0], .table.tkj-admin td:nth-child(3)[b-u6vybu44w0] {
-    width: 32%;
+.table.tkj-admin th:nth-child(4)[b-u6vybu44w0], .table.tkj-admin td:nth-child(4)[b-u6vybu44w0] { 
+    width: 29%;
 }
 
-.table.tkj-admin th:nth-child(4)[b-u6vybu44w0], .table.tkj-admin td:nth-child(4)[b-u6vybu44w0] {
+.table.tkj-admin th:nth-child(5)[b-u6vybu44w0], .table.tkj-admin td:nth-child(5)[b-u6vybu44w0] { 
     width: 20%;
 }
 
-.table.tkj-admin th:nth-child(5)[b-u6vybu44w0], .table.tkj-admin td:nth-child(5)[b-u6vybu44w0] {
-    width: 25%;
+.table.tkj-admin th:nth-child(6)[b-u6vybu44w0], .table.tkj-admin td:nth-child(5)[b-u6vybu44w0] {
+    width: 23%;
 }
 
 /* Untuk Admin, Kajur */
@@ -1454,6 +1458,34 @@ body[b-u6vybu44w0] {
     height: 100%;
     object-fit: cover;
 }
+
+.part-sort-arrow[b-u6vybu44w0] {
+    font-size: 0.6em;
+    vertical-align: middle;
+    margin-left: 4px;
+}
+
+.checkmark-animate[b-u6vybu44w0] {
+    display: inline-block;
+    animation: pop-check-b-u6vybu44w0 0.5s cubic-bezier(.17,.67,.83,.67);
+}
+
+@keyframes pop-check-b-u6vybu44w0 {
+    0% {
+        transform: scale(0.2);
+        opacity: 0;
+    }
+
+    60% {
+        transform: scale(1.2);
+        opacity: 1;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
 /* /Pages/Clients/Presence.razor.rz.scp.css */
 h5.fw-bold[b-ku9a753df1] {
     font-size: 1.2rem;
@@ -1570,12 +1602,6 @@ body[b-ku9a753df1] {
 
 input[type="radio"].presence-radio-input[b-ku9a753df1] {
     accent-color: #00BA1E !important;
-}
-
-.page-size-dropdown[b-ku9a753df1] {
-    width: 150px;
-    min-width: 120px;
-    max-width: 180px;
 }
 
 /* PKLPresenceWeb\Pages\Clients\Presence.razor.css */
@@ -1860,6 +1886,12 @@ input[type="radio"].presence-radio-input[b-ku9a753df1] {
         flex-direction: row !important;
         gap: 0.5rem !important;
     }
+}
+
+.sort-arrow[b-ku9a753df1] {
+    font-size: 0.6em;
+    vertical-align: middle;
+    margin-left: 4px;
 }
 /* /Pages/Clients/Profile.razor.rz.scp.css */
 /* Container halaman */

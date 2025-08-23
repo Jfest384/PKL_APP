@@ -12,11 +12,11 @@ namespace PKL_API.Models
         [Column("id_teacher")]
         public int Teacherid { get; set; }
 
-        public required User User { get; set; }
-        public required Teacher Teacher { get; set; }
+        public User? User { get; set; }
+        public Teacher? Teacher { get; set; }
 
-        public required ICollection<Student> Students { get; set; }
-        public required ICollection<Presence> Presences { get; set; }
-        public required ICollection<Report> Reports { get; set; }
+        public ICollection<Student>? Students { get; set; }
+        public ICollection<Presence>? Presences { get; set; }
+        public ICollection<Report>? Reports { get; set; }
     }
 }

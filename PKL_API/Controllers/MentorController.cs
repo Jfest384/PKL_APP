@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PKL_API.Models;
+using PKL_API.Models.DTO;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
@@ -20,12 +21,22 @@ namespace PKL_API.Controllers
 
         //[Authorize]
         [HttpGet]
-        public async Task<IActionResult> GetMentors([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        public async Task<IActionResult> GetMentors([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string? name = null)
         {
             if (page < 1) page = 1;
             if (pageSize < 1) pageSize = 10;
 
             var query = _db.Mentors
+                .Include(m => m.User)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(name))
+            {
+                var lowered = name.ToLower();
+                query = query.Where(m => m.User.fullname.ToLower().Contains(lowered));
+            }
+
+            var resultQuery = query
                 .Select(mentor => new
                 {
                     mentor.id,
@@ -39,9 +50,9 @@ namespace PKL_API.Controllers
                         .ToList()
                 });
 
-            var totalItems = await query.CountAsync();
+            var totalItems = await resultQuery.CountAsync();
             var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
-            var mentorsList = await query
+            var mentorsList = await resultQuery
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
@@ -56,7 +67,67 @@ namespace PKL_API.Controllers
             });
         }
 
+        [HttpPost]
+        public async Task<IActionResult> AddMentors([FromBody] List<MentorDTO> inputs)
+        {
+            if (inputs == null || inputs.Count == 0)
+                return BadRequest("Data mentor tidak boleh kosong.");
 
+            var results = new List<object>();
+            foreach (var input in inputs)
+            {
+                if (input == null || input.id_user <= 0 || input.id_teacher <= 0)
+                {
+                    results.Add(new { input, success = false, message = "id_user dan id_teacher wajib diisi." });
+                    continue;
+                }
+
+                // Cek apakah mentor sudah ada
+                var existingMentor = await _db.Mentors.FirstOrDefaultAsync(m => m.Userid == input.id_user);
+                if (existingMentor != null)
+                {
+                    results.Add(new { input, success = false, message = "Mentor dengan id_user tersebut sudah ada." });
+                    continue;
+                }
+
+                // Tambahkan mentor baru
+                var mentor = new Mentor
+                {
+                    Userid = input.id_user,
+                    Teacherid = input.id_teacher
+                };
+                _db.Mentors.Add(mentor);
+
+                // Update UserRoles
+                var userRoles = await _db.UserRoles.Where(ur => ur.User.id == input.id_user).ToListAsync();
+
+                // Jika ada id_role 6, ubah ke 3
+                var role6 = userRoles.FirstOrDefault(ur => ur.RoleId == 6);
+                if (role6 != null) role6.RoleId = 3;
+
+                // Jika ada id_role 5, tambahkan id_role 3 jika belum ada
+                var role5 = userRoles.FirstOrDefault(ur => ur.RoleId == 5);
+                var alreadyHasRole3 = userRoles.Any(ur => ur.RoleId == 3);
+                if (role5 != null && !alreadyHasRole3)
+                {
+                    var user = await _db.Users.FindAsync(input.id_user);
+                    var role3 = await _db.Roles.FindAsync(3);
+                    if (user != null && role3 != null)
+                    {
+                        var newUserRole = new UserRole
+                        {
+                            User = user,
+                            Role = role3,
+                            RoleId = 3
+                        };
+                        _db.UserRoles.Add(newUserRole);
+                    }
+                }
+                results.Add(new { input, success = true, message = "Mentor berhasil ditambahkan." });
+            }
+            await _db.SaveChangesAsync();
+            return Ok(results);
+        }
 
         [Authorize]
         [HttpGet("students")]

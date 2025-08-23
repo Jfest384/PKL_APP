@@ -35,7 +35,7 @@
 
         @if (UserRole != "Student" && CurrentTab != "Pembimbing PKL" && CurrentTab != "Manajemen Kelas")
         {
-            <div class="row g-2 mb-3">
+            <div class="row g-2 mb-3 align-items-center">
                 <div class="col">
                     <input class="form-control" placeholder="Search..." @bind="SearchText" @oninput="OnSearchChanged" />
                 </div>
@@ -48,6 +48,14 @@
                         }
                     </select>
                 </div>
+                @if ((UserRole == "Admin" || UserRole == "Kepala Jurusan") && CurrentTab == "Siswa TKJ")
+                {
+                    <div class="col-12 col-md-auto d-flex align-items-center gap-2 assign-btn-wrapper mt-2 mt-md-0">
+                        <button class="btn btn-warning w-100 w-md-auto" @onclick="OnAssignStudentPKLClicked">
+                            <i class="bi bi-person-plus"></i> Assign Student PKL
+                        </button>
+                    </div>
+                }
             </div>
         }
 
@@ -60,6 +68,20 @@
                 <div class="col-auto ms-auto">
                     <button class="btn btn-warning w-200" @onclick="() => ShowAddModal = true">
                         <i class="bi bi-plus-lg me-1"></i> Tambah Kelas
+                    </button>
+                </div>
+            </div>
+        }
+
+        @if (CurrentTab == "Pembimbing PKL" && (UserRole == "Admin" || UserRole == "Kepala Jurusan"))
+        {
+            <div class="row g-2 mb-3 align-items-center">
+                <div class="col">
+                    <input class="form-control" placeholder="Search Mentor..." @bind="MentorSearchText" @oninput="OnMentorDataSearchChanged" />
+                </div>
+                <div class="col-auto ms-auto">
+                    <button class="btn btn-success" @onclick="OpenAddMentorModal">
+                        <i class="bi bi-person-plus"></i> Mentor
                     </button>
                 </div>
             </div>
@@ -79,10 +101,32 @@
                 <table class="table table-bordered @GetTableCode()">
                     <thead>
                         <tr>
+                            @if ((UserRole == "Admin" || UserRole == "Kepala Jurusan") && CurrentTab == "Siswa TKJ")
+                            {
+                                <th class="text-center">
+                                    <input type="checkbox" @bind="IsHeaderCheckboxChecked" />
+                                </th>
+                            }
                             <th class="text-center">No</th>
                             @foreach (var header in GetHeaders())
                             {
-                                <th class="text-center">@header</th>
+                                var sortable = false;
+                                if (CurrentTab == "Siswa TKJ" && (header == "NIS" || header == "Nama" || header == "Kelas")) sortable = true;
+                                else if (CurrentTab == "Pembimbing PKL" && header == "Nama") sortable = true;
+                                else if (CurrentTab == "Siswa PKL" && (header == "NIS" || header == "Nama" || header == "Kelas" || header == "Pembimbing" || header == "Tempat PKL")) sortable = true;
+                                else if (CurrentTab == "Manajemen Kelas" && (header == "Kelas" || header == "Total Siswa" || header == "Wali Kelas" || header == "Tahun")) sortable = true;
+
+                                <th class="text-center @(sortable ? "sortable" : "")"
+                                    @onclick="sortable ? (() => SortBy(header)) : null"
+                                    style="cursor:@(sortable ? "pointer" : "default")">
+                                    @header
+                                    @if (SortColumn == header)
+                                    {
+                                        <span class="part-sort-arrow">
+                                            @(SortAscending ? "▲" : "▼")
+                                        </span>
+                                    }
+                                </th>
                             }
                             @if ((UserRole == "Admin" || UserRole == "Kepala Jurusan"))
                             {
@@ -91,10 +135,16 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @if (GetCurrentData().Count == 0)
+                        @if (GetPagedSortedData().Count == 0)
                         {
-                            var showAction = (UserRole == "Admin" || UserRole == "Kepala Jurusan") && CurrentTab == "Siswa PKL";
-                            var colspan = 1 + GetHeaders().Count + (showAction ? 1 : 0);
+                            int colspan = 0;
+                            if ((UserRole == "Admin" || UserRole == "Kepala Jurusan") && CurrentTab == "Siswa TKJ")
+                                colspan += 1;
+                            colspan += 1;
+                            colspan += GetHeaders().Count;
+                            if (UserRole == "Admin" || UserRole == "Kepala Jurusan")
+                                colspan += 1;
+
                             <tr>
                                 <td colspan="@colspan" class="text-center text-muted">
                                     Tidak ada data @(CurrentTab).
@@ -103,11 +153,19 @@
                         }
                         else
                         {
-                            var rowIndex = (CurrentPage - 1) * 10; // 10 = page size, sesuaikan jika page size dinamis
-                            @foreach (var item in GetCurrentData())
+                            var rowIndex = (CurrentPage - 1) * PageSize; // 10 = page size, sesuaikan jika page size dinamis
+                            @foreach (var item in GetPagedSortedData())
                             {
                                 rowIndex++;
                                 <tr>
+                                    @if ((UserRole == "Admin" || UserRole == "Kepala Jurusan") && CurrentTab == "Siswa TKJ")
+                                    {
+                                        <td class="text-center">
+                                            <input type="checkbox"
+                                                   checked="@SelectedSiswaPKLIds.Contains(int.Parse(item[0]))"
+                                                   @onchange="e => OnRowCheckboxChanged(e, item)" />
+                                        </td>
+                                    }
                                     <td class="text-center">@rowIndex</td>
                                     @if (CurrentTab == "Siswa TKJ")
                                     {
@@ -208,6 +266,13 @@
                     </tbody>
                 </table>
             </div>
+
+            <select class="form-select page-size-dropdown my-3" style="max-width:160px;" @bind="PageSize">
+                <option value="10">Show 10 Entries</option>
+                <option value="50">Show 50 Entries</option>
+                <option value="100">Show 100 Entries</option>
+                <option value="1000">Show All Entries</option>
+            </select>
 
             <nav class="d-flex justify-content-center mt-2" style="padding: 1rem;">
                 <ul class="pagination d-flex flex-wrap justify-content-center">
@@ -492,6 +557,90 @@
                 </div>
             </Modal>
         }
+
+        @if (ShowAddMentorModal)
+        {
+            <Modal IsVisible="true">
+                <div class="modal-scrollable-content">
+                    <h5 class="mb-3 text-center fw-bold">Add Mentor</h5>
+                    <div class="mb-3 text-center">
+                        <input class="form-control w-75 mx-auto" placeholder="Search..." @bind="TeacherSearchText" @oninput="OnMentorSearchChanged" />
+                    </div>
+                    <div class="mb-3" style="max-height:300px;overflow-y:auto;">
+                        @if (IsLoadingTeachers)
+                        {
+                            <div class="text-center my-4">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                        }
+                        else if (TeacherList.Count == 0)
+                        {
+                            <div class="text-center text-muted">No teachers found.</div>
+                        }
+                        else
+                        {
+                            @foreach (var teacher in TeacherList)
+                            {
+                                <div class="form-check text-start ms-2">
+                                    <input class="form-check-input"
+                                           type="checkbox"
+                                           id="teacher_@teacher.id"
+                                           checked="@SelectedTeacherIds.Contains(teacher.id)"
+                                           @onchange="e => OnTeacherCheckboxChanged(e, teacher.id, teacher.userid)" />
+                                    <label class="form-check-label" for="teacher_@teacher.id">
+                                        @teacher.nip - @teacher.fullname
+                                    </label>
+                                </div>
+                            }
+                        }
+                    </div>
+                    <div class="d-flex justify-content-center gap-3 mt-4">
+                        <button class="btn btn-danger px-4" @onclick="CancelAddMentor">Cancel</button>
+                        <button class="btn btn-success px-4" @onclick="ConfirmAddMentor" disabled="@(SelectedTeacherIds.Count == 0)">Confirm</button>
+                    </div>
+                </div>
+            </Modal>
+        }
+
+        @if (ShowAssignPKLModal)
+        {
+            <Modal IsVisible="true">
+                <div class="text-center">
+                    <i class="bi bi-person-plus fs-1 text-warning"></i>
+                    <p class="fw-bold">Assign Siswa PKL</p>
+                    <p>Apakah Anda yakin ingin memasukkan @AssignBatchData.Count siswa ke data Siswa PKL?</p>
+                    <div class="d-flex justify-content-center gap-3 mt-4">
+                        <button class="btn btn-danger px-4" @onclick="CancelAssignPKL">No</button>
+                        <button class="btn btn-success px-4" @onclick="ConfirmAssignPKL">Yes</button>
+                    </div>
+                </div>
+            </Modal>
+        }
+        @if (ShowAssignPKLError)
+        {
+            <Modal IsVisible="true">
+                <div class="text-center">
+                    <i class="bi bi-exclamation-triangle fs-1 text-danger"></i>
+                    <p class="fw-bold">Error</p>
+                    <p>Silakan pilih minimal satu siswa terlebih dahulu sebelum assign.</p>
+                    <button class="btn btn-primary px-4" @onclick="CloseAssignPKLError">OK</button>
+                </div>
+            </Modal>
+        }
+        @if (ShowAssignPKLSuccess)
+        {
+            <Modal IsVisible="true">
+                <div class="text-center">
+                    <span class="checkmark-animate">
+                        <i class="bi bi-check-circle-fill" style="font-size:3rem; color:limegreen;"></i>
+                    </span>
+                    <p class="mt-2 fw-bold" style="font-size:20px">Success</p>
+                    <p class="mt-1">Siswa berhasil ditambahkan ke data Siswa PKL!</p>
+                </div>
+            </Modal>
+        }
     </div>
 </div>
 
@@ -634,7 +783,6 @@
     void CloseAssignModal()
     {
         ShowAssignModal = false;
-
         Navigation.NavigateTo("/participant", forceLoad: true);
     }
 
@@ -677,35 +825,15 @@
         WalasList = await Http.GetFromJsonAsync<List<WalasItem>>(APIUrl.Endpoint("data/walas"));
     }
 
-    private async Task<List<StudentItem>> GetAllStudentsAsync()
-    {
-        var allStudents = new List<StudentItem>();
-        int page = 1;
-        int totalPages = 1;
-        do
-        {
-            var res = await Http.GetFromJsonAsync<StudentListResponse>(APIUrl.Endpoint($"students?page={page}"));
-            if (res?.students != null)
-                allStudents.AddRange(res.students);
-            totalPages = res?.totalPages ?? 1;
-            page++;
-        } while (page <= totalPages);
-        return allStudents;
-    }
-
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
         if (!authState.User.Identity.IsAuthenticated)
-        {
             Navigation.NavigateTo("/login", true);
-        }
 
         var token = await JS.InvokeAsync<string>("localStorage.getItem", "authToken");
         if (!string.IsNullOrEmpty(token))
-        {
             Http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        }
 
         var user = await Http.GetFromJsonAsync<UserResponse>(APIUrl.Endpoint("me"));
         UserRole = user?.role ?? "";
@@ -751,6 +879,7 @@
         }
     }
 
+    private List<StudentPKLItem> CachedStudentPKLs = new();
     private async Task LoadData()
     {
         IsLoading = true;
@@ -759,45 +888,51 @@
 
         if (CurrentTab == "Siswa TKJ")
         {
-            url = APIUrl.Endpoint($"students?page={CurrentPage}");
+            url = APIUrl.Endpoint($"students?page={CurrentPage}&pageSize={PageSize}");
             if (!string.IsNullOrWhiteSpace(SearchText)) url += $"&name={SearchText}";
             if (SelectedClassId.HasValue) url += $"&id_class={SelectedClassId}";
 
             var res = await Http.GetFromJsonAsync<StudentListResponse>(url);
             Students = res?.students ?? new();
-            TotalPages = res?.totalPages ?? 1;
+            // Use backend totalItems to calculate TotalPages
+            int totalItems = res?.totalItems ?? Students.Count;
+            TotalPages = (int)Math.Ceiling((double)totalItems / PageSize);
 
-            // Ambil semua siswa PKL dari semua halaman
-            StudentPKLs = await GetAllStudentPKLsAsync();
+            if (CachedStudentPKLs.Count == 0)
+                CachedStudentPKLs = await GetAllStudentPKLsAsync();
+            StudentPKLs = CachedStudentPKLs;
         }
         else if (CurrentTab == "Pembimbing PKL")
         {
-            url = APIUrl.Endpoint($"mentors?page={CurrentPage}");
+            url = APIUrl.Endpoint($"mentors?page={CurrentPage}&pageSize={PageSize}");
+            if (!string.IsNullOrWhiteSpace(MentorSearchText)) url += $"&name={MentorSearchText}";
             var res = await Http.GetFromJsonAsync<MentorListResponse>(url);
             Mentors = res?.data ?? new();
-            int totalItems = res?.totalItems ?? 0;
-            TotalPages = (int)Math.Ceiling(totalItems / 10.0);
+            int totalItems = res?.totalItems ?? Mentors.Count;
+            TotalPages = (int)Math.Ceiling((double)totalItems / PageSize);
         }
         else if (CurrentTab == "Siswa PKL")
         {
-            url = APIUrl.Endpoint($"students/pkl?page={CurrentPage}");
+            url = APIUrl.Endpoint($"students/pkl?page={CurrentPage}&pageSize={PageSize}");
             if (!string.IsNullOrWhiteSpace(SearchText)) url += $"&name={SearchText}";
             if (SelectedClassId.HasValue) url += $"&id_class={SelectedClassId}";
 
             var res = await Http.GetFromJsonAsync<StudentPKLListResponse>(url);
             StudentPKLs = res?.students ?? new();
-            TotalPages = res?.totalPages ?? 1;
+            int totalItems = res?.totalItems ?? StudentPKLs.Count;
+            TotalPages = (int)Math.Ceiling((double)totalItems / PageSize);
         }
         else if (CurrentTab == "Manajemen Kelas")
         {
-            url = APIUrl.Endpoint($"classes?page={CurrentPage}");
+            url = APIUrl.Endpoint($"classes?page={CurrentPage}&pageSize={PageSize}");
             if (!string.IsNullOrWhiteSpace(SearchText)) url += $"&name={SearchText}";
             var res = await Http.GetFromJsonAsync<ClassListResponse>(url);
             Classrooms = res?.classrooms ?? new();
-            TotalPages = res?.totalPages ?? 1;
+            int totalItems = res?.totalItems ?? Classrooms.Count;
+            TotalPages = (int)Math.Ceiling((double)totalItems / PageSize);
 
-            // Ambil data siswa untuk menghitung total siswa per kelas
-            var students = await GetAllStudentsAsync();
+            CachedAllStudents = await GetAllStudentsAsync(ignoreSearch: CurrentTab == "Manajemen Kelas");
+            var students = CachedAllStudents;
             StudentCountPerClass = students
                 .GroupBy(s => s.classroomid)
                 .ToDictionary(g => g.Key, g => g.Count());
@@ -817,8 +952,9 @@
         CurrentTab = tab;
         CurrentPage = 1;
         SearchText = string.Empty;
-        SelectedClassId = null; // reset juga class id
+        SelectedClassId = null;
         ShowConfirmationModal = false;
+        IsSortingAllData = false; // reset
         await LoadData();
     }
 
@@ -834,6 +970,10 @@
     private async void OnClassChange(ChangeEventArgs e)
     {
         SelectedClassId = int.TryParse(e.Value?.ToString(), out var id) ? id : null;
+        CachedAllStudents.Clear(); // reset cache
+        IsSortingAllData = false;  // <--- Tambahkan ini!
+        LastStudentSearchText = "";
+        LastStudentClassId = null;
         CurrentPage = 1;
         await LoadData();
     }
@@ -841,6 +981,10 @@
     private async void OnSearchChanged(ChangeEventArgs e)
     {
         SearchText = e.Value?.ToString() ?? "";
+        CachedAllStudents.Clear(); // reset cache
+        IsSortingAllData = false;  // <--- Tambahkan ini!
+        LastStudentSearchText = "";
+        LastStudentClassId = null;
         searchDebounceCts?.Cancel();
         searchDebounceCts = new CancellationTokenSource();
         var token = searchDebounceCts.Token;
@@ -859,14 +1003,46 @@
     private List<string[]> GetCurrentData()
     {
         if (CurrentTab == "Siswa TKJ")
-            return Students.Select(s => new[] { s.id.ToString(), s.nis, s.fullname, s.class_name, s.classroomid.ToString(), s.isPKL.ToString() }).ToList();
-        else if (CurrentTab == "Pembimbing PKL")
-            return Mentors.Select(m => new[] { m.id.ToString(), m.fullname, string.Join(", ", m.classes) }).ToList();
+        {
+            var source = IsSortingAllData ? CachedAllStudents : Students;
+            // if (IsSortingAllData)
+            // {
+            //     if (!string.IsNullOrWhiteSpace(SearchText))
+            //         source = source.Where(s => s.fullname.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ||
+            //                                    s.nis.Contains(SearchText, StringComparison.OrdinalIgnoreCase)).ToList();
+            //     if (SelectedClassId.HasValue)
+            //         source = source.Where(s => s.classroomid == SelectedClassId.Value).ToList();
+            // }
+            return source.Select(s => new[] { s.id.ToString(), s.nis, s.fullname, s.class_name, s.classroomid.ToString(), s.isPKL.ToString() }).ToList();
+        }
         else if (CurrentTab == "Siswa PKL")
-            return StudentPKLs.Select(p => new[] { p.id.ToString(), p.nis, p.fullname, p.class_name, p.mentor_name, p.company_name }).ToList();
+        {
+            var source = IsSortingAllData ? CachedAllStudentPKLs : StudentPKLs;
+            // if (IsSortingAllData)
+            // {
+            //     if (!string.IsNullOrWhiteSpace(SearchText))
+            //         source = source.Where(s => s.fullname.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ||
+            //                                    s.nis.Contains(SearchText, StringComparison.OrdinalIgnoreCase)).ToList();
+            //     if (SelectedClassId.HasValue)
+            //         source = source.Where(s => s.classroomid == SelectedClassId.Value).ToList();
+            // }
+            return source.Select(p => new[] { p.id.ToString(), p.nis, p.fullname, p.class_name, p.mentor_name, p.company_name }).ToList();
+        }
         else if (CurrentTab == "Manajemen Kelas")
-            return Classrooms.Select(c => new[] { c.id.ToString(), c.name, c.students.ToString(), c.walas, c.year.ToString(), c.description }).ToList();
-
+        {
+            var source = IsSortingAllData ? CachedAllClassrooms : Classrooms;
+            // if (IsSortingAllData)
+            // {
+            //     if (!string.IsNullOrWhiteSpace(SearchText))
+            //         source = source.Where(c => c.name.Contains(SearchText, StringComparison.OrdinalIgnoreCase)).ToList();
+            // }
+            return source.Select(c => new[] { c.id.ToString(), c.name, c.students.ToString(), c.walas, c.year.ToString(), c.description }).ToList();
+        }
+        else if (CurrentTab == "Pembimbing PKL")
+        {
+            var source = IsSortingAllData ? CachedAllMentors : Mentors;
+            return source.Select(m => new[] { m.id.ToString(), m.fullname, string.Join(", ", m.classes) }).ToList();
+        }
         return new();
     }
 
@@ -956,22 +1132,6 @@
         IsLoadingStudents = false;
 
         StateHasChanged();
-    }
-
-    private async Task<List<StudentPKLItem>> GetAllStudentPKLsAsync()
-    {
-        var allPKLs = new List<StudentPKLItem>();
-        int page = 1;
-        int totalPages = 1;
-        do
-        {
-            var res = await Http.GetFromJsonAsync<StudentPKLListResponse>(APIUrl.Endpoint($"students/pkl?page={page}"));
-            if (res?.students != null)
-                allPKLs.AddRange(res.students);
-            totalPages = res?.totalPages ?? 1;
-            page++;
-        } while (page <= totalPages);
-        return allPKLs;
     }
 
     void OnStudentCheckboxChanged(ChangeEventArgs e, int studentId)
@@ -1085,4 +1245,449 @@
 
     private void GoToProfile() => Navigation.NavigateTo("/home/profile");
     private string photoUrl = "/images/default_profile.jpg";
+
+    private int pageSize = 10;
+    private int PageSize
+    {
+        get => pageSize;
+        set
+        {
+            if (pageSize != value)
+            {
+                pageSize = value;
+                CurrentPage = 1;
+                _ = LoadData();
+            }
+        }
+    }
+
+    private string SortColumn = "";
+    private bool SortAscending = true;
+
+    private async void SortBy(string column)
+    {
+        if (SortColumn == column)
+            SortAscending = !SortAscending;
+        else
+        {
+            SortColumn = column;
+            SortAscending = true;
+        }
+        CurrentPage = 1;
+        IsSortingAllData = true;
+
+        if (CurrentTab == "Siswa TKJ")
+        {
+            // Cek cache
+            if (CachedAllStudents.Count > 0 && LastStudentSearchText == SearchText && LastStudentClassId == SelectedClassId)
+            {
+                // Data sudah di-cache, tidak perlu fetch ulang
+                Students = CachedAllStudents;
+            }
+            else
+            {
+                var url = APIUrl.Endpoint($"students?page=1&pageSize=1000");
+                if (!string.IsNullOrWhiteSpace(SearchText)) url += $"&name={SearchText}";
+                if (SelectedClassId.HasValue) url += $"&id_class={SelectedClassId}";
+                var res = await Http.GetFromJsonAsync<StudentListResponse>(url);
+                CachedAllStudents = res?.students ?? new();
+                Students = CachedAllStudents;
+                LastStudentSearchText = SearchText;
+                LastStudentClassId = SelectedClassId;
+            }
+        }
+        else if (CurrentTab == "Siswa PKL")
+        {
+            if (CachedAllStudentPKLs.Count > 0 && LastStudentSearchText == SearchText && LastStudentClassId == SelectedClassId)
+            {
+                StudentPKLs = CachedAllStudentPKLs;
+            }
+            else
+            {
+                var url = APIUrl.Endpoint($"students/pkl?page=1&pageSize=1000");
+                if (!string.IsNullOrWhiteSpace(SearchText)) url += $"&name={SearchText}";
+                if (SelectedClassId.HasValue) url += $"&id_class={SelectedClassId}";
+                var res = await Http.GetFromJsonAsync<StudentPKLListResponse>(url);
+                CachedAllStudentPKLs = res?.students ?? new();
+                StudentPKLs = CachedAllStudentPKLs;
+                LastStudentSearchText = SearchText;
+                LastStudentClassId = SelectedClassId;
+            }
+        }
+        else if (CurrentTab == "Manajemen Kelas")
+        {
+            if (CachedAllClassrooms.Count > 0 && LastStudentSearchText == SearchText)
+            {
+                Classrooms = CachedAllClassrooms;
+            }
+            else
+            {
+                var url = APIUrl.Endpoint($"classes?page=1&pageSize=1000");
+                if (!string.IsNullOrWhiteSpace(SearchText)) url += $"&name={SearchText}";
+                var res = await Http.GetFromJsonAsync<ClassListResponse>(url);
+                CachedAllClassrooms = res?.classrooms ?? new();
+                Classrooms = CachedAllClassrooms;
+                LastStudentSearchText = SearchText;
+            }
+        }
+        else if (CurrentTab == "Pembimbing PKL")
+        {
+            if (CachedAllMentors.Count > 0)
+            {
+                Mentors = CachedAllMentors;
+            }
+            else
+            {
+                var res = await Http.GetFromJsonAsync<MentorListResponse>(
+                    APIUrl.Endpoint($"mentors?page=1&pageSize=1000"));
+                CachedAllMentors = res?.data ?? new();
+                Mentors = CachedAllMentors;
+            }
+        }
+        StateHasChanged();
+    }
+
+    private List<string[]> GetSortedData()
+    {
+        var data = GetCurrentData();
+
+        if (string.IsNullOrEmpty(SortColumn))
+            return data;
+
+        Func<string[], object> keySelector = row => row[0];
+
+        if (CurrentTab == "Siswa TKJ")
+        {
+            if (SortColumn == "NIS") keySelector = row => row[1];
+            else if (SortColumn == "Nama") keySelector = row => row[2];
+            else if (SortColumn == "Kelas") keySelector = row => row[3];
+        }
+        else if (CurrentTab == "Pembimbing PKL")
+        {
+            if (SortColumn == "Nama") keySelector = row => row[1];
+        }
+        else if (CurrentTab == "Siswa PKL")
+        {
+            if (SortColumn == "NIS") keySelector = row => row[1];
+            else if (SortColumn == "Nama") keySelector = row => row[2];
+            else if (SortColumn == "Kelas") keySelector = row => row[3];
+            else if (SortColumn == "Pembimbing") keySelector = row => row[4];
+            else if (SortColumn == "Tempat PKL") keySelector = row => row[5];
+        }
+        else if (CurrentTab == "Manajemen Kelas")
+        {
+            if (SortColumn == "Kelas") keySelector = row => row[1];
+            else if (SortColumn == "Total Siswa") keySelector = row => int.TryParse(row[2], out var v) ? v : 0;
+            else if (SortColumn == "Wali Kelas") keySelector = row => row[3];
+            else if (SortColumn == "Tahun") keySelector = row => row[4];
+        }
+
+        if (SortColumn == "NIS" || SortColumn == "Total Siswa")
+        {
+            return SortAscending
+                ? data.OrderBy(row => int.TryParse(keySelector(row)?.ToString(), out var v) ? v : 0).ToList()
+                : data.OrderByDescending(row => int.TryParse(keySelector(row)?.ToString(), out var v) ? v : 0).ToList();
+        }
+        else
+        {
+            return SortAscending
+                ? data.OrderBy(row => keySelector(row)?.ToString()).ToList()
+                : data.OrderByDescending(row => keySelector(row)?.ToString()).ToList();
+        }
+    }
+
+    private List<string[]> GetPagedSortedData()
+    {
+        var sorted = GetSortedData();
+        if (IsSortingAllData)
+            return sorted.Skip((CurrentPage - 1) * PageSize).Take(PageSize).ToList();
+        return sorted;
+    }
+
+    private bool IsSortingAllData = false;
+    private List<StudentItem> CachedAllStudents = new();
+    private List<StudentPKLItem> CachedAllStudentPKLs = new();
+    private List<MentorItem> CachedAllMentors = new();
+    private List<ClassItem> CachedAllClassrooms = new();
+
+    private string LastStudentSearchText = "";
+    private int? LastStudentClassId = null;
+    private bool IsAllStudentsFetched = false;
+    private bool IsAllClassroomsFetched = false;
+
+    private int page = 1;
+    private int totalPages = 1;
+
+    private async Task<List<StudentItem>> GetAllStudentsAsync(bool ignoreSearch = false)
+    {
+        if (IsAllStudentsFetched && CachedAllStudents.Count > 0)
+            return CachedAllStudents;
+
+        var url = APIUrl.Endpoint("students?page=1&pageSize=1000");
+        if (!ignoreSearch && !string.IsNullOrWhiteSpace(SearchText)) url += $"&name={SearchText}";
+        if (SelectedClassId.HasValue) url += $"&id_class={SelectedClassId}";
+
+        var res = await Http.GetFromJsonAsync<StudentListResponse>(url);
+        CachedAllStudents = res?.students ?? new();
+        IsAllStudentsFetched = true;
+
+        LastStudentSearchText = ignoreSearch ? "" : SearchText;
+        LastStudentClassId = SelectedClassId;
+
+        return CachedAllStudents;
+    }
+
+    private async Task<List<StudentPKLItem>> GetAllStudentPKLsAsync()
+    {
+        var allPKLs = new List<StudentPKLItem>();
+        do
+        {
+            var res = await Http.GetFromJsonAsync<StudentPKLListResponse>(APIUrl.Endpoint($"students/pkl?page={page}"));
+            if (res?.students != null)
+                allPKLs.AddRange(res.students);
+            totalPages = res?.totalPages ?? 1;
+            page++;
+        } while (page <= totalPages);
+        return allPKLs;
+    }
+
+    private async Task<List<MentorItem>> GetAllMentorsAsync()
+    {
+        var allMentors = new List<MentorItem>();
+        do
+        {
+            var res = await Http.GetFromJsonAsync<MentorListResponse>(APIUrl.Endpoint($"mentors?page={page}"));
+            if (res?.data != null)
+                allMentors.AddRange(res.data);
+            totalPages = res?.totalPages ?? 1;
+            page++;
+        } while (page <= totalPages);
+        return allMentors;
+    }
+
+    private async Task<List<ClassItem>> GetAllClassroomsAsync()
+    {
+        if (IsAllClassroomsFetched && CachedAllClassrooms.Count > 0)
+            return CachedAllClassrooms;
+
+        var allClasses = new List<ClassItem>();
+        do
+        {
+            var res = await Http.GetFromJsonAsync<ClassListResponse>(APIUrl.Endpoint($"classes?page={page}"));
+            if (res?.classrooms != null)
+                allClasses.AddRange(res.classrooms);
+            totalPages = res?.totalPages ?? 1;
+            page++;
+        } while (page <= totalPages);
+
+        CachedAllClassrooms = allClasses;
+        IsAllClassroomsFetched = true;
+        return CachedAllClassrooms;
+    }
+
+    private bool ShowAddMentorModal = false;
+    private string MentorSearchText = "";
+    private string TeacherSearchText = "";
+    private bool IsLoadingTeachers = false;
+    private List<TeacherItem> TeacherList = new();
+    private HashSet<int> SelectedTeacherIds = new();
+    private Dictionary<int, int> SelectedTeacherUserIds = new();
+    private CancellationTokenSource? mentorSearchDebounceCts;
+
+    private void OpenAddMentorModal()
+    {
+        ShowAddMentorModal = true;
+        MentorSearchText = "";
+        TeacherList.Clear();
+        SelectedTeacherIds.Clear();
+        SelectedTeacherUserIds.Clear();
+        _ = LoadTeachers();
+    }
+
+    private async Task LoadTeachers()
+    {
+        IsLoadingTeachers = true;
+        StateHasChanged();
+        var url = APIUrl.Endpoint("teachers");
+        if (!string.IsNullOrWhiteSpace(TeacherSearchText))
+            url += $"?name={TeacherSearchText}";
+        var result = await Http.GetFromJsonAsync<List<TeacherItem>>(url);
+        TeacherList = result ?? new();
+        IsLoadingTeachers = false;
+        StateHasChanged();
+    }
+
+    private async void OnMentorSearchChanged(ChangeEventArgs e)
+    {
+        TeacherSearchText = e.Value?.ToString() ?? "";
+        mentorSearchDebounceCts?.Cancel();
+        mentorSearchDebounceCts = new CancellationTokenSource();
+        var token = mentorSearchDebounceCts.Token;
+        try
+        {
+            await Task.Delay(350, token);
+            if (!token.IsCancellationRequested)
+            {
+                await LoadTeachers();
+            }
+        }
+        catch (TaskCanceledException) { }
+    }
+
+    private async void OnMentorDataSearchChanged(ChangeEventArgs e)
+    {
+        MentorSearchText = e.Value?.ToString() ?? "";
+        mentorSearchDebounceCts?.Cancel();
+        mentorSearchDebounceCts = new CancellationTokenSource();
+        var token = mentorSearchDebounceCts.Token;
+        try
+        {
+            await Task.Delay(350, token);
+            if (!token.IsCancellationRequested)
+            {
+                await LoadData();
+            }
+        }
+        catch (TaskCanceledException) { }
+    }
+
+    private void OnTeacherCheckboxChanged(ChangeEventArgs e, int teacherId, int userId)
+    {
+        var isChecked = e.Value is bool b && b;
+        if (isChecked)
+        {
+            SelectedTeacherIds.Add(teacherId);
+            SelectedTeacherUserIds[teacherId] = userId;
+        }
+        else
+        {
+            SelectedTeacherIds.Remove(teacherId);
+            SelectedTeacherUserIds.Remove(teacherId);
+        }
+    }
+
+    private void CancelAddMentor()
+    {
+        ShowAddMentorModal = false;
+        MentorSearchText = "";
+        TeacherList.Clear();
+        SelectedTeacherIds.Clear();
+        SelectedTeacherUserIds.Clear();
+    }
+
+    private async void ConfirmAddMentor()
+    {
+        // Siapkan payload
+        var payload = SelectedTeacherIds.Select(id => new MentorDTO
+        {
+            id_teacher = id,
+            id_user = SelectedTeacherUserIds[id]
+        }).ToList();
+
+        // var url = APIUrl.Endpoint("students?page=1&pageSize=1000");
+        var response = await Http.PostAsJsonAsync(APIUrl.Endpoint("mentors"), payload);
+        if (response.IsSuccessStatusCode)
+        {
+            ShowAddMentorModal = false;
+            MentorSearchText = "";
+            TeacherList.Clear();
+            SelectedTeacherIds.Clear();
+            SelectedTeacherUserIds.Clear();
+            await LoadData();
+        }
+        else
+        {
+            await JS.InvokeVoidAsync("alert", "Gagal menambah mentor. Silakan coba lagi.");
+        }
+    }
+
+    private HashSet<int> SelectedSiswaPKLIds = new();
+    private bool ShowAssignPKLModal = false;
+    private bool ShowAssignPKLError = false;
+    private List<EditStudentBatchDTO> AssignBatchData = new();
+    private bool ShowAssignPKLSuccess = false;
+
+    private void OnRowCheckboxChanged(ChangeEventArgs e, string[] item)
+    {
+        var id = int.Parse(item[0]);
+        var isChecked = e.Value is bool b && b;
+        if (isChecked)
+            SelectedSiswaPKLIds.Add(id);
+        else
+            SelectedSiswaPKLIds.Remove(id);
+    }
+
+    private bool IsHeaderCheckboxChecked
+    {
+        get
+        {
+            var pageData = GetPagedSortedData();
+            if (pageData.Count == 0) return false;
+            return pageData.All(item => SelectedSiswaPKLIds.Contains(int.Parse(item[0])));
+        }
+        set
+        {
+            var pageData = GetPagedSortedData();
+            if (pageData.Count == 0) return;
+            if (value)
+            {
+                foreach (var item in pageData)
+                    SelectedSiswaPKLIds.Add(int.Parse(item[0]));
+            }
+            else
+            {
+                foreach (var item in pageData)
+                    SelectedSiswaPKLIds.Remove(int.Parse(item[0]));
+            }
+        }
+    }
+
+    private void OnAssignStudentPKLClicked()
+    {
+        if (SelectedSiswaPKLIds.Count == 0)
+        {
+            ShowAssignPKLError = true;
+            StateHasChanged();
+            return;
+        }
+        AssignBatchData = GetPagedSortedData()
+            .Where(item => SelectedSiswaPKLIds.Contains(int.Parse(item[0])))
+            .Select(item => new EditStudentBatchDTO
+            {
+                studentId = int.Parse(item[0]),
+                isPKL = true,
+                idClass = int.Parse(item[4])
+            }).ToList();
+        ShowAssignPKLModal = true;
+        StateHasChanged();
+    }
+
+    private async Task ConfirmAssignPKL()
+    {
+        var response = await Http.PutAsJsonAsync(APIUrl.Endpoint("assign/batch"), AssignBatchData);
+        if (response.IsSuccessStatusCode)
+        {
+            ShowAssignPKLModal = false;
+            AssignBatchData.Clear();
+            SelectedSiswaPKLIds.Clear();
+            ShowAssignPKLSuccess = true;
+            StateHasChanged();
+            await Task.Delay(2000);
+            ShowAssignPKLSuccess = false;
+            await LoadData();
+        }
+    }
+
+    private void CancelAssignPKL()
+    {
+        ShowAssignPKLModal = false;
+        AssignBatchData.Clear();
+        StateHasChanged();
+    }
+
+    private void CloseAssignPKLError()
+    {
+        ShowAssignPKLError = false;
+        StateHasChanged();
+    }
 }

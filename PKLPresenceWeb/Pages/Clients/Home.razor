@@ -53,8 +53,6 @@
                 <li>
                     Isi data berikut:
                     <ul>
-                        @* <li>Hari/Tanggal</li>
-                        <li>Jam</li> *@
                         <li>Ringkasan pekerjaan</li>
                     </ul>
                 </li>
@@ -66,7 +64,7 @@
 @code {
     private string fullName = "";
     private string secondLine = "";
-    private string photoUrl = "/images/default_profile.jpg"; // default
+    private string photoUrl = "/images/default_profile.jpg";
 
     protected override async Task OnInitializedAsync()
     {
@@ -95,20 +93,29 @@
             var root = doc.RootElement;
 
             fullName = root.GetProperty("fullname").GetString() ?? "";
-            var role = root.GetProperty("role").GetString() ?? "";
-
-            if (role.ToLower() == "student")
+            bool isStudent = false;
+            if (root.TryGetProperty("roles", out var rolesProp) && rolesProp.ValueKind == JsonValueKind.String)
             {
-                var data = root.GetProperty("data");
-                if (data.GetArrayLength() > 0)
-                {
-                    var first = data[0];
-                    secondLine = first.GetProperty("classroom").GetString() ?? "";
-                }
+                var rolesText = rolesProp.GetString() ?? "-";
+                isStudent = rolesText.ToLower().Contains("student");
+                secondLine = rolesText;
             }
-            else
+            else if (root.TryGetProperty("role", out var roleProp))
             {
+                var role = roleProp.GetString() ?? "";
+                isStudent = role.Trim().ToLower() == "student";
                 secondLine = role;
+            }
+
+            // Jika student, tampilkan nama kelas
+            if (isStudent && root.TryGetProperty("data", out var dataProp) && dataProp.ValueKind == JsonValueKind.Array)
+            {
+                if (dataProp.GetArrayLength() > 0)
+                {
+                    var first = dataProp[0];
+                    if (first.TryGetProperty("classroom", out var classroomProp))
+                        secondLine = classroomProp.GetString() ?? "";
+                }
             }
 
             // ===== Ambil foto profile =====

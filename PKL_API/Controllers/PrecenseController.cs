@@ -184,30 +184,31 @@ namespace PKL_API.Controllers
             if (page < 1) page = 1;
             if (pageSize < 1) pageSize = 10;
 
-            int userId, roleId;
-            try
-            {
-                (userId, roleId) = await _userAccessHelper.GetUserIdAndRoleAsync();
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Unauthorized(ex.Message);
-            }
+            var userIdClaim = User.FindFirst("id")?.Value;
+            if (userIdClaim == null || !int.TryParse(userIdClaim, out int userId))
+                return Unauthorized("Invalid user token");
 
-            IQueryable<Presence> query = _db.Presences
-                .Include(p => p.Student)
-                    .ThenInclude(s => s.Classroom!)
-                .Include(p => p.Student)
-                    .ThenInclude(s => s.Mentor!)
-                .Include(p => p.PresenceType)
-                .Include(p => p.Detail);
+            // Ambil semua role user
+            var roleIds = await _db.UserRoles
+                .Where(ur => ur.User.id == userId)
+                .Select(ur => ur.RoleId)
+                .ToListAsync();
 
-            if (roleId == 2) // Student
+            // Student
+            if (roleIds.Contains(2))
             {
                 var student = await _db.Students.FirstOrDefaultAsync(s => s.Userid == userId);
                 if (student == null)
                     return BadRequest("Student data not found.");
-                query = query.Where(p => p.Studentid == student.id);
+                var query = _db.Presences
+                    .Include(p => p.Student)
+                        .ThenInclude(s => s.Classroom!)
+                    .Include(p => p.Student)
+                        .ThenInclude(s => s.Mentor!)
+                    .Include(p => p.PresenceType)
+                    .Include(p => p.Detail)
+                    .Where(p => p.Studentid == student.id);
+
                 if (date.HasValue)
                     query = query.Where(p => p.date == date.Value);
                 var totalCount = await query.CountAsync();
@@ -242,8 +243,97 @@ namespace PKL_API.Controllers
                 });
             }
 
-            // For Mentor (roleId == 3)
-            else if (roleId == 3)
+            // Mentor & Wali Kelas (gabungan)
+            else if (roleIds.Contains(3) && roleIds.Contains(5))
+            {
+                var filterDate = date ?? DateOnly.FromDateTime(DateTime.Now);
+                var mentor = await _db.Mentors.FirstOrDefaultAsync(m => m.Userid == userId);
+                var waliKelas = await _db.WaliKelas.FirstOrDefaultAsync(wk => wk.Userid == userId);
+                var classroom = waliKelas != null
+                    ? await _db.Classrooms.FirstOrDefaultAsync(c => c.WaliKelasid == waliKelas.id) : null;
+
+                var mentorStudentsQuery = _db.Students
+                    .Include(s => s.User)
+                    .Include(s => s.Classroom)
+                    .Where(s => s.Mentorid == mentor.id && s.isPKL == true);
+
+                var waliKelasStudentsQuery = classroom != null
+                    ? _db.Students
+                        .Include(s => s.User)
+                        .Include(s => s.Classroom)
+                        .Where(s => s.Classroomid == classroom.id && s.isPKL == true)
+                    : Enumerable.Empty<Student>().AsQueryable();
+
+                // Gabungkan student, hilangkan duplikat
+                var students = await mentorStudentsQuery
+                    .Union(waliKelasStudentsQuery).ToListAsync();
+                var studentIds = students.Select(s => s.id).ToList();
+
+                // Ambil presensi
+                var presencesQuery = _db.Presences
+                    .Include(p => p.PresenceType)
+                    .Include(p => p.Detail)
+                    .Where(p => studentIds.Contains(p.Studentid) && p.date == filterDate);
+
+                if (date.HasValue)
+                    presencesQuery = presencesQuery.Where(p => p.date == date.Value);
+                var presencesOnDate = await presencesQuery.ToListAsync();
+
+                var result = students.Select(s =>
+                {
+                    var presence = presencesOnDate.FirstOrDefault(p => p.Studentid == s.id);
+                    return new
+                    {
+                        id_presence = presence?.id.ToString() ?? "-",
+                        nis = s.nis ?? "-",
+                        name = s.User.fullname ?? "-",
+                        classroom_name = s.Classroom?.name ?? "-",
+                        date = date.HasValue ? ToIndonesianLongDate(date.Value) : "-",
+                        time = presence != null ? presence.time.ToString("HH:mm:ss") : "-",
+                        presence_type = presence?.PresenceType?.name ?? "-",
+                        feedback = presence?.feedback ?? "-",
+                        isPresence = presence != null ? "✔️" : "❌",
+                        lat = presence?.Detail?.lat.ToString() ?? "-",
+                        longitude = presence?.Detail?.longitude?.ToString() ?? "-",
+                        report = presence?.Detail?.daily_report ?? "-",
+                        isComplete = GetPresenceCompleteSymbol(presence)
+                    };
+                });
+
+                // Search di hasil join (nama, nis, status)
+                if (!string.IsNullOrWhiteSpace(search))
+                {
+                    var searchLower = search.ToLower();
+                    result = result.Where(r =>
+                        (r.name.ToLower().Contains(searchLower)) ||
+                        (r.nis.ToLower().Contains(searchLower)) ||
+                        (r.presence_type.ToLower().Contains(searchLower))
+                    );
+                }
+
+                var resultList = result.ToList();
+                var totalCount = resultList.Count;
+                List<object> pagedResult;
+                if (pageSize < 0 || pageSize >= totalCount)
+                {
+                    pagedResult = resultList.Cast<object>().ToList();
+                    pageSize = totalCount;
+                    page = 1;
+                }
+                else pagedResult = resultList.Skip((page - 1) * pageSize).Take(pageSize).Cast<object>().ToList();
+
+                return Ok(new
+                {
+                    page,
+                    pageSize,
+                    totalCount,
+                    totalPages = (int)Math.Ceiling(totalCount / (double)pageSize),
+                    data = pagedResult
+                });
+            }
+
+            // Mentor saja
+            else if (roleIds.Contains(3))
             {
                 var mentor = await _db.Mentors.FirstOrDefaultAsync(m => m.Userid == userId);
                 if (mentor == null)
@@ -264,11 +354,14 @@ namespace PKL_API.Controllers
                 var studentIds = students.Select(s => s.id).ToList();
 
                 // Ambil presensi hari itu
-                var presencesOnDate = await _db.Presences
+                var presencesQuery = _db.Presences
                     .Include(p => p.PresenceType)
                     .Include(p => p.Detail)
-                    .Where(p => p.Mentorid == mentor.id && p.date == filterDate)
-                    .ToListAsync();
+                    .Where(p => p.Mentorid == mentor.id && p.date == filterDate);
+
+                if (date.HasValue)
+                    presencesQuery = presencesQuery.Where(p => p.date == date.Value);
+                var presencesOnDate = await presencesQuery.ToListAsync();
 
                 // Mapping left join
                 var result = students.Select(s =>
@@ -293,7 +386,6 @@ namespace PKL_API.Controllers
                     };
                 });
 
-                // Search di hasil join (nama, nis, status)
                 if (!string.IsNullOrWhiteSpace(search))
                 {
                     var searchLower = search.ToLower();
@@ -306,7 +398,14 @@ namespace PKL_API.Controllers
 
                 var resultList = result.ToList();
                 var totalCount = resultList.Count;
-                var pagedResult = resultList.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+                List<object> pagedResult;
+                if (pageSize < 0 || pageSize >= totalCount)
+                {
+                    pagedResult = resultList.Cast<object>().ToList();
+                    pageSize = totalCount;
+                    page = 1;
+                }
+                else pagedResult = resultList.Skip((page - 1) * pageSize).Take(pageSize).Cast<object>().ToList();
 
                 return Ok(new
                 {
@@ -318,8 +417,8 @@ namespace PKL_API.Controllers
                 });
             }
 
-            // For Wali Kelas (roleId == 5)
-            else if (roleId == 5)
+            // Wali Kelas saja
+            else if (roleIds.Contains(5))
             {
                 var waliKelas = await _db.WaliKelas.FirstOrDefaultAsync(wk => wk.Userid == userId);
                 if (waliKelas == null)
@@ -342,11 +441,14 @@ namespace PKL_API.Controllers
                 var students = await studentsQuery.ToListAsync();
                 var studentIds = students.Select(s => s.id).ToList();
 
-                var presencesOnDate = await _db.Presences
+                var presencesQuery = _db.Presences
                     .Include(p => p.PresenceType)
                     .Include(p => p.Detail)
-                    .Where(p => studentIds.Contains(p.Studentid) && p.date == filterDate)
-                    .ToListAsync();
+                    .Where(p => studentIds.Contains(p.Studentid) && p.date == filterDate);
+
+                if (date.HasValue)
+                    presencesQuery = presencesQuery.Where(p => p.date == date.Value);
+                var presencesOnDate = await presencesQuery.ToListAsync();
 
                 var result = students.Select(s =>
                 {
@@ -381,7 +483,14 @@ namespace PKL_API.Controllers
 
                 var resultList = result.ToList();
                 var totalCount = resultList.Count;
-                var pagedResult = resultList.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+                List<object> pagedResult;
+                if (pageSize < 0 || pageSize >= totalCount)
+                {
+                    pagedResult = resultList.Cast<object>().ToList();
+                    pageSize = totalCount;
+                    page = 1;
+                }
+                else pagedResult = resultList.Skip((page - 1) * pageSize).Take(pageSize).Cast<object>().ToList();
 
                 return Ok(new
                 {
@@ -393,7 +502,7 @@ namespace PKL_API.Controllers
                 });
             }
 
-            // For Admin/Umum
+            // Admin/Umum
             else
             {
                 var filterDate = date ?? DateOnly.FromDateTime(DateTime.Now);
@@ -409,11 +518,14 @@ namespace PKL_API.Controllers
                 var students = await studentsQuery.ToListAsync();
                 var studentIds = students.Select(s => s.id).ToList();
 
-                var presencesOnDate = await _db.Presences
+                var presencesQuery = _db.Presences
                     .Include(p => p.PresenceType)
                     .Include(p => p.Detail)
-                    .Where(p => studentIds.Contains(p.Studentid) && p.date == filterDate)
-                    .ToListAsync();
+                    .Where(p => studentIds.Contains(p.Studentid) && p.date == filterDate);
+
+                if (date.HasValue)
+                    presencesQuery = presencesQuery.Where(p => p.date == date.Value);
+                var presencesOnDate = await presencesQuery.ToListAsync();
 
                 var result = students.Select(s =>
                 {
@@ -449,7 +561,14 @@ namespace PKL_API.Controllers
 
                 var resultList = result.ToList();
                 var totalCount = resultList.Count;
-                var pagedResult = resultList.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+                List<object> pagedResult;
+                if (pageSize < 0 || pageSize >= totalCount)
+                {
+                    pagedResult = resultList.Cast<object>().ToList();
+                    pageSize = totalCount;
+                    page = 1;
+                }
+                else pagedResult = resultList.Skip((page - 1) * pageSize).Take(pageSize).Cast<object>().ToList();
 
                 return Ok(new
                 {
@@ -460,9 +579,6 @@ namespace PKL_API.Controllers
                     data = pagedResult
                 });
             }
-
-            // Fallback: return BadRequest if role is not handled
-            return BadRequest("Role not supported.");
         }
 
         private static string GetPresenceCompleteSymbol(Presence? presence)

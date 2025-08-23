@@ -20,25 +20,38 @@ namespace PKL_API.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetClassroom([FromQuery] string? name, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        public IActionResult GetClassroom(
+            [FromQuery] string? name,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10)
         {
             if (page < 1) page = 1;
             if (pageSize < 1) pageSize = 10;
 
-            var query = _db.Classrooms.AsQueryable();
+            var query = _db.Classrooms
+                .Include(q => q.WaliKelas)
+                .ThenInclude(wk => wk.User)
+                .AsQueryable();
 
-            // Filter by name jika diisi
             if (!string.IsNullOrWhiteSpace(name))
             {
                 var lowered = name.ToLower();
-                query = query.Where(q => q.name.ToLower().Contains(lowered));
+
+                // Parse values outside the expression tree
+                bool parsedTotal = int.TryParse(name, out var total);
+                bool parsedYear = int.TryParse(name, out var yearVal);
+
+                query = query.Where(q =>
+                    q.name.ToLower().Contains(lowered)
+                    || (parsedTotal && q.total_students == total)
+                    || (q.WaliKelas != null && q.WaliKelas.User.fullname.ToLower().Contains(lowered))
+                    || (parsedYear && q.year == yearVal)
+                );
             }
 
-            // Hitung total item dan total halaman
             var totalItems = query.Count();
             var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
 
-            // Ambil data per halaman
             var classroomsList = query
                 .OrderBy(q => q.id)
                 .Skip((page - 1) * pageSize)
@@ -55,7 +68,6 @@ namespace PKL_API.Controllers
                 })
                 .ToList();
 
-            // Hasil akhir dengan informasi pagination
             var result = new
             {
                 page,

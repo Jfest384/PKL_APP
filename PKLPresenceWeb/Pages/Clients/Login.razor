@@ -20,14 +20,14 @@
                type="text"
                placeholder="Username"
                @bind="loginDTO.username"
-               @onkeydown="OnInputKeyDown" />
+               @onkeyup="OnInputKeyUp" />
 
         <div class="password-container">
             <input class="login-input"
                    type="@PasswordInputType"
                    placeholder="Password"
                    @bind="loginDTO.password"
-                   @onkeydown="OnInputKeyDown" />
+                   @onkeyup="OnInputKeyUp" />
             <button type="button" class="toggle-password" @onclick="TogglePasswordVisibility">
                 <span>@(showPassword ? "🙈" : "👁️")</span>
             </button>
@@ -107,7 +107,7 @@
         }
     }
 
-    private async Task OnInputKeyDown(KeyboardEventArgs e)
+    private async Task OnInputKeyUp(KeyboardEventArgs e)
     {
         if (e.Key == "Enter" && !isLoggingIn)
         {

@@ -232,23 +232,27 @@ body {
 
 /* Untuk Admin, Kajur */
 .table.tkj-admin th:nth-child(1), .table.tkj-admin td:nth-child(1) {
+    width: 5%;
+}
+
+.table.tkj-admin th:nth-child(2), .table.tkj-admin td:nth-child(2) { 
     width: 10%;
 }
 
-.table.tkj-admin th:nth-child(2), .table.tkj-admin td:nth-child(2) {
+.table.tkj-admin th:nth-child(3), .table.tkj-admin td:nth-child(3) { 
     width: 13%;
 }
 
-.table.tkj-admin th:nth-child(3), .table.tkj-admin td:nth-child(3) {
-    width: 32%;
+.table.tkj-admin th:nth-child(4), .table.tkj-admin td:nth-child(4) { 
+    width: 29%;
 }
 
-.table.tkj-admin th:nth-child(4), .table.tkj-admin td:nth-child(4) {
+.table.tkj-admin th:nth-child(5), .table.tkj-admin td:nth-child(5) { 
     width: 20%;
 }
 
-.table.tkj-admin th:nth-child(5), .table.tkj-admin td:nth-child(5) {
-    width: 25%;
+.table.tkj-admin th:nth-child(6), .table.tkj-admin td:nth-child(5) {
+    width: 23%;
 }
 
 /* Untuk Admin, Kajur */
@@ -369,4 +373,32 @@ body {
     width: 100%;
     height: 100%;
     object-fit: cover;
+}
+
+.part-sort-arrow {
+    font-size: 0.6em;
+    vertical-align: middle;
+    margin-left: 4px;
+}
+
+.checkmark-animate {
+    display: inline-block;
+    animation: pop-check 0.5s cubic-bezier(.17,.67,.83,.67);
+}
+
+@keyframes pop-check {
+    0% {
+        transform: scale(0.2);
+        opacity: 0;
+    }
+
+    60% {
+        transform: scale(1.2);
+        opacity: 1;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
 }
