@@ -1051,8 +1051,6 @@
             var photos = await Http.GetFromJsonAsync<List<PresencePhotoResponse>>(APIUrl.Endpoint($"presence/{item.id_presence}/photos"));
             if (photos != null)
             {
-                var photoIds = photos.Select(p => p.id).ToList();
-                await JS.InvokeVoidAsync("console.log", $"Photo IDs: {string.Join(", ", photoIds)}");
                 foreach (var field in PreviewPresenceFields)
                 {
                     var photo = photos.FirstOrDefault(p => MapPhotoTypeToField(p.type) == field.Field);

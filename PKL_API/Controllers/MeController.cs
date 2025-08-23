@@ -42,7 +42,7 @@ namespace PKL_API.Controllers
 
             if (selectedUser == null)
             {
-                return NotFound("User not found");
+                return NotFound("User no found");
             }
 
             // Ambil semua role user
