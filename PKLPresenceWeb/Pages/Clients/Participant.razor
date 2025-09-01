@@ -349,6 +349,12 @@
                     <div class="text-center">
                         <i class="bi bi-person-plus fs-1 text-success"></i>
                         <p class="fw-bold">Pilih Siswa</p>
+                        <div class="mb-3">
+                            <input class="form-control w-75 mx-auto"
+                                   placeholder="Search..."
+                                   @bind="AddStudentSearchText"
+                                   @oninput="OnAddStudentSearchChanged" />
+                        </div>
                         @if (IsLoadingStudents)
                         {
                             <div class="my-4">
@@ -360,13 +366,13 @@
                         else
                         {
                             <div class="mb-3 text-start" style="max-height:300px;overflow-y:auto;">
-                                @if (AvailableStudents.Count == 0)
+                                @if (FilteredAvailableStudents.Count == 0)
                                 {
                                     <div class="text-center text-muted">Tidak ada siswa PKL tanpa mentor.</div>
                                 }
                                 else
                                 {
-                                    @foreach (var student in AvailableStudents)
+                                    @foreach (var student in FilteredAvailableStudents)
                                     {
                                         <div class="form-check ms-2">
                                             <input class="form-check-input"
@@ -382,11 +388,11 @@
                                 }
                             </div>
                         }
-                        <div class="d-flex justify-content-center gap-3 mt-4">
-                            <button class="btn btn-danger px-4" @onclick="CancelAddStudentToMentor">Cancel</button>
-                            <button class="btn btn-success px-4" @onclick="ConfirmAddStudentToMentor" disabled="@(SelectedStudentIds.Count == 0)">Confirm</button>
-                        </div>
                     </div>
+                </div>
+                <div class="d-flex justify-content-center gap-3">
+                    <button class="btn btn-danger px-4" @onclick="CancelAddStudentToMentor">Cancel</button>
+                    <button class="btn btn-success px-4" @onclick="ConfirmAddStudentToMentor" disabled="@(SelectedStudentIds.Count == 0)">Confirm</button>
                 </div>
             </Modal>
         }
@@ -396,38 +402,50 @@
             <Modal IsVisible="true">
                 <div class="modal-scrollable-content">
                     <h5 class="mb-3 text-center">Pilih Tempat PKL</h5>
-                    @if (IsLoadingCompanies)
-                    {
-                        <div class="text-center my-4">
-                            <div class="spinner-border text-primary" role="status">
-                                <span class="visually-hidden">Loading...</span>
-                            </div>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="mb-3 ms-1">
-                            @foreach (var company in Companies)
-                            {
-                                <div class="form-check text-start">
-                                    <input class="form-check-input"
-                                           type="radio"
-                                           name="companyRadio"
-                                           id="company_@company.id"
-                                           value="@company.id"
-                                           checked="@(SelectedCompanyId == company.id)"
-                                           @onchange="OnCompanyRadioChanged" />
-                                    <label class="form-check-label" for="company_@company.id">
-                                        @company.name
-                                    </label>
-                                </div>
-                            }
-                        </div>
-                    }
-                    <div class="d-flex justify-content-center gap-3 mt-4">
-                        <button class="btn btn-danger px-4" @onclick="ClosePilihPTModal">Cancel</button>
-                        <button class="btn btn-success px-4" @onclick="ConfirmPilihPT" disabled="@(SelectedCompanyId == null)">Confirm</button>
+                    <div class="mb-3">
+                        <input class="form-control w-75 mx-auto"
+                               placeholder="Search..."
+                               @bind="CompanySearchText"
+                               @oninput="OnCompanySearchChanged" />
                     </div>
+                    <div style="max-height:300px;overflow-y:auto;">
+                        @if (IsLoadingCompanies)
+                        {
+                            <div class="text-center my-4">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="mb-3 ms-1">
+                                @foreach (var company in FilteredCompanies)
+                                {
+                                    <div class="form-check text-start">
+                                        <input class="form-check-input"
+                                               type="radio"
+                                               name="companyRadio"
+                                               id="company_@company.id"
+                                               value="@company.id"
+                                               checked="@(SelectedCompanyId == company.id)"
+                                               @onchange="OnCompanyRadioChanged" />
+                                        <label class="form-check-label" for="company_@company.id">
+                                            @company.name
+                                        </label>
+                                    </div>
+                                }
+                                @if (FilteredCompanies.Count == 0)
+                                {
+                                    <div class="text-center text-muted">No companies found.</div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+                <div class="d-flex justify-content-center gap-3 mt-3">
+                    <button class="btn btn-danger px-4" @onclick="ClosePilihPTModal">Cancel</button>
+                    <button class="btn btn-success px-4" @onclick="ConfirmPilihPT" disabled="@(SelectedCompanyId == null)">Confirm</button>
                 </div>
             </Modal>
         }
@@ -462,10 +480,10 @@
                         <label class="form-label d-block text-start">Deskripsi</label>
                         <input class="form-control" @bind="NewClass.description" />
                     </div>
-                    <div class="d-flex justify-content-around mt-4">
-                        <button class="btn btn-danger px-4" @onclick="CancelAdd">Cancel</button>
-                        <button class="btn btn-success px-4" @onclick="ConfirmAdd" disabled="@(IsAddClassValid == false)">Confirm</button>
-                    </div>
+                </div>
+                <div class="d-flex justify-content-around">
+                    <button class="btn btn-danger px-4" @onclick="CancelAdd">Cancel</button>
+                    <button class="btn btn-success px-4" @onclick="ConfirmAdd" disabled="@(IsAddClassValid == false)">Confirm</button>
                 </div>
             </Modal>
         }
@@ -573,10 +591,10 @@
                             }
                         }
                     </div>
-                    <div class="d-flex justify-content-center gap-3 mt-4">
-                        <button class="btn btn-danger px-4" @onclick="CancelAddMentor">Cancel</button>
-                        <button class="btn btn-success px-4" @onclick="ConfirmAddMentor" disabled="@(SelectedTeacherIds.Count == 0)">Confirm</button>
-                    </div>
+                </div>
+                <div class="d-flex justify-content-center gap-3">
+                    <button class="btn btn-danger px-4" @onclick="CancelAddMentor">Cancel</button>
+                    <button class="btn btn-success px-4" @onclick="ConfirmAddMentor" disabled="@(SelectedTeacherIds.Count == 0)">Confirm</button>
                 </div>
             </Modal>
         }
@@ -651,9 +669,8 @@
                             <div class="participant-modal-value">@((string.IsNullOrWhiteSpace(SelectedStudentDetail.mentor_name) ? "-" : SelectedStudentDetail.mentor_name))</div>
                         }
                     </div>
-
-                    <button class="btn btn-danger px-4" @onclick="CloseDetailModal">Close</button>
                 </div>
+                <button class="btn btn-danger px-4" @onclick="CloseDetailModal">Close</button>
             </Modal>
         }
     </div>
@@ -677,6 +694,8 @@
     private List<ClassItem> Classrooms = new();
 
     private CancellationTokenSource? searchDebounceCts;
+    private string AddStudentSearchText = "";
+    private string CompanySearchText = "";
 
     bool ShowAddStudentToMentorModal = false;
     int? SelectedMentorId;
@@ -1111,6 +1130,7 @@
         SelectedMentorId = null;
         SelectedMentorName = null;
         SelectedStudentIds.Clear();
+        AddStudentSearchText = "";
     }
 
     async void OnPilihTempatPKL(string[] studentRow)
@@ -1160,6 +1180,7 @@
         ShowPilihPTModal = false;
         SelectedStudentIdForPT = null;
         SelectedCompanyId = null;
+        CompanySearchText = "";
         Companies.Clear();
     }
 
@@ -1392,7 +1413,7 @@
         var allPKLs = new List<StudentPKLItem>();
         do
         {
-            var res = await Http.GetFromJsonAsync<StudentPKLListResponse>(APIUrl.Endpoint($"students/pkl?page={page}"));
+            var res = await Http.GetFromJsonAsync<StudentPKLListResponse>(APIUrl.Endpoint($"students/pkl?pageSize=1000"));
             if (res?.students != null)
                 allPKLs.AddRange(res.students);
             totalPages = res?.totalPages ?? 1;
@@ -1678,5 +1699,33 @@
         ShowStudentDetailModal = false;
         SelectedStudentDetail = null;
         SelectedStudentPhotoUrl = null;
+    }
+
+    private List<StudentPKLItem> FilteredAvailableStudents =>
+    string.IsNullOrWhiteSpace(AddStudentSearchText)
+        ? AvailableStudents
+        : AvailableStudents.Where(s =>
+            (s.nis?.Contains(AddStudentSearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+            (s.fullname?.Contains(AddStudentSearchText, StringComparison.OrdinalIgnoreCase) ?? false)
+        ).ToList();
+
+    private void OnAddStudentSearchChanged(ChangeEventArgs e)
+    {
+        AddStudentSearchText = e.Value?.ToString() ?? "";
+        StateHasChanged();
+    }
+
+    private List<CompanyItem> FilteredCompanies =>
+    string.IsNullOrWhiteSpace(CompanySearchText)
+        ? Companies
+        : Companies.Where(c =>
+            (c.name?.Contains(CompanySearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+            (c.address?.Contains(CompanySearchText, StringComparison.OrdinalIgnoreCase) ?? false)
+        ).ToList();
+
+    private void OnCompanySearchChanged(ChangeEventArgs e)
+    {
+        CompanySearchText = e.Value?.ToString() ?? "";
+        StateHasChanged();
     }
 }

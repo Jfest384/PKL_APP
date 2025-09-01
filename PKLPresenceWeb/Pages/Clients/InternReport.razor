@@ -477,8 +477,8 @@
                             }
                         </div>
                     </div>
-                    <button class="btn btn-primary w-100 mb-2" @onclick="CloseReportDetailModal">Close</button>
                 </div>
+                <button class="btn btn-primary w-100 mt-2" @onclick="CloseReportDetailModal">Close</button>
             </Modal>
         }
 
@@ -514,7 +514,7 @@
                         <div class="report-modal-label">Feedback</div>
                         <div class="report-modal-colon">:</div>
                     </div>
-                    <div class="mb-3 mx-1">
+                    <div class="mb-2 mx-1">
                         <textarea id="feedbackInput"
                                   class="form-control"
                                   placeholder="Masukkan Feedback"
@@ -524,12 +524,12 @@
                                   rows="3"></textarea>
                         <div class="char-counter-outer">@FeedbackInput.Length/100</div>
                     </div>
-                    <button class="btn btn-primary w-100 mb-2"
-                            @onclick="OnFeedbackButtonClick"
-                            disabled="@IsSubmittingFeedback">
-                        @(string.IsNullOrWhiteSpace(FeedbackInput) ? "Close" : "Confirm")
-                    </button>
                 </div>
+                <button class="btn btn-primary w-100"
+                        @onclick="OnFeedbackButtonClick"
+                        disabled="@IsSubmittingFeedback">
+                    @(string.IsNullOrWhiteSpace(FeedbackInput) ? "Close" : "Confirm")
+                </button>
             </Modal>
         }
 
@@ -550,9 +550,9 @@
                             @onclick="() => OpenFileInNewTab(SelectedReportDetail.reportFileId)">
                         Preview
                     </button>
-                    <div class="mb-2 mt-3 mx-2">
-                        <button class="btn btn-danger w-100" @onclick="ClosePreviewModal">Close</button>
-                    </div>
+                </div>
+                <div class="mt-2 mx-2">
+                    <button class="btn btn-danger w-100" @onclick="ClosePreviewModal">Close</button>
                 </div>
             </Modal>
         }

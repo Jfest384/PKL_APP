@@ -467,7 +467,7 @@ input[type="radio"].presence-radio-input {
     width: 100%;
 }
 
-.upload-box {
+/*.upload-box {
     max-width: 240px;
     max-height: 180px;
     min-width: 135px;
@@ -485,4 +485,31 @@ input[type="radio"].presence-radio-input {
         object-fit: cover;
         border-radius: 4px;
         display: block;
+    }*/
+
+.upload-box {
+    display: inline-block;
+    background: #fafbfc;
+    cursor: pointer;
+    text-align: center;
+    vertical-align: middle;
+    border-radius: 8px;
+    border: 1.5px solid #e0e0e0;
+    padding: 0;
+    /* Hapus batasan ukuran agar box mengikuti gambar */
+    width: fit-content;
+    height: fit-content;
+    overflow: visible;
+}
+
+    .upload-box img,
+    .img-upload-preview {
+        display: block;
+        width: auto;
+        height: auto;
+        max-width: 240px;
+        max-height: 180px;
+        border-radius: 4px;
+        margin: auto;
+        object-fit: contain; /* agar gambar tidak terpotong */
     }

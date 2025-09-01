@@ -55,7 +55,7 @@
                             <th class="text-center">Hari/Tanggal</th>
                             <th class="text-center">Jam</th>
                             <th class="text-center">Status</th>
-                            <th class="text-center">Feedback</th>
+                            <th class="text-center">Report</th>
                             <th class="text-center">Action</th>
                         </tr>
                     </thead>
@@ -71,7 +71,16 @@
                                     <td>@item.date</td>
                                     <td>@item.time</td>
                                     <td>@item.presence_type</td>
-                                    <td>@item.feedback</td>
+                                    <td class="text-center">
+                                        @if (item.isComplete == "✔️")
+                                        {
+                                            <span class="bi bi-check text-success" style="font-size: 2rem; font-weight: bold"></span>
+                                        }
+                                        else
+                                        {
+                                            <span class="bi bi-x text-danger" style="font-size: 2rem; font-weight: bold"></span>
+                                        }
+                                    </td>
                                     <td class="text-center">
                                         <div class="d-flex flex-column gap-2 align-items-center justify-content-center presence-action-group">
                                             <button class="btn btn-sm btn-success" @onclick="() => ShowDetail(item)"
@@ -98,43 +107,81 @@
                 </table>
             </div>
 
-            <select class="form-select page-size-dropdown mt-3 mb-3" @bind="PageSize">
-                <option value="5">Show 5 Entries</option>
+            <select class="form-select page-size-dropdown mt-3 mb-3" style="max-width:170px;" @bind="PageSize">
                 <option value="10">Show 10 Entries</option>
-                <option value="15">Show 15 Entries</option>
+                <option value="50">Show 50 Entries</option>
+                <option value="100">Show 100 Entries</option>
+                <option value="1000">Show All Entries</option>
             </select>
 
-            <nav class="d-flex justify-content-center mt-2">
-                <ul class="pagination">
-                    @if (Presences is null || Presences.Count == 0)
+            <nav class="d-flex justify-content-center mt-2" style="padding: 1rem;">
+                <ul class="pagination d-flex flex-wrap justify-content-center">
+                    <li class="page-item @(CurrentPage == 1 ? "disabled" : null)">
+                        <button class="page-link" @onclick="() => ChangePage(CurrentPage - 1)">Previous</button>
+                    </li>
+
+                    <li class="page-item @(CurrentPage == 1 ? "active" : null)">
+                        <button class="page-link" @onclick="() => ChangePage(1)" disabled="@(CurrentPage == 1)">1</button>
+                    </li>
+
+                    @if (CurrentPage <= 3)
                     {
-                        <li class="page-item disabled">
-                            <button type="button" class="page-link disabled" disabled style="pointer-events:none;opacity:0.6;">Prev</button>
-                        </li>
-                        <li class="page-item disabled">
-                            <button type="button" class="page-link disabled" disabled style="pointer-events:none;opacity:0.6;">Next</button>
-                        </li>
+                        for (int i = 2; i <= Math.Min(4, TotalPages - 1); i++)
+                        {
+                            var pageNumber = i;
+                            <li class="page-item @(pageNumber == CurrentPage ? "active" : null)">
+                                <button class="page-link" @onclick="() => ChangePage(pageNumber)" disabled="@(pageNumber == CurrentPage)">@pageNumber</button>
+                            </li>
+                        }
+
+                        if (TotalPages > 5)
+                        {
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        }
+                    }
+                    else if (CurrentPage >= TotalPages - 2)
+                    {
+                        if (TotalPages > 5)
+                        {
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        }
+
+                        for (int i = TotalPages - 3; i < TotalPages; i++)
+                        {
+                            if (i > 1)
+                            {
+                                var pageNumber = i;
+                                <li class="page-item @(pageNumber == CurrentPage ? "active" : null)">
+                                    <button class="page-link" @onclick="() => ChangePage(pageNumber)" disabled="@(pageNumber == CurrentPage)">@pageNumber</button>
+                                </li>
+                            }
+                        }
                     }
                     else
                     {
-                        <li class="page-item @(CurrentPage == 1 ? "disabled" : null)">
-                            <button class="page-link" @onclick="() => ChangePage(CurrentPage - 1)">Previous</button>
-                        </li>
-                        @for (int i = 1; i <= TotalPages; i++)
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+
+                        for (int i = CurrentPage - 1; i <= CurrentPage + 1; i++)
                         {
-                            var pageNum = i;
-                            <li class="page-item @(pageNum == CurrentPage ? "active" : null)">
-                                <button class="page-link"
-                                        @onclick="() => ChangePage(pageNum)"
-                                        disabled="@(pageNum == CurrentPage)">
-                                    @pageNum
-                                </button>
+                            var pageNumber = i;
+                            <li class="page-item @(pageNumber == CurrentPage ? "active" : null)">
+                                <button class="page-link" @onclick="() => ChangePage(pageNumber)" disabled="@(pageNumber == CurrentPage)">@pageNumber</button>
                             </li>
                         }
-                        <li class="page-item @(CurrentPage == TotalPages ? "disabled" : null)">
-                            <button class="page-link" @onclick="() => ChangePage(CurrentPage + 1)">Next</button>
+
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                    }
+
+                    @if (TotalPages > 1)
+                    {
+                        <li class="page-item @(CurrentPage == TotalPages ? "active" : null)">
+                            <button class="page-link" @onclick="() => ChangePage(TotalPages)" disabled="@(CurrentPage == TotalPages)">@TotalPages</button>
                         </li>
                     }
+
+                    <li class="page-item @(CurrentPage == TotalPages ? "disabled" : null)">
+                        <button class="page-link" @onclick="() => ChangePage(CurrentPage + 1)">Next</button>
+                    </li>
                 </ul>
             </nav>
 
@@ -198,17 +245,16 @@
                                                    OnChange="@(e => OnPhotoChanged(e, field.Field))" />
                                     }
                                 }
-
                             </div>
                         }
-                        <div class="d-flex justify-content-center gap-3 mt-4">
-                            <button class="btn btn-danger px-4" @onclick="CancelPresenceModal" disabled="@IsSubmittingPresence">Cancel</button>
-                            <button class="btn btn-success px-4"
-                                    @onclick="ConfirmPresenceModal"
-                                    disabled="@(!IsPresenceFormValid || IsSubmittingPresence || !IsLocationValid)">
-                                Confirm
-                            </button>
-                        </div>
+                    </div>
+                    <div class="d-flex justify-content-center gap-3 mt-2">
+                        <button class="btn btn-danger px-4" @onclick="CancelPresenceModal" disabled="@IsSubmittingPresence">Cancel</button>
+                        <button class="btn btn-success px-4"
+                                @onclick="ConfirmPresenceModal"
+                                disabled="@(!IsPresenceFormValid || IsSubmittingPresence || !IsLocationValid)">
+                            Confirm
+                        </button>
                     </div>
                 </Modal>
             }
@@ -328,14 +374,14 @@
                         {
                             <div class="alert alert-danger mt-3">@ReportModalError</div>
                         }
-                        <div class="d-flex justify-content-center gap-3 mt-2">
-                            <button class="btn btn-danger px-4" style="min-width:90px;" @onclick="CancelReportModal">Cancel</button>
-                            <button class="btn btn-success px-4" style="min-width:90px;"
-                                    @onclick="ConfirmReportModal"
-                                    disabled="@( !IsReportFormValid )">
-                                Confirm
-                            </button>
-                        </div>
+                    </div>
+                    <div class="d-flex justify-content-center gap-3 mt-2">
+                        <button class="btn btn-danger px-4" style="min-width:90px;" @onclick="CancelReportModal">Cancel</button>
+                        <button class="btn btn-success px-4" style="min-width:90px;"
+                                @onclick="ConfirmReportModal"
+                                disabled="@( !IsReportFormValid )">
+                            Confirm
+                        </button>
                     </div>
                 </Modal>
             }
@@ -362,7 +408,6 @@
                         </span>
                         <p class="mt-2 fw-bold" style="font-size:20px">Success</p>
                         <p class="mt-1">Presensi berhasil dilakukan!</p>
-                        <p>Terima Kasih 🙏🏻</p>
                     </div>
                 </Modal>
             }
@@ -513,7 +558,7 @@
                                                         disabled="@(string.IsNullOrWhiteSpace(item.presence_type) || item.presence_type == "-")">
                                                     Detail
                                                 </button>
-                                                @if (UserRole == "Kepala Jurusan" || UserRole == "Mentor" || UserRole == "Wali kelas")
+                                                @if (UserRole != "Student" && UserRole != "Teacher")
                                                 {
                                                     <button class="btn btn-sm btn-warning"
                                                             @onclick="() => ShowFeedback(item)"
@@ -629,8 +674,27 @@
 
         @if ((ShowDetailModal || ShowFeedbackModal) && SelectedPresenceDetail != null)
         {
-            <Modal IsVisible="true" Title="@ModalTitle">
-                <div class="modal-scrollable-content mx-1">
+            <Modal IsVisible="true">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    @if (UserRole != "Student")
+                    {
+                        <button class="btn"
+                                @onclick="ShowPrevPresence"
+                                disabled="@(SelectedPresenceIndex <= 0)">
+                            <i class="bi bi-chevron-left"></i>
+                        </button>
+                    }
+                    <span class="fw-bold" style="flex:1;text-align:center; font-size:20px">@ModalTitle</span>
+                    @if (UserRole != "Student")
+                    {
+                        <button class="btn"
+                                @onclick="ShowNextPresence"
+                                disabled="@(SelectedPresenceIndex >= Presences.Where(p => !string.IsNullOrWhiteSpace(p.presence_type) && p.presence_type != "-").Count() - 1)">
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
+                    }
+                </div>
+                <div class="mb-2" style="max-height:400px;overflow-y:auto;">
                     <div class="presence-modal-grid mb-3 mt-3 text-start">
                         <div class="presence-modal-label">NIS</div>
                         <div class="presence-modal-colon">:</div>
@@ -681,15 +745,14 @@
                             <div class="presence-modal-value">
                                 <div id="detailPresenceMap" class="detail-presence-map"></div>
                                 <div class="mt-2 text-muted" style="font-size:small;">
-                                    Latitude: @SelectedPresenceDetail.lat, Longitude: @SelectedPresenceDetail.longitude
+                                    * Klik Peta untuk preview pada Google Maps
                                 </div>
                             </div>
                         }
-                        <button class="btn btn-primary w-100 mb-2 mt-2" @onclick="CloseDetailModal">Close</button>
                     }
                     @if (ShowFeedbackModal)
                     {
-                        <div class="mb-3 mx-1">
+                        <div class="mx-1">
                             <textarea id="feedbackInput"
                                       class="form-control"
                                       placeholder="Masukkan Feedback"
@@ -699,13 +762,21 @@
                                       rows="3"></textarea>
                             <div class="char-counter-outer">@FeedbackInput.Length/200</div>
                         </div>
-                        <button class="btn btn-primary w-100 mb-2"
-                                @onclick="OnFeedbackButtonClick"
-                                disabled="@IsSubmittingFeedback">
-                            @(string.IsNullOrWhiteSpace(FeedbackInput) ? "Close" : "Confirm")
-                        </button>
                     }
                 </div>
+
+                @if (ShowDetailModal) 
+                {
+                    <button class="btn btn-primary w-100 " @onclick="CloseDetailModal">Close</button>
+                }
+                @if (ShowFeedbackModal)
+                {
+                    <button class="btn btn-primary w-100"
+                            @onclick="OnFeedbackButtonClick"
+                            disabled="@IsSubmittingFeedback">
+                        @(string.IsNullOrWhiteSpace(FeedbackInput) ? "Close" : "Confirm")
+                    </button>
+                }
             </Modal>
         }
 
@@ -831,10 +902,10 @@
                                 </div>
                             }
                         }
-                        <div class="d-flex justify-content-center gap-3 mt-4">
-                            <button class="btn btn-danger px-4" @onclick="() => ShowPresencePhotoModal = false">Close</button>
-                        </div>
                     }
+                </div>
+                <div class="d-flex justify-content-center gap-3 mt-2">
+                    <button class="btn btn-danger px-4" @onclick="() => ShowPresencePhotoModal = false">Close</button>
                 </div>
             </Modal>
         }
@@ -844,6 +915,7 @@
 @code {
     Dictionary<string, string?> PresencePhotoPreviews = new();
     private List<PresenceItem> AllPresences = new();
+    private int SelectedPresenceIndex = -1;
 
     private string UserRole = "";
     private List<PresenceItem> Presences = new();
@@ -1138,7 +1210,8 @@
                 pageSize = value;
                 CurrentPage = 1;
                 // Pastikan filter tetap digunakan
-                _ = LoadPresence(selectedDate);
+                if (UserRole == "Student") _ = LoadStudentPresences();
+                else _ = LoadPresence(selectedDate);
             }
         }
     }
@@ -1317,6 +1390,9 @@
 
     void ShowDetail(PresenceItem item)
     {
+        // Cari index presensi yang sedang ditampilkan
+        var list = Presences.Where(p => !string.IsNullOrWhiteSpace(p.presence_type) && p.presence_type != "-").ToList();
+        SelectedPresenceIndex = list.FindIndex(p => p.id_presence == item.id_presence);
         SelectedPresenceDetail = item;
         ModalTitle = "Presence Detail";
         ShowDetailModal = true;
@@ -1330,6 +1406,7 @@
         SelectedPresenceDetail = null;
         FeedbackInput = "";
         IsSubmittingFeedback = false;
+        SelectedPresenceIndex = -1;
         // isMapRendered = false;
         //JS.InvokeVoidAsync("renderPresenceMapWithMarker", "detailPresenceMap", 0, 0, null);
     }
@@ -1357,11 +1434,18 @@
         if (page >= 1 && page <= TotalPages && page != CurrentPage)
         {
             CurrentPage = page;
-            Presences = GetSortedPresences()
-                .Skip((CurrentPage - 1) * PageSize)
-                .Take(PageSize)
-                .ToList();
-            StateHasChanged();
+            if (UserRole == "Student")
+            {
+                await LoadStudentPresences();
+            }
+            else
+            {
+                Presences = GetSortedPresences()
+                    .Skip((CurrentPage - 1) * PageSize)
+                    .Take(PageSize)
+                    .ToList();
+                StateHasChanged();
+            }
         }
     }
 
@@ -1746,6 +1830,26 @@
             PageSize = size;
             CurrentPage = 1;
             await LoadPresence(selectedDate);
+        }
+    }
+
+    void ShowPrevPresence()
+    {
+        var list = Presences.Where(p => !string.IsNullOrWhiteSpace(p.presence_type) && p.presence_type != "-").ToList();
+        if (SelectedPresenceIndex > 0)
+        {
+            SelectedPresenceIndex--;
+            SelectedPresenceDetail = list[SelectedPresenceIndex];
+        }
+    }
+
+    void ShowNextPresence()
+    {
+        var list = Presences.Where(p => !string.IsNullOrWhiteSpace(p.presence_type) && p.presence_type != "-").ToList();
+        if (SelectedPresenceIndex < list.Count - 1)
+        {
+            SelectedPresenceIndex++;
+            SelectedPresenceDetail = list[SelectedPresenceIndex];
         }
     }
 }

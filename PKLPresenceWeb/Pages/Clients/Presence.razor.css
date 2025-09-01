@@ -333,19 +333,19 @@ input[type="radio"].presence-radio-input {
 }
 
 .table.student-table th:nth-child(2), .table.student-table td:nth-child(2) {
-    width: 20%;
+    width: 30%;
 }
 
 .table.student-table th:nth-child(3), .table.student-table td:nth-child(3) {
-    width: 10%;
+    width: 12%;
 }
 
 .table.student-table th:nth-child(4), .table.student-table td:nth-child(4) {
-    width: 10%;
+    width: 12%;
 }
 
 .table.student-table th:nth-child(5), .table.student-table td:nth-child(5) {
-    width: 30%;
+    width: 16%;
 }
 
 .table.student-table th:nth-child(6), .table.student-table td:nth-child(6) {
@@ -368,7 +368,7 @@ input[type="radio"].presence-radio-input {
 }
 
     .scrollable-x > .table.student-table {
-        min-width: 750px;
+        min-width: 600px;
         max-width: 1900px; /* atau sesuai kebutuhan */
         width: 100%;
         table-layout: fixed;
@@ -405,7 +405,7 @@ input[type="radio"].presence-radio-input {
     animation: pop-check 0.5s cubic-bezier(.17,.67,.83,.67);
 }
 
-.upload-box {
+/*.upload-box {
     max-width: 240px;
     max-height: 180px;
     min-width: 135px;
@@ -417,6 +417,34 @@ input[type="radio"].presence-radio-input {
 }
 
     .upload-box img,
+    .img-upload-preview {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 4px;
+        display: block;
+    }*/
+
+
+.upload-box,
+.upload-box-report {
+    position: relative;
+    max-width: 180px; /* 3:4 ratio, width */
+    max-height: 240px; /* 3:4 ratio, height */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 8px;
+    background: #fafbfc;
+    cursor: pointer;
+    overflow: hidden;
+    text-align: center;
+    margin: auto;
+}
+
+    .upload-box img,
+    .upload-box-report img,
     .img-upload-preview {
         width: 100%;
         height: 100%;

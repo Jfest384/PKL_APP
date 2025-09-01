@@ -59,8 +59,8 @@
         }
 
         // Ukuran awal hasil (misalnya max width 800px)
-        let targetWidth = 800;
-        let targetHeight = Math.floor(targetWidth * 3 / 4);
+        let targetWidth = 600;
+        let targetHeight = Math.floor(targetWidth * 4 / 3);
 
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');

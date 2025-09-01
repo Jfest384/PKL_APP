@@ -28,9 +28,16 @@ namespace PKL_API.Controllers
         }
 
         [HttpGet("companies")]
-        public IActionResult GetCompaniesData()
+        public IActionResult GetCompaniesData([FromQuery] string? search)
         {
-            var companies = _db.Companies
+            var query = _db.Companies.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                query = query.Where(c => c.name.Contains(search));
+            }
+
+            var companies = query
                 .Select(c => new
                 {
                     c.id,

@@ -896,7 +896,7 @@ input[type="radio"].presence-radio-input[b-yabyv8rrba] {
     width: 100%;
 }
 
-.upload-box[b-yabyv8rrba] {
+/*.upload-box {
     max-width: 240px;
     max-height: 180px;
     min-width: 135px;
@@ -907,13 +907,40 @@ input[type="radio"].presence-radio-input[b-yabyv8rrba] {
     margin: auto;
 }
 
-    .upload-box img[b-yabyv8rrba],
-    .img-upload-preview[b-yabyv8rrba] {
+    .upload-box img,
+    .img-upload-preview {
         width: 100%;
         height: 100%;
         object-fit: cover;
         border-radius: 4px;
         display: block;
+    }*/
+
+.upload-box[b-yabyv8rrba] {
+    display: inline-block;
+    background: #fafbfc;
+    cursor: pointer;
+    text-align: center;
+    vertical-align: middle;
+    border-radius: 8px;
+    border: 1.5px solid #e0e0e0;
+    padding: 0;
+    /* Hapus batasan ukuran agar box mengikuti gambar */
+    width: fit-content;
+    height: fit-content;
+    overflow: visible;
+}
+
+    .upload-box img[b-yabyv8rrba],
+    .img-upload-preview[b-yabyv8rrba] {
+        display: block;
+        width: auto;
+        height: auto;
+        max-width: 240px;
+        max-height: 180px;
+        border-radius: 4px;
+        margin: auto;
+        object-fit: contain; /* agar gambar tidak terpotong */
     }
 /* /Pages/Clients/Login.razor.rz.scp.css */
 .login-page[b-wdph3wuyzt] {
@@ -1869,19 +1896,19 @@ input[type="radio"].presence-radio-input[b-ku9a753df1] {
 }
 
 .table.student-table th:nth-child(2)[b-ku9a753df1], .table.student-table td:nth-child(2)[b-ku9a753df1] {
-    width: 20%;
+    width: 30%;
 }
 
 .table.student-table th:nth-child(3)[b-ku9a753df1], .table.student-table td:nth-child(3)[b-ku9a753df1] {
-    width: 10%;
+    width: 12%;
 }
 
 .table.student-table th:nth-child(4)[b-ku9a753df1], .table.student-table td:nth-child(4)[b-ku9a753df1] {
-    width: 10%;
+    width: 12%;
 }
 
 .table.student-table th:nth-child(5)[b-ku9a753df1], .table.student-table td:nth-child(5)[b-ku9a753df1] {
-    width: 30%;
+    width: 16%;
 }
 
 .table.student-table th:nth-child(6)[b-ku9a753df1], .table.student-table td:nth-child(6)[b-ku9a753df1] {
@@ -1904,7 +1931,7 @@ input[type="radio"].presence-radio-input[b-ku9a753df1] {
 }
 
     .scrollable-x > .table.student-table[b-ku9a753df1] {
-        min-width: 750px;
+        min-width: 600px;
         max-width: 1900px; /* atau sesuai kebutuhan */
         width: 100%;
         table-layout: fixed;
@@ -1941,7 +1968,7 @@ input[type="radio"].presence-radio-input[b-ku9a753df1] {
     animation: pop-check 0.5s cubic-bezier(.17,.67,.83,.67);
 }
 
-.upload-box[b-ku9a753df1] {
+/*.upload-box {
     max-width: 240px;
     max-height: 180px;
     min-width: 135px;
@@ -1952,7 +1979,35 @@ input[type="radio"].presence-radio-input[b-ku9a753df1] {
     margin: auto;
 }
 
+    .upload-box img,
+    .img-upload-preview {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 4px;
+        display: block;
+    }*/
+
+
+.upload-box[b-ku9a753df1],
+.upload-box-report[b-ku9a753df1] {
+    position: relative;
+    max-width: 180px; /* 3:4 ratio, width */
+    max-height: 240px; /* 3:4 ratio, height */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 8px;
+    background: #fafbfc;
+    cursor: pointer;
+    overflow: hidden;
+    text-align: center;
+    margin: auto;
+}
+
     .upload-box img[b-ku9a753df1],
+    .upload-box-report img[b-ku9a753df1],
     .img-upload-preview[b-ku9a753df1] {
         width: 100%;
         height: 100%;
