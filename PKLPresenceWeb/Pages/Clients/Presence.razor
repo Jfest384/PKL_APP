@@ -161,11 +161,11 @@
                                                @onclick="() => OnPhotoBoxClick(field.Field)">
                                             @if (PresencePhotoPreviews.ContainsKey(field.Field) && PresencePhotoPreviews[field.Field] != null)
                                             {
-                                                <img src="@PresencePhotoPreviews[field.Field]" style="display:block; max-height:180px; max-width:240px; width:auto; height:auto; margin:auto;" />
+                                                <img src="@PresencePhotoPreviews[field.Field]" />
                                             }
                                             else if (ActiveWebRTCField == field.Field)
                                             {
-                                                <video id="webrtc_@field.Field" autoplay playsinline style="width:100%;height:120px;object-fit:cover;border-radius:8px;background:#222;"></video>
+                                                <video id="webrtc_@field.Field" autoplay playsinline style="width:100%;height:120px;object-fit:cover;border-radius:4px;background:#222;"></video>
                                             }
                                             else
                                             {
@@ -560,14 +560,12 @@
                             <button class="page-link" @onclick="() => ChangePage(CurrentPage - 1)">Previous</button>
                         </li>
 
-                        @* Selalu tampilkan page 1 *@
                         <li class="page-item @(CurrentPage == 1 ? "active" : null)">
                             <button class="page-link" @onclick="() => ChangePage(1)" disabled="@(CurrentPage == 1)">1</button>
                         </li>
 
                         @if (CurrentPage <= 3)
                         {
-                            // Tampilkan halaman 2 sampai 4
                             for (int i = 2; i <= Math.Min(4, TotalPages - 1); i++)
                             {
                                 var pageNumber = i;
@@ -614,7 +612,6 @@
                             <li class="page-item disabled"><span class="page-link">...</span></li>
                         }
 
-                        @* Selalu tampilkan halaman terakhir (jika > 1) *@
                         @if (TotalPages > 1)
                         {
                             <li class="page-item @(CurrentPage == TotalPages ? "active" : null)">

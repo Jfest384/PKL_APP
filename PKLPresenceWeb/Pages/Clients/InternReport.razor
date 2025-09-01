@@ -128,7 +128,7 @@
                             <div class="upload-box border rounded @(WebRTCPhotoDataUrl == null ? "no-photo" : "has-photo")" @onclick="OpenWebRTCModal">
                                 @if (WebRTCPhotoDataUrl != null)
                                 {
-                                    <img src="@WebRTCPhotoDataUrl" style="display:block; max-height:180px; max-width:240px; width:auto; height:auto; margin:auto;" />
+                                    <img src="@WebRTCPhotoDataUrl"/>
                                 }
                                 else
                                 {

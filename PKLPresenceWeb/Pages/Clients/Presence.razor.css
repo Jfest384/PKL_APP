@@ -408,6 +408,7 @@ input[type="radio"].presence-radio-input {
 .upload-box {
     max-width: 240px;
     max-height: 180px;
+    min-width: 135px;
     display: flex;
     align-items: center;
     justify-content: center;

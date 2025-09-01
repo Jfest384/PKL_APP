@@ -899,6 +899,7 @@ input[type="radio"].presence-radio-input[b-yabyv8rrba] {
 .upload-box[b-yabyv8rrba] {
     max-width: 240px;
     max-height: 180px;
+    min-width: 135px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1943,6 +1944,7 @@ input[type="radio"].presence-radio-input[b-ku9a753df1] {
 .upload-box[b-ku9a753df1] {
     max-width: 240px;
     max-height: 180px;
+    min-width: 135px;
     display: flex;
     align-items: center;
     justify-content: center;
