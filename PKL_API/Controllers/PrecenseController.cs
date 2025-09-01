@@ -32,7 +32,7 @@ namespace PKL_API.Controllers
 
         [Authorize]
         [HttpPost]
-        [RequestSizeLimit(4_000_000)]
+        [RequestSizeLimit(5_000_000)]
         public async Task<IActionResult> SubmitPrecense([FromForm] PrecenseDTO dto)
         {
             var userIdClaim = User.FindFirst("id")?.Value;
@@ -1076,7 +1076,7 @@ namespace PKL_API.Controllers
 
         [Authorize]
         [HttpPut("{presenceId}/edit")]
-        [RequestSizeLimit(4_000_000)]
+        [RequestSizeLimit(5_000_000)]
         public async Task<IActionResult> EditPresence(int presenceId, [FromForm] Presence_ReportDTO dto)
         {
             var userIdClaim = User.FindFirst("id")?.Value;

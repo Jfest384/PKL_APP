@@ -1635,6 +1635,7 @@ input[type="radio"].presence-radio-input[b-ku9a753df1] {
     cursor: pointer;
     text-align: center;
     vertical-align: middle;
+    border-radius: 8px;
 }
 
     .upload-box img[b-ku9a753df1] {
@@ -1756,7 +1757,7 @@ input[type="radio"].presence-radio-input[b-ku9a753df1] {
 .upload-box-report[b-ku9a753df1] {
     display: inline-block;
     border: 1.5px solid #e0e0e0;
-    border-radius: 8px;
+    border-radius: 4px;
     background: #fafbfc;
     cursor: pointer;
     width: fit-content;
@@ -1774,7 +1775,7 @@ input[type="radio"].presence-radio-input[b-ku9a753df1] {
         max-height: 180px;
         width: auto;
         height: auto;
-        border-radius: 8px;
+        border-radius: 4px;
     }
 
 .char-counter-outer[b-ku9a753df1] {
@@ -1920,6 +1921,24 @@ input[type="radio"].presence-radio-input[b-ku9a753df1] {
     display: inline-block;
     animation: pop-check 0.5s cubic-bezier(.17,.67,.83,.67);
 }
+
+/*.upload-box {
+    width: 180px;
+    height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    margin: auto;
+}
+
+.img-upload-preview {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 12px;
+    display: block;
+}*/
 /* /Pages/Clients/Profile.razor.rz.scp.css */
 /* Container halaman */
 .profile-page[b-t1gp74n82c] {

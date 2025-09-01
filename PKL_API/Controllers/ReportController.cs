@@ -30,7 +30,7 @@ namespace PKL_API.Controllers
 
         [Authorize]
         [HttpPost]
-        [RequestSizeLimit(3_000_000)] // Batas 3MB total
+        [RequestSizeLimit(5_000_000)]
         public async Task<IActionResult> SubmitReport([FromForm] ReportDTO dto)
         {
             if (!ModelState.IsValid)

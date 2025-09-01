@@ -18,8 +18,8 @@
             const constraints = {
                 video: {
                     facingMode: "environment",
-                    width: { ideal: 1280 },  // biarkan tetap HD
-                    height: { ideal: 720 }
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }   // 1280x720 = 16:9, tapi akan dipaksa ke 4:3
                 }
             };
             const stream = await navigator.mediaDevices.getUserMedia(constraints);
@@ -38,11 +38,29 @@
         const video = document.getElementById(elementId);
         if (!video) return;
 
-        // 🔹 Atur resolusi awal (misalnya maksimal 800px lebar)
-        const maxWidth = 800;
-        const scale = maxWidth / video.videoWidth;
-        let targetWidth = Math.min(video.videoWidth, maxWidth);
-        let targetHeight = video.videoHeight * scale;
+        // Target rasio 4:3
+        const targetRatio = 4 / 3;
+        const videoRatio = video.videoWidth / video.videoHeight;
+
+        let sx, sy, sw, sh;
+
+        if (videoRatio > targetRatio) {
+            // Video lebih lebar dari 4:3 → crop kiri & kanan
+            sh = video.videoHeight;
+            sw = sh * targetRatio;
+            sx = (video.videoWidth - sw) / 2;
+            sy = 0;
+        } else {
+            // Video lebih tinggi dari 4:3 → crop atas & bawah
+            sw = video.videoWidth;
+            sh = sw / targetRatio;
+            sx = 0;
+            sy = (video.videoHeight - sh) / 2;
+        }
+
+        // Ukuran awal hasil (misalnya max width 800px)
+        let targetWidth = 800;
+        let targetHeight = Math.floor(targetWidth * 3 / 4);
 
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
@@ -51,24 +69,24 @@
         async function compressToMax2MB() {
             canvas.width = targetWidth;
             canvas.height = targetHeight;
-            ctx.drawImage(video, 0, 0, targetWidth, targetHeight);
+            ctx.drawImage(video, sx, sy, sw, sh, 0, 0, targetWidth, targetHeight);
 
             let quality = 0.9;
             let blob = await new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", quality));
 
-            // Turunkan kualitas hingga <= 2MB atau minimal quality 0.1
+            // Turunkan kualitas hingga <= 2MB
             while (blob.size > 2 * 1024 * 1024 && quality > 0.1) {
                 quality -= 0.1;
                 blob = await new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", quality));
             }
 
-            // Jika masih lebih dari 2MB, kurangi resolusi bertahap
+            // Jika masih lebih dari 2MB → perkecil resolusi bertahap
             while (blob.size > 2 * 1024 * 1024) {
                 targetWidth = Math.floor(targetWidth * 0.9);
-                targetHeight = Math.floor(targetHeight * 0.9);
+                targetHeight = Math.floor(targetWidth * 0.9 * 3 / 4); // tetap 4:3
                 canvas.width = targetWidth;
                 canvas.height = targetHeight;
-                ctx.drawImage(video, 0, 0, targetWidth, targetHeight);
+                ctx.drawImage(video, sx, sy, sw, sh, 0, 0, targetWidth, targetHeight);
                 blob = await new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", quality));
             }
 
