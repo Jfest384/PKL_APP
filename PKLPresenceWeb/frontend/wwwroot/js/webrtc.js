@@ -18,8 +18,8 @@
             const constraints = {
                 video: {
                     facingMode: "environment",
-                    width: { ideal: 1280 },
-                    height: { ideal: 720 }   // 1280x720 = 16:9, tapi akan dipaksa ke 4:3
+                    width: { ideal: 600 },
+                    height: { ideal: 800 }   // 1280x720 = 16:9, tapi akan dipaksa ke 4:3
                 }
             };
             const stream = await navigator.mediaDevices.getUserMedia(constraints);

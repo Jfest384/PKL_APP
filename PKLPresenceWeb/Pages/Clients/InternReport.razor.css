@@ -512,6 +512,6 @@ input[type="radio"].presence-radio-input {
         width: auto;
         height: auto;
         object-fit: cover;
-        border-radius: 2px;
+        border-radius: 1px;
         display: block;
     }
