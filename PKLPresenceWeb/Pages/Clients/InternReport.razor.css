@@ -487,29 +487,29 @@ input[type="radio"].presence-radio-input {
         display: block;
     }*/
 
-.upload-box {
-    display: inline-block;
+.upload-box,
+.upload-box-report {
+    position: relative;
+    max-width: 180px; /* 3:4 ratio, width */
+    max-height: 240px; /* 3:4 ratio, height */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 8px;
     background: #fafbfc;
     cursor: pointer;
+    overflow: hidden;
     text-align: center;
-    vertical-align: middle;
-    border-radius: 8px;
-    border: 1.5px solid #e0e0e0;
-    padding: 0;
-    /* Hapus batasan ukuran agar box mengikuti gambar */
-    width: fit-content;
-    height: fit-content;
-    overflow: visible;
+    margin: auto;
 }
 
     .upload-box img,
+    .upload-box-report img,
     .img-upload-preview {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 2px;
         display: block;
-        width: auto;
-        height: auto;
-        max-width: 240px;
-        max-height: 180px;
-        border-radius: 4px;
-        margin: auto;
-        object-fit: contain; /* agar gambar tidak terpotong */
     }
