@@ -352,10 +352,24 @@
                     </div>
                 </Modal>
             }
+
+            @if (ShowPresenceSuccess)
+            {
+                <Modal IsVisible="true">
+                    <div class="text-center">
+                        <span class="checkmark-presence-animate">
+                            <i class="bi bi-check-circle-fill" style="font-size:3rem; color:limegreen;"></i>
+                        </span>
+                        <p class="mt-2 fw-bold" style="font-size:20px">Success</p>
+                        <p class="mt-1">Presensi berhasil dilakukan!</p>
+                        <p>Terima Kasih 🙏🏻</p>
+                    </div>
+                </Modal>
+            }
         }
         else
         {
-            <div class="row g-2 mb-3">
+            <div class="row g-2 mb-3 align-items-end">
                 <div class="col">
                     <input class="form-control" placeholder="Search..." @bind="searchName" @oninput="OnFilterChanged" />
                 </div>
@@ -367,6 +381,15 @@
                             <option value="@cls.id">@cls.name</option>
                         }
                     </select>
+                </div>
+                <div class="col-12 col-md-auto d-flex align-items-center gap-2 mt-2 mt-md-0">
+                    <input type="date"
+                           class="form-control"
+                           style="w-100 w-md-auto"
+                           value="@selectedDate"
+                           min="@MinDate"
+                           max="@MaxDate"
+                           @onchange="OnDateSelected" />
                 </div>
             </div>
 
@@ -421,24 +444,7 @@
                                         </span>
                                     }
                                 </th>
-                                <th class="text-center" style="position:relative;">
-                                    <button class="btn btn-link p-0 fw-bold" @onclick="ToggleDatePicker" style="color:inherit;">
-                                        Hari/Tanggal
-                                        <i class="bi bi-chevron-down ms-1"></i>
-                                    </button>
-                                    @if (showDatePicker)
-                                    {
-                                        <div style="position: absolute; z-index: 10;">
-                                            <input type="date"
-                                                   class="form-control"
-                                                   value="@selectedDate"
-                                                   min="@MinDate"
-                                                   max="@MaxDate"
-                                                   style="width:150px;"
-                                                   @onchange="OnDateSelected" />
-                                        </div>
-                                    }
-                                </th>
+                                <th class="text-center">Hari/Tanggal</th>
                                 <th class="text-center sortable" @onclick="() => SortBy(nameof(PresenceItem.time))">
                                     Jam
                                     @if (SortColumn == nameof(PresenceItem.time))
@@ -457,7 +463,7 @@
                                         </span>
                                     }
                                 </th>
-                                <th class="text-center">Feedback</th>
+                                <th class="text-center">Report</th>
                                 <th class="text-center">Action</th>
                             </tr>
                         </thead>
@@ -489,7 +495,16 @@
                                         <td>@item.date</td>
                                         <td>@item.time</td>
                                         <td>@item.presence_type</td>
-                                        <td>@item.feedback</td>
+                                        <td class="text-center">
+                                            @if (item.isComplete == "✔️")
+                                            {
+                                                <span class="bi bi-check text-success" style="font-size: 2rem; font-weight: bold"></span>
+                                            }
+                                            else
+                                            {
+                                                <span class="bi bi-x text-danger" style="font-size: 2rem; font-weight: bold"></span>
+                                            }
+                                        </td>
                                         <td>
                                             <div class="d-flex flex-column gap-2 align-items-center">
                                                 <button class="btn btn-sm btn-success"
@@ -848,7 +863,7 @@
 
     // Date picker state
     private bool showDatePicker = false;
-    private string selectedDate = "";
+    private string selectedDate = DateTime.Today.ToString("yyyy-MM-dd");
     private string MinDate => DateTime.Today.AddYears(-1).ToString("yyyy-MM-dd"); // Optional: set min date
     private string MaxDate => DateTime.Today.ToString("yyyy-MM-dd");
 
@@ -888,6 +903,7 @@
 
     private string? ActiveWebRTCField = null;
     private DotNetObjectReference<Presence>? dotNetRef;
+    private bool ShowPresenceSuccess = false;
 
     private string PreviewPresenceReport = "";
     private bool IsReportFormValid =>
@@ -1480,7 +1496,11 @@
             SelectedPresenceTypeId = 0;
             SelectedPresenceTypeName = "";
             LocationInput = "";
-            Navigation.NavigateTo(Navigation.Uri, forceLoad: true); // Refresh page
+            ShowPresenceSuccess = true;
+            StateHasChanged();
+            await Task.Delay(2000);
+            ShowPresenceSuccess = false;
+            Navigation.NavigateTo(Navigation.Uri, forceLoad: true);
         }
         else await JS.InvokeVoidAsync("alert", "Gagal submit presensi.");
     }

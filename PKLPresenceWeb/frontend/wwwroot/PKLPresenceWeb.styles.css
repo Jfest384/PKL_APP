@@ -1486,6 +1486,34 @@ body[b-u6vybu44w0] {
         opacity: 1;
     }
 }
+
+.participant-modal-grid[b-u6vybu44w0] {
+    display: grid;
+    grid-template-columns: 110px 18px 1fr;
+    row-gap: 5px;
+    font-size: 1rem;
+    color: black;
+}
+
+.participant-modal-label[b-u6vybu44w0] {
+    font-weight: 400;
+}
+
+.participant-modal-colon[b-u6vybu44w0] {
+    text-align: center;
+}
+
+.participant-modal-value[b-u6vybu44w0] {
+    font-weight: 500;
+    word-break: break-word;
+}
+
+.profile-photo-container[b-u6vybu44w0] {
+    width: 120px;
+    height: 120px;
+    position: relative;
+    margin-bottom: 1rem;
+}
 /* /Pages/Clients/Presence.razor.rz.scp.css */
 h5.fw-bold[b-ku9a753df1] {
     font-size: 1.2rem;
@@ -1595,16 +1623,10 @@ body[b-ku9a753df1] {
     font-weight: bold;
 }
 
-/* Radio button hijau saat checked */
-/*.presence-radio-input:checked {
-    accent-color: #28a745;*/ /* Bootstrap success green */
-/*}*/
-
 input[type="radio"].presence-radio-input[b-ku9a753df1] {
     accent-color: #00BA1E !important;
 }
 
-/* PKLPresenceWeb\Pages\Clients\Presence.razor.css */
 .upload-box[b-ku9a753df1] {
     display: inline-block;
     min-height: 120px;
@@ -1790,7 +1812,7 @@ input[type="radio"].presence-radio-input[b-ku9a753df1] {
 }
 
 .table.mentor-table th:nth-child(3)[b-ku9a753df1], .table.mentor-table td:nth-child(3)[b-ku9a753df1] {
-    width: 17%;
+    width: 22%;
 }
 
 .table.mentor-table th:nth-child(4)[b-ku9a753df1], .table.mentor-table td:nth-child(4)[b-ku9a753df1] {
@@ -1802,7 +1824,7 @@ input[type="radio"].presence-radio-input[b-ku9a753df1] {
 }
 
 .table.mentor-table th:nth-child(6)[b-ku9a753df1], .table.mentor-table td:nth-child(6)[b-ku9a753df1] {
-    width: 12%;
+    width: 20%;
 }
 
 .table.mentor-table th:nth-child(7)[b-ku9a753df1], .table.mentor-table td:nth-child(7)[b-ku9a753df1] {
@@ -1814,7 +1836,7 @@ input[type="radio"].presence-radio-input[b-ku9a753df1] {
 }
 
 .table.mentor-table th:nth-child(9)[b-ku9a753df1], .table.mentor-table td:nth-child(9)[b-ku9a753df1] {
-    width: 23%;
+    width: 10%;
 }
 
 .table.mentor-table th:nth-child(10)[b-ku9a753df1], .table.mentor-table td:nth-child(10)[b-ku9a753df1] {
@@ -1892,6 +1914,11 @@ input[type="radio"].presence-radio-input[b-ku9a753df1] {
     font-size: 0.6em;
     vertical-align: middle;
     margin-left: 4px;
+}
+
+.checkmark-presence-animate[b-ku9a753df1] {
+    display: inline-block;
+    animation: pop-check 0.5s cubic-bezier(.17,.67,.83,.67);
 }
 /* /Pages/Clients/Profile.razor.rz.scp.css */
 /* Container halaman */

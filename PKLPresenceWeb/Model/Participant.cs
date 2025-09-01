@@ -24,6 +24,19 @@ namespace PKLPresenceWeb.Model
         public bool isPKL { get; set; }
     }
 
+    public class StudentDetail
+    {
+        public int id { get; set; }
+        public int userid { get; set; }
+        public string fullname { get; set; }
+        public bool gender { get; set; }
+        public string nis { get; set; }
+        public string class_name { get; set; }
+        public string? mentor_name { get; set; }
+        public string? company_name { get; set; }
+        public string isPKL { get; set; }
+    }
+
     public class MentorListResponse
     {
         public int page { get; set; }

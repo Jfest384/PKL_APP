@@ -50,7 +50,7 @@
                 </div>
                 @if ((UserRole == "Admin" || UserRole == "Kepala Jurusan") && CurrentTab == "Siswa TKJ")
                 {
-                    <div class="col-12 col-md-auto d-flex align-items-center gap-2 assign-btn-wrapper mt-2 mt-md-0">
+                    <div class="col-12 col-md-auto d-flex align-items-center gap-2 mt-2 mt-md-0">
                         <button class="btn btn-warning w-100 w-md-auto" @onclick="OnAssignStudentPKLClicked">
                             <i class="bi bi-person-plus"></i> Assign Student PKL
                         </button>
@@ -177,13 +177,8 @@
                                             <td>
                                                 <div class="d-flex gap-2 justify-content-center">
                                                     <button class="btn btn-sm btn-success"
-                                                            @onclick="() => NavigateToClassManagement(item)">
-                                                        <i class="bi bi-person-plus"></i> ke Kelas
-                                                    </button>
-                                                    <button class="btn btn-sm btn-warning"
-                                                            @onclick="() => ConfirmAddToPkl(item)"
-                                                            disabled="@(IsStudentInPKL(int.Parse(item[0])))">
-                                                        <i class="bi bi-person-plus"></i> ke Siswa PKL
+                                                            @onclick="() => OnShowStudentDetail(int.Parse(item[0]))">
+                                                        Detail
                                                     </button>
                                                 </div>
                                             </td>
@@ -234,7 +229,6 @@
                                     }
                                     else if (CurrentTab == "Manajemen Kelas")
                                     {
-                                        // item[0] = classId, item[1] = name, dst.
                                         <td>@item[1]</td>
                                         <td>
                                             @{
@@ -346,24 +340,6 @@
                     </li>
                 </ul>
             </nav>
-        }
-
-        @if (ShowConfirmationModal)
-        {
-            <Modal IsVisible="ShowConfirmationModal">
-                <div class="text-center">
-                    <i class="bi bi-person-plus fs-1"></i>
-                    <p class="fw-bold">Tambahkan Siswa</p>
-                    <p>@ConfirmationText</p>
-                    <div class="d-flex justify-content-center gap-3 mt-4">
-                        @if (ConfirmButtonText != "Done")
-                        {
-                            <button class="btn btn-danger px-4" @onclick="CancelModal">Cancel</button>
-                        }
-                        <button class="btn btn-primary px-4" @onclick="ConfirmAssignPkl">@ConfirmButtonText</button>
-                    </div>
-                </div>
-            </Modal>
         }
 
         @if (ShowAddStudentToMentorModal)
@@ -545,6 +521,7 @@
                             </div>
                         </div>
                     }
+
                     else if (DeleteModalState == "done")
                     {
                         <div class="text-center">
@@ -638,6 +615,44 @@
                     </span>
                     <p class="mt-2 fw-bold" style="font-size:20px">Success</p>
                     <p class="mt-1">Siswa berhasil ditambahkan ke data Siswa PKL!</p>
+                </div>
+            </Modal>
+        }
+
+        @if (ShowStudentDetailModal && SelectedStudentDetail != null)
+        {
+            <Modal IsVisible="true" Title="Student Detail">
+                <div class="modal-scrollable-content mx-1">
+                    <div class="d-flex justify-content-center my-3">
+                        <img src="@SelectedStudentPhotoUrl" onerror="this.src='/images/default_profile.jpg'" class="rounded-circle" style="width:120px;height:120px;object-fit:cover;" />
+                    </div>
+
+                    <div class="participant-modal-grid mb-3 mt-3 text-start">
+                        <div class="participant-modal-label">NIS</div>
+                        <div class="participant-modal-colon">:</div>
+                        <div class="participant-modal-value">@SelectedStudentDetail.nis</div>
+
+                        <div class="participant-modal-label">Nama</div>
+                        <div class="participant-modal-colon">:</div>
+                        <div class="participant-modal-value">@SelectedStudentDetail.fullname</div>
+
+                        <div class="participant-modal-label">Kelas</div>
+                        <div class="participant-modal-colon">:</div>
+                        <div class="participant-modal-value">@SelectedStudentDetail.class_name</div>
+
+                        @if (SelectedStudentDetail.isPKL == "Yes")
+                        {
+                            <div class="participant-modal-label">Perusahaan</div>
+                            <div class="participant-modal-colon">:</div>
+                            <div class="participant-modal-value">@((string.IsNullOrWhiteSpace(SelectedStudentDetail.company_name) ? "-" : SelectedStudentDetail.company_name))</div>
+
+                            <div class="participant-modal-label">Mentor</div>
+                            <div class="participant-modal-colon">:</div>
+                            <div class="participant-modal-value">@((string.IsNullOrWhiteSpace(SelectedStudentDetail.mentor_name) ? "-" : SelectedStudentDetail.mentor_name))</div>
+                        }
+                    </div>
+
+                    <button class="btn btn-danger px-4" @onclick="CloseDetailModal">Close</button>
                 </div>
             </Modal>
         }
@@ -784,6 +799,11 @@
     {
         ShowAssignModal = false;
         Navigation.NavigateTo("/participant", forceLoad: true);
+    }
+
+    void CloseDetailModal()
+    {
+        ShowStudentDetailModal = false;
     }
 
     void OnDeleteClass(int classId, string className)
@@ -1005,37 +1025,16 @@
         if (CurrentTab == "Siswa TKJ")
         {
             var source = IsSortingAllData ? CachedAllStudents : Students;
-            // if (IsSortingAllData)
-            // {
-            //     if (!string.IsNullOrWhiteSpace(SearchText))
-            //         source = source.Where(s => s.fullname.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ||
-            //                                    s.nis.Contains(SearchText, StringComparison.OrdinalIgnoreCase)).ToList();
-            //     if (SelectedClassId.HasValue)
-            //         source = source.Where(s => s.classroomid == SelectedClassId.Value).ToList();
-            // }
             return source.Select(s => new[] { s.id.ToString(), s.nis, s.fullname, s.class_name, s.classroomid.ToString(), s.isPKL.ToString() }).ToList();
         }
         else if (CurrentTab == "Siswa PKL")
         {
             var source = IsSortingAllData ? CachedAllStudentPKLs : StudentPKLs;
-            // if (IsSortingAllData)
-            // {
-            //     if (!string.IsNullOrWhiteSpace(SearchText))
-            //         source = source.Where(s => s.fullname.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ||
-            //                                    s.nis.Contains(SearchText, StringComparison.OrdinalIgnoreCase)).ToList();
-            //     if (SelectedClassId.HasValue)
-            //         source = source.Where(s => s.classroomid == SelectedClassId.Value).ToList();
-            // }
             return source.Select(p => new[] { p.id.ToString(), p.nis, p.fullname, p.class_name, p.mentor_name, p.company_name }).ToList();
         }
         else if (CurrentTab == "Manajemen Kelas")
         {
             var source = IsSortingAllData ? CachedAllClassrooms : Classrooms;
-            // if (IsSortingAllData)
-            // {
-            //     if (!string.IsNullOrWhiteSpace(SearchText))
-            //         source = source.Where(c => c.name.Contains(SearchText, StringComparison.OrdinalIgnoreCase)).ToList();
-            // }
             return source.Select(c => new[] { c.id.ToString(), c.name, c.students.ToString(), c.walas, c.year.ToString(), c.description }).ToList();
         }
         else if (CurrentTab == "Pembimbing PKL")
@@ -1059,59 +1058,10 @@
     private int? SelectedStudentIdForClassManagement = null;
     private string? SelectedIsPKLForClassManagement = null;
 
-    void NavigateToClassManagement(string[] studentRow)
-    {
-        var studentId = int.TryParse(studentRow[0], out var id) ? id : (int?)null;
-        var isPKL = studentRow.Length > 5 ? studentRow[5] : "false";
-
-        SelectedStudentId = studentId;
-        SelectedStudentStatus = isPKL;
-
-        _ = ChangeTab("Manajemen Kelas");
-    }
-
     bool ShowConfirmationModal = false;
     string ConfirmationText = "Apakah Anda yakin ingin menambahkan Siswa ini ke daftar Siswa PKL?";
     string ConfirmButtonText = "Confirm";
     int? SelectedStudentId;
-
-    void ConfirmAddToPkl(string[] studentRow)
-    {
-        SelectedStudentId = int.Parse(studentRow[0]); // assuming id
-        SelectedClassId = int.Parse(studentRow[4]); // assuming id_class
-        ShowConfirmationModal = true;
-        ConfirmationText = "Apakah Anda yakin ingin menambahkan Siswa ini ke daftar Siswa PKL?";
-        ConfirmButtonText = "Confirm";
-        StateHasChanged();
-    }
-
-    async Task ConfirmAssignPkl()
-    {
-        if (ConfirmButtonText == "Done")
-        {
-            ShowConfirmationModal = false;
-            SelectedClassId = 0;
-            SelectedStudentId = 0;
-            return;
-        }
-
-        var payload = new { isPKL = true, idClass = SelectedClassId };
-        var response = await Http.PutAsJsonAsync(APIUrl.Endpoint($"assign/{SelectedStudentId}"), payload);
-
-        if (response.IsSuccessStatusCode)
-        {
-            ConfirmationText = "Siswa berhasil ditambahkan ke daftar Siswa PKL!";
-            ConfirmButtonText = "Done";
-        }
-    }
-
-    void CancelModal()
-    {
-        ShowConfirmationModal = false;
-        SelectedClassId = 0;
-        SelectedStudentId = 0;
-        StateHasChanged();
-    }
 
     async void OnAddStudentToMentor(string[] mentorRow)
     {
@@ -1689,5 +1639,44 @@
     {
         ShowAssignPKLError = false;
         StateHasChanged();
+    }
+
+    private bool ShowStudentDetailModal = false;
+    private StudentDetail? SelectedStudentDetail;
+    private string? SelectedStudentPhotoUrl = null;
+
+    private async void OnShowStudentDetail(int studentId)
+    {
+        ShowStudentDetailModal = true;
+        SelectedStudentDetail = null;
+        SelectedStudentPhotoUrl = null;
+
+        // Fetch student detail
+        var detail = await Http.GetFromJsonAsync<StudentDetail>(APIUrl.Endpoint($"students/{studentId}"));
+        SelectedStudentDetail = detail;
+
+        // Fetch photo
+        var photoRequest = new HttpRequestMessage(HttpMethod.Get, APIUrl.Endpoint($"students/{studentId}/photo"));
+        var photoResponse = await Http.SendAsync(photoRequest);
+        if (photoResponse.IsSuccessStatusCode)
+        {
+            var bytes = await photoResponse.Content.ReadAsByteArrayAsync();
+            var contentType = photoResponse.Content.Headers.ContentType?.MediaType ?? "image/jpeg";
+            var base64 = Convert.ToBase64String(bytes);
+            SelectedStudentPhotoUrl = $"data:{contentType};base64,{base64}";
+        }
+        else
+        {
+            SelectedStudentPhotoUrl = "/images/default_profile.jpg";
+        }
+
+        StateHasChanged();
+    }
+
+    private void CloseStudentDetailModal()
+    {
+        ShowStudentDetailModal = false;
+        SelectedStudentDetail = null;
+        SelectedStudentPhotoUrl = null;
     }
 }

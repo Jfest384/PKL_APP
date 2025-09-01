@@ -122,7 +122,7 @@ namespace PKL_API.Controllers
 
             // Step 3: Get the photo by Photoid
             if (user.Photoid == null)
-                return NotFound("Photo not found.");
+                return Ok(null);
 
             var photo = await _db.Photos
                 .AsNoTracking()

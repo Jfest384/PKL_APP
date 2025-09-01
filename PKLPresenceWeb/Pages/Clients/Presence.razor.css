@@ -106,16 +106,10 @@ body {
     font-weight: bold;
 }
 
-/* Radio button hijau saat checked */
-/*.presence-radio-input:checked {
-    accent-color: #28a745;*/ /* Bootstrap success green */
-/*}*/
-
 input[type="radio"].presence-radio-input {
     accent-color: #00BA1E !important;
 }
 
-/* PKLPresenceWeb\Pages\Clients\Presence.razor.css */
 .upload-box {
     display: inline-block;
     min-height: 120px;
@@ -301,7 +295,7 @@ input[type="radio"].presence-radio-input {
 }
 
 .table.mentor-table th:nth-child(3), .table.mentor-table td:nth-child(3) {
-    width: 17%;
+    width: 22%;
 }
 
 .table.mentor-table th:nth-child(4), .table.mentor-table td:nth-child(4) {
@@ -313,7 +307,7 @@ input[type="radio"].presence-radio-input {
 }
 
 .table.mentor-table th:nth-child(6), .table.mentor-table td:nth-child(6) {
-    width: 12%;
+    width: 20%;
 }
 
 .table.mentor-table th:nth-child(7), .table.mentor-table td:nth-child(7) {
@@ -325,7 +319,7 @@ input[type="radio"].presence-radio-input {
 }
 
 .table.mentor-table th:nth-child(9), .table.mentor-table td:nth-child(9) {
-    width: 23%;
+    width: 10%;
 }
 
 .table.mentor-table th:nth-child(10), .table.mentor-table td:nth-child(10) {
@@ -403,4 +397,9 @@ input[type="radio"].presence-radio-input {
     font-size: 0.6em;
     vertical-align: middle;
     margin-left: 4px;
+}
+
+.checkmark-presence-animate {
+    display: inline-block;
+    animation: pop-check 0.5s cubic-bezier(.17,.67,.83,.67);
 }

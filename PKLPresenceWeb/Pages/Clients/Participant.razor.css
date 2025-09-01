@@ -402,3 +402,31 @@ body {
         opacity: 1;
     }
 }
+
+.participant-modal-grid {
+    display: grid;
+    grid-template-columns: 110px 18px 1fr;
+    row-gap: 5px;
+    font-size: 1rem;
+    color: black;
+}
+
+.participant-modal-label {
+    font-weight: 400;
+}
+
+.participant-modal-colon {
+    text-align: center;
+}
+
+.participant-modal-value {
+    font-weight: 500;
+    word-break: break-word;
+}
+
+.profile-photo-container {
+    width: 120px;
+    height: 120px;
+    position: relative;
+    margin-bottom: 1rem;
+}
