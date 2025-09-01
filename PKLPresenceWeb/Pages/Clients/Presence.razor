@@ -742,9 +742,9 @@
                                 <div class="mb-3 mx-1">
                                     <label class="d-block mt-2 mb-1 fw-normal">@field.Item1</label>
                                     <label class="upload-box border rounded">
-                                        @if (PresencePhotoPreviews.ContainsKey(field.Item2) && PresencePhotoPreviews[field.Item2] != null)
+                                        @if (PreviewPresencePhotoUrls.ContainsKey(field.Item2) && PreviewPresencePhotoUrls[field.Item2] != null)
                                         {
-                                            <img src="@PresencePhotoPreviews[field.Item2]" style="display:block; max-height:180px; max-width:240px; width:auto; height:auto; margin:auto;" />
+                                            <img src="@PreviewPresencePhotoUrls[field.Item2]" style="display:block; max-height:180px; max-width:240px; width:auto; height:auto; margin:auto;" />
                                         }
                                         else
                                         {
@@ -772,9 +772,9 @@
                                 <div class="mb-3 mx-1">
                                     <label class="d-block mt-2 mb-1 fw-normal">@field.Item1</label>
                                     <label class="upload-box border rounded">
-                                        @if (PresencePhotoPreviews.ContainsKey(field.Item2) && PresencePhotoPreviews[field.Item2] != null)
+                                        @if (PreviewPresencePhotoUrls.ContainsKey(field.Item2) && PreviewPresencePhotoUrls[field.Item2] != null)
                                         {
-                                            <img src="@PresencePhotoPreviews[field.Item2]" style="display:block; max-height:180px; max-width:240px; width:auto; height:auto; margin:auto;" />
+                                            <img src="@PreviewPresencePhotoUrls[field.Item2]" style="display:block; max-height:180px; max-width:240px; width:auto; height:auto; margin:auto;" />
                                         }
                                         else
                                         {
@@ -793,9 +793,9 @@
                             <div class="mb-3 mx-1">
                                 <label class="d-block mt-2 mb-1 fw-normal">Info Libur dari Perusahaan</label>
                                 <label class="upload-box border rounded">
-                                    @if (PresencePhotoPreviews.ContainsKey("HolidayFromCompany") && PresencePhotoPreviews["HolidayFromCompany"] != null)
+                                    @if (PreviewPresencePhotoUrls.ContainsKey("HolidayFromCompany") && PreviewPresencePhotoUrls["HolidayFromCompany"] != null)
                                     {
-                                        <img src="@PresencePhotoPreviews["HolidayFromCompany"]" style="display:block; max-height:180px; max-width:240px; width:auto; height:auto; margin:auto;" />
+                                        <img src="@PreviewPresencePhotoUrls["HolidayFromCompany"]" style="display:block; max-height:180px; max-width:240px; width:auto; height:auto; margin:auto;" />
                                     }
                                     else
                                     {
@@ -814,9 +814,9 @@
                                 <div class="mb-3 mx-1">
                                     <label class="d-block mt-2 mb-1 fw-normal">@field.Label</label>
                                     <label class="upload-box border rounded">
-                                        @if (PresencePhotoPreviews.ContainsKey(field.Field) && PresencePhotoPreviews[field.Field] != null)
+                                        @if (PreviewPresencePhotoUrls.ContainsKey(field.Field) && PreviewPresencePhotoUrls[field.Field] != null)
                                         {
-                                            <img src="@PresencePhotoPreviews[field.Field]" style="display:block; max-height:180px; max-width:240px; width:auto; height:auto; margin:auto;" />
+                                            <img src="@PreviewPresencePhotoUrls[field.Field]" class="img-upload-preview" />
                                         }
                                         else
                                         {
