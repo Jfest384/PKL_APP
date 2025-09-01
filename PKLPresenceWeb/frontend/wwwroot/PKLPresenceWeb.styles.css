@@ -865,7 +865,7 @@ input[type="radio"].presence-radio-input[b-yabyv8rrba] {
 }
 
 .custom-upload-text[b-yabyv8rrba] {
-    margin-top: 16px;
+    margin-top: 10px;
     font-size: 1rem;
     color: #444;
     text-align: center;
@@ -878,6 +878,9 @@ input[type="radio"].presence-radio-input[b-yabyv8rrba] {
     border-radius: 10px;
     margin: auto;
     display: block;
+    width: auto;
+    height: auto;
+    object-fit: cover;
 }
 
 .file-upload-center[b-yabyv8rrba] {
