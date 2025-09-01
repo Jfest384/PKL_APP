@@ -429,8 +429,8 @@ input[type="radio"].presence-radio-input {
 .upload-box,
 .upload-box-report {
     position: relative;
-    max-width: 180px; /* 3:4 ratio, width */
-    max-height: 240px; /* 3:4 ratio, height */
+    width: fit-content; /* 3:4 ratio, width */
+    height: fit-content; /* 3:4 ratio, height */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -446,8 +446,10 @@ input[type="radio"].presence-radio-input {
     .upload-box img,
     .upload-box-report img,
     .img-upload-preview {
-        width: 100%;
-        height: 100%;
+        max-width: 180px;
+        max-height: 240px;
+        width: auto;
+        height: auto;
         object-fit: cover;
         border-radius: 2px;
         display: block;

@@ -919,8 +919,8 @@ input[type="radio"].presence-radio-input[b-yabyv8rrba] {
 .upload-box[b-yabyv8rrba],
 .upload-box-report[b-yabyv8rrba] {
     position: relative;
-    max-width: 180px; /* 3:4 ratio, width */
-    max-height: 240px; /* 3:4 ratio, height */
+    width: fit-content; /* 3:4 ratio, width */
+    height: fit-content; /* 3:4 ratio, height */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -936,8 +936,10 @@ input[type="radio"].presence-radio-input[b-yabyv8rrba] {
     .upload-box img[b-yabyv8rrba],
     .upload-box-report img[b-yabyv8rrba],
     .img-upload-preview[b-yabyv8rrba] {
-        width: 100%;
-        height: 100%;
+        max-width: 180px;
+        max-height: 240px;
+        width: auto;
+        height: auto;
         object-fit: cover;
         border-radius: 2px;
         display: block;
@@ -1992,8 +1994,8 @@ input[type="radio"].presence-radio-input[b-ku9a753df1] {
 .upload-box[b-ku9a753df1],
 .upload-box-report[b-ku9a753df1] {
     position: relative;
-    max-width: 180px; /* 3:4 ratio, width */
-    max-height: 240px; /* 3:4 ratio, height */
+    width: fit-content; /* 3:4 ratio, width */
+    height: fit-content; /* 3:4 ratio, height */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2009,8 +2011,10 @@ input[type="radio"].presence-radio-input[b-ku9a753df1] {
     .upload-box img[b-ku9a753df1],
     .upload-box-report img[b-ku9a753df1],
     .img-upload-preview[b-ku9a753df1] {
-        width: 100%;
-        height: 100%;
+        max-width: 180px;
+        max-height: 240px;
+        width: auto;
+        height: auto;
         object-fit: cover;
         border-radius: 2px;
         display: block;
