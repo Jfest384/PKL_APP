@@ -125,7 +125,7 @@
                     <div class="mb-2">
                         <label class="my-2">Foto Saat Bimbingan</label>
                         <div style="display: flex; justify-content: center;">
-                            <div class="upload-box-report @(WebRTCPhotoDataUrl == null ? "no-photo" : "has-photo")" @onclick="OpenWebRTCModal">
+                            <div class="upload-box @(WebRTCPhotoDataUrl == null ? "no-photo" : "has-photo")" @onclick="OpenWebRTCModal">
                                 @if (WebRTCPhotoDataUrl != null)
                                 {
                                     <img src="@WebRTCPhotoDataUrl"/>
