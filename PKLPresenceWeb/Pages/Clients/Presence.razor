@@ -204,11 +204,11 @@
                                 {
                                     @if (IsWebRTCField(field.Field))
                                     {
-                                        <label class="upload-box border rounded"
+                                        <label class="upload-box-report"
                                                @onclick="() => OnPhotoBoxClick(field.Field)">
                                             @if (PresencePhotoPreviews.ContainsKey(field.Field) && PresencePhotoPreviews[field.Field] != null)
                                             {
-                                                <img src="@PresencePhotoPreviews[field.Field]" />
+                                                <img src="@PresencePhotoPreviews[field.Field]" class="img-upload-preview" />
                                             }
                                             else if (ActiveWebRTCField == field.Field)
                                             {
@@ -216,7 +216,7 @@
                                             }
                                             else
                                             {
-                                                <span class="text-muted d-flex flex-column align-items-center justify-content-center" style="height:120px;">
+                                                <span class="upload-box text-muted d-flex flex-column align-items-center justify-content-center" style="height:120px;">
                                                     <i class="bi bi-image" style="font-size:2rem;"></i>
                                                     <br />Upload Foto
                                                 </span>
@@ -225,15 +225,15 @@
                                     }
                                     else
                                     {
-                                        <label class="upload-box border rounded"
+                                        <label class="upload-box-report"
                                                for="fileInput_@field.Field">
                                             @if (PresencePhotoPreviews.ContainsKey(field.Field) && PresencePhotoPreviews[field.Field] != null)
                                             {
-                                                <img src="@PresencePhotoPreviews[field.Field]" style="display:block; max-height:180px; max-width:240px; width:auto; height:auto; margin:auto;" />
+                                                <img src="@PresencePhotoPreviews[field.Field]" class="img-upload-preview" />
                                             }
                                             else
                                             {
-                                                <span class="text-muted d-flex flex-column align-items-center justify-content-center" style="height:120px;">
+                                                <span class="upload-box text-muted d-flex flex-column align-items-center justify-content-center" style="height:120px;">
                                                     <i class="bi bi-image" style="font-size:2rem;"></i>
                                                     <br />Upload Foto
                                                 </span>
@@ -809,10 +809,10 @@
                             {
                                 <div class="mb-3 mx-1">
                                     <label class="d-block mt-2 mb-1 fw-normal">@field.Item1</label>
-                                    <label class="upload-box border rounded">
+                                    <label class="upload-box-report">
                                         @if (PreviewPresencePhotoUrls.ContainsKey(field.Item2) && PreviewPresencePhotoUrls[field.Item2] != null)
                                         {
-                                            <img src="@PreviewPresencePhotoUrls[field.Item2]" style="display:block; max-height:180px; max-width:240px; width:auto; height:auto; margin:auto;" />
+                                            <img src="@PreviewPresencePhotoUrls[field.Item2]" class="img-upload-preview" />
                                         }
                                         else
                                         {
@@ -839,10 +839,10 @@
                             {
                                 <div class="mb-3 mx-1">
                                     <label class="d-block mt-2 mb-1 fw-normal">@field.Item1</label>
-                                    <label class="upload-box border rounded">
+                                    <label class="upload-box-report">
                                         @if (PreviewPresencePhotoUrls.ContainsKey(field.Item2) && PreviewPresencePhotoUrls[field.Item2] != null)
                                         {
-                                            <img src="@PreviewPresencePhotoUrls[field.Item2]" style="display:block; max-height:180px; max-width:240px; width:auto; height:auto; margin:auto;" />
+                                            <img src="@PreviewPresencePhotoUrls[field.Item2]" class="img-upload-preview" />
                                         }
                                         else
                                         {
@@ -860,10 +860,10 @@
                             // Libur: HolidayFromCompany
                             <div class="mb-3 mx-1">
                                 <label class="d-block mt-2 mb-1 fw-normal">Info Libur dari Perusahaan</label>
-                                <label class="upload-box border rounded">
+                                <label class="upload-box-report">
                                     @if (PreviewPresencePhotoUrls.ContainsKey("HolidayFromCompany") && PreviewPresencePhotoUrls["HolidayFromCompany"] != null)
                                     {
-                                        <img src="@PreviewPresencePhotoUrls["HolidayFromCompany"]" style="display:block; max-height:180px; max-width:240px; width:auto; height:auto; margin:auto;" />
+                                        <img src="@PreviewPresencePhotoUrls["HolidayFromCompany"]" class="img-upload-preview" />
                                     }
                                     else
                                     {
@@ -881,7 +881,7 @@
                             {
                                 <div class="mb-3 mx-1">
                                     <label class="d-block mt-2 mb-1 fw-normal">@field.Label</label>
-                                    <label class="upload-box border rounded">
+                                    <label class="upload-box-report">
                                         @if (PreviewPresencePhotoUrls.ContainsKey(field.Field) && PreviewPresencePhotoUrls[field.Field] != null)
                                         {
                                             <img src="@PreviewPresencePhotoUrls[field.Field]" class="img-upload-preview" />
