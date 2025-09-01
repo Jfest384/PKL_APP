@@ -125,14 +125,14 @@
                     <div class="mb-2">
                         <label class="my-2">Foto Saat Bimbingan</label>
                         <div style="display: flex; justify-content: center;">
-                            <div class="upload-box @(WebRTCPhotoDataUrl == null ? "no-photo" : "has-photo")" @onclick="OpenWebRTCModal">
+                            <div class="custom-upload-box @(WebRTCPhotoDataUrl == null ? "no-photo" : "has-photo")" @onclick="OpenWebRTCModal">
                                 @if (WebRTCPhotoDataUrl != null)
                                 {
-                                    <img src="@WebRTCPhotoDataUrl"/>
+                                    <img src="@WebRTCPhotoDataUrl" class="uploaded-photo-preview" />
                                 }
                                 else
                                 {
-                                    <span class="upload-box text-muted d-flex flex-column align-items-center justify-content-center" style="height:120px;">
+                                    <span class="text-muted d-flex flex-column align-items-center justify-content-center">
                                         <i class="bi bi-image" style="font-size:2rem;"></i>
                                         <br />Upload Foto
                                     </span>
@@ -539,8 +539,7 @@
                 <div class="modal-scrollable-content text-center mx-1">
                     <div class="mb-2">Foto Saat Bimbingan</div>
                     <img src="@APIUrl.Endpoint($"repots/preview/{SelectedReportDetail.reportPhotoId}")"
-                         alt="Foto Saat Bimbingan"
-                         style="max-width: 240px; max-height: 180px; border-radius: 8px; margin-bottom: 1rem;" />
+                         alt="Foto Saat Bimbingan" class="uploaded-photo-preview" />
                     <div class="mb-2">Deskripsi Kegiatan</div>
                     <div class="mb-3 mx-2">
                         <textarea class="form-control" readonly rows="3">@SelectedReportDetail.description</textarea>
