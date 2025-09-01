@@ -208,7 +208,7 @@
                                                @onclick="() => OnPhotoBoxClick(field.Field)">
                                             @if (PresencePhotoPreviews.ContainsKey(field.Field) && PresencePhotoPreviews[field.Field] != null)
                                             {
-                                                <img src="@PresencePhotoPreviews[field.Field]" class="img-upload-preview" />
+                                                <img src="@PresencePhotoPreviews[field.Field]" />
                                             }
                                             else if (ActiveWebRTCField == field.Field)
                                             {
@@ -285,7 +285,7 @@
                                     <label class="upload-box-report" @onclick='() => OnPhotoBoxClick("MedicalCertificate", isReport: true)'>
                                         @if (ReportPhotoPreviews.ContainsKey("MedicalCertificate") && ReportPhotoPreviews["MedicalCertificate"] != null)
                                         {
-                                            <img src="@ReportPhotoPreviews["MedicalCertificate"]" class="img-upload-preview" />
+                                            <img src="@ReportPhotoPreviews["MedicalCertificate"]" />
                                         }
                                         else
                                         {
@@ -816,7 +816,7 @@
                                         }
                                         else
                                         {
-                                            <span class="text-muted d-flex flex-column align-items-center justify-content-center" style="height:120px;">
+                                            <span class="upload-box text-muted d-flex flex-column align-items-center justify-content-center" style="height:120px;">
                                                 <i class="bi bi-image" style="font-size:2rem;"></i>
                                                 <br />Upload Foto
                                             </span>
@@ -846,7 +846,7 @@
                                         }
                                         else
                                         {
-                                            <span class="text-muted d-flex flex-column align-items-center justify-content-center" style="height:120px;">
+                                            <span class="upload-box text-muted d-flex flex-column align-items-center justify-content-center" style="height:120px;">
                                                 <i class="bi bi-image" style="font-size:2rem;"></i>
                                                 <br />Upload Foto
                                             </span>
@@ -867,7 +867,7 @@
                                     }
                                     else
                                     {
-                                        <span class="text-muted d-flex flex-column align-items-center justify-content-center" style="height:120px;">
+                                        <span class="upload-box text-muted d-flex flex-column align-items-center justify-content-center" style="height:120px;">
                                             <i class="bi bi-image" style="font-size:2rem;"></i>
                                             <br />Upload Foto
                                         </span>
@@ -884,11 +884,11 @@
                                     <label class="upload-box-report">
                                         @if (PreviewPresencePhotoUrls.ContainsKey(field.Field) && PreviewPresencePhotoUrls[field.Field] != null)
                                         {
-                                            <img src="@PreviewPresencePhotoUrls[field.Field]" class="img-upload-preview" />
+                                            <img src="@PreviewPresencePhotoUrls[field.Field]" />
                                         }
                                         else
                                         {
-                                            <span class="text-muted d-flex flex-column align-items-center justify-content-center" style="height:120px;">
+                                            <span class="upload-box text-muted d-flex flex-column align-items-center justify-content-center" style="height:120px;">
                                                 <i class="bi bi-image" style="font-size:2rem;"></i>
                                                 <br />Upload Foto
                                             </span>
