@@ -881,9 +881,8 @@ input[type="radio"].presence-radio-input[b-yabyv8rrba] {
 }
 
 .uploaded-photo-preview[b-yabyv8rrba] {
-    width: 100%;
-    max-width: 250px;
-    height: auto;
+    max-width: 240px;
+    max-height: 180px;
     border-radius: 8px;
     margin: auto;
     display: block;
@@ -896,6 +895,25 @@ input[type="radio"].presence-radio-input[b-yabyv8rrba] {
     justify-content: center;
     width: 100%;
 }
+
+.upload-box[b-yabyv8rrba] {
+    max-width: 240px;
+    max-height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    margin: auto;
+}
+
+    .upload-box img[b-yabyv8rrba],
+    .img-upload-preview[b-yabyv8rrba] {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 4px;
+        display: block;
+    }
 /* /Pages/Clients/Login.razor.rz.scp.css */
 .login-page[b-wdph3wuyzt] {
     min-height: 100vh;
@@ -1922,9 +1940,9 @@ input[type="radio"].presence-radio-input[b-ku9a753df1] {
     animation: pop-check 0.5s cubic-bezier(.17,.67,.83,.67);
 }
 
-/*.upload-box {
-    width: 180px;
-    height: 180px;
+.upload-box[b-ku9a753df1] {
+    max-width: 240px;
+    max-height: 180px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1932,13 +1950,14 @@ input[type="radio"].presence-radio-input[b-ku9a753df1] {
     margin: auto;
 }
 
-.img-upload-preview {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: 12px;
-    display: block;
-}*/
+    .upload-box img[b-ku9a753df1],
+    .img-upload-preview[b-ku9a753df1] {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 4px;
+        display: block;
+    }
 /* /Pages/Clients/Profile.razor.rz.scp.css */
 /* Container halaman */
 .profile-page[b-t1gp74n82c] {

@@ -405,9 +405,9 @@ input[type="radio"].presence-radio-input {
     animation: pop-check 0.5s cubic-bezier(.17,.67,.83,.67);
 }
 
-/*.upload-box {
-    width: 180px;
-    height: 180px;
+.upload-box {
+    max-width: 240px;
+    max-height: 180px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -415,10 +415,11 @@ input[type="radio"].presence-radio-input {
     margin: auto;
 }
 
-.img-upload-preview {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: 12px;
-    display: block;
-}*/
+    .upload-box img,
+    .img-upload-preview {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 4px;
+        display: block;
+    }

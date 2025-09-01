@@ -52,7 +52,7 @@ namespace PKL_API.Controllers
             if (string.IsNullOrWhiteSpace(dto.description))
                 return BadRequest("Description is required.");
 
-            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".docx", ".pdf" };
+            var allowedExtensions = new[] { ".pdf" };
 
             bool IsValidFile(IFormFile? file)
             {

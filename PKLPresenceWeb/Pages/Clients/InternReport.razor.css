@@ -452,9 +452,8 @@ input[type="radio"].presence-radio-input {
 }
 
 .uploaded-photo-preview {
-    width: 100%;
-    max-width: 250px;
-    height: auto;
+    max-width: 240px;
+    max-height: 180px;
     border-radius: 8px;
     margin: auto;
     display: block;
@@ -467,3 +466,22 @@ input[type="radio"].presence-radio-input {
     justify-content: center;
     width: 100%;
 }
+
+.upload-box {
+    max-width: 240px;
+    max-height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    margin: auto;
+}
+
+    .upload-box img,
+    .img-upload-preview {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 4px;
+        display: block;
+    }
