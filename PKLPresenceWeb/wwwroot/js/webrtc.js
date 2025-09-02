@@ -38,29 +38,15 @@
         const video = document.getElementById(elementId);
         if (!video) return;
 
-        // Target rasio 4:3
-        const targetRatio = 4 / 3;
-        const videoRatio = video.videoWidth / video.videoHeight;
+        // Gunakan ukuran asli video
+        let sw = video.videoWidth;
+        let sh = video.videoHeight;
+        let sx = 0;
+        let sy = 0;
 
-        let sx, sy, sw, sh;
-
-        if (videoRatio > targetRatio) {
-            // Video lebih lebar dari 4:3 → crop kiri & kanan
-            sh = video.videoHeight;
-            sw = sh * targetRatio;
-            sx = (video.videoWidth - sw) / 2;
-            sy = 0;
-        } else {
-            // Video lebih tinggi dari 4:3 → crop atas & bawah
-            sw = video.videoWidth;
-            sh = sw / targetRatio;
-            sx = 0;
-            sy = (video.videoHeight - sh) / 2;
-        }
-
-        // Ukuran awal hasil (misalnya max width 800px)
+        // Ukuran awal hasil (misalnya max width 6000px tapi tetap sesuai rasio asli kamera)
         let targetWidth = 600;
-        let targetHeight = Math.floor(targetWidth * 4 / 3);
+        let targetHeight = Math.floor(targetWidth * (sh / sw));
 
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
@@ -83,7 +69,7 @@
             // Jika masih lebih dari 2MB → perkecil resolusi bertahap
             while (blob.size > 2 * 1024 * 1024) {
                 targetWidth = Math.floor(targetWidth * 0.9);
-                targetHeight = Math.floor(targetWidth * 0.9 * 3 / 4); // tetap 4:3
+                targetHeight = Math.floor(targetWidth * (sh / sw)); // pakai rasio asli
                 canvas.width = targetWidth;
                 canvas.height = targetHeight;
                 ctx.drawImage(video, sx, sy, sw, sh, 0, 0, targetWidth, targetHeight);

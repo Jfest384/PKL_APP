@@ -42,6 +42,7 @@ namespace PKL_API.Controllers
                     mentor.id,
                     mentor.Userid,
                     mentor.Teacherid,
+                    mentor.Teacher.nip,
                     mentor.User.fullname,
                     classes = _db.Students
                         .Where(s => s.Mentorid == mentor.id && s.Classroomid != null)
