@@ -51,7 +51,7 @@ namespace PKL_API.Controllers
             if (string.IsNullOrWhiteSpace(dto.description))
                 return BadRequest("Description is required.");
 
-            var allowedExtensions = new[] { ".pdf" };
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".pdf" };
 
             bool IsValidFile(IFormFile? file)
             {
@@ -61,7 +61,7 @@ namespace PKL_API.Controllers
             }
 
             if (!IsValidFile(dto.GuidancePhoto) || !IsValidFile(dto.ReportFile))
-                return BadRequest("Only PNG, JPG, JPEG, DOCX, or PDF files are allowed.");
+                return BadRequest("Only PNG, JPG, JPEG, or PDF files are allowed.");
 
             async Task<ReportFile?> SaveFileAsync(IFormFile? file)
             {

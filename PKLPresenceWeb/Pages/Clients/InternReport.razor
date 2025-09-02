@@ -171,13 +171,62 @@
 
             @if (ShowWebRTCModal)
             {
-                <Modal IsVisible="true" Title="Ambil Foto">
-                    <div class="d-flex flex-column align-items-center">
-                        <video id="webrtc_capture" autoplay playsinline style="width:240px;height:160px;object-fit:cover;border-radius:8px;background:#222;"></video>
-                        <div class="d-flex gap-2 mt-3">
-                            <button class="btn btn-danger px-4" @onclick="CloseWebRTCModal">Cancel</button>
-                            <button class="btn btn-success px-4" @onclick="CaptureWebRTCPhoto">Capture</button>
+                <Modal IsVisible="true">
+                    <div class="modal-header position-relative">
+                        <button type="button" class="btn-close position-absolute top-0 end-0 m-2"
+                                aria-label="Close" @onclick="CloseWebRTCModal">
+                        </button>
+
+                        <h5 class="modal-title fw-bold w-100 text-center">Ambil Foto</h5>
+                    </div>
+
+                    <div class="position-relative d-flex flex-column align-items-center mt-3">
+                        <video id="webrtc_capture" autoplay playsinline class="webrtc-modal-videos"></video>
+                        @if (IsWebRTCCaptureCounting && WebRTCCaptureCountdown > 0)
+                        {
+                            <div class="webrtc-countdown-anim">
+                                @WebRTCCaptureCountdown
+                            </div>
+                        }
+
+                        <!-- Tombol kontrol -->
+                        <div class="d-flex gap-3 mt-3 align-items-center">
+
+                            <!-- Timer dropdown -->
+                            <div class="dropdown">
+                                <button class="btn btn-warning" type="button" id="timerMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-clock"></i>
+                                </button>
+                                <ul class="dropdown-menu" aria-labelledby="dropdownTimerBtn">
+                                    <li><a class="dropdown-item" @onclick="@(() => SetTimer(0))">None</a></li>
+                                    <li><a class="dropdown-item" @onclick="@(() => SetTimer(3))">3s</a></li>
+                                    <li><a class="dropdown-item" @onclick="@(() => SetTimer(5))">5s</a></li>
+                                </ul>
+                            </div>
+
+                            <!-- Capture -->
+                            <button class="btn-circle-capture" title="Capture" @onclick="CaptureWebRTCPhoto">
+                                <i class="bi bi-camera" style="font-size:1.2rem; color: black"></i>
+                            </button>
+
+                            @* <!-- Switch Camera -->
+                            <button class="btn btn-outline-secondary px-3" title="Switch Camera" @onclick="SwitchCamera">
+                                <i class="bi bi-arrow-repeat"></i>
+                            </button> *@
                         </div>
+                    </div>
+                </Modal>
+            }
+
+            @if (ShowReportSuccess)
+            {
+                <Modal IsVisible="true">
+                    <div class="text-center">
+                        <span class="checkmark-report-animate">
+                            <i class="bi bi-check-circle-fill" style="font-size:3rem; color:limegreen;"></i>
+                        </span>
+                        <p class="mt-2 fw-bold" style="font-size:20px">Success</p>
+                        <p class="mt-1">Report berhasil disubmit!</p>
                     </div>
                 </Modal>
             }
@@ -615,6 +664,7 @@
     int GuidanceStudentId = 0;
     string GuidanceStudentName = "";
     bool IsSubmittingGuidance = false;
+    private bool ShowReportSuccess = false;
 
     void ShowGuidance(int studentId, string studentName)
     {
@@ -894,6 +944,10 @@
         if (response.IsSuccessStatusCode)
         {
             CloseDetailModal();
+            ShowReportSuccess = true;
+            StateHasChanged();
+            await Task.Delay(2000);
+            ShowReportSuccess = false;
             await LoadReports();
         }
         else
@@ -1046,4 +1100,25 @@
     !string.IsNullOrWhiteSpace(ContentInput)
     && WebRTCPhotoDataUrl != null
        && UploadedReportFile != null;
+
+    async Task SetTimer(int seconds)
+    {
+        await JS.InvokeVoidAsync("window.webrtcPhoto.SetTimer", $"webrtc_capture", seconds);
+    }
+
+    async Task SwitchCamera()
+    {
+        await JS.InvokeVoidAsync("window.webrtcPhoto.switchCamera", $"webrtc_capture");
+    }
+
+    private int WebRTCCaptureCountdown = 0;
+    private bool IsWebRTCCaptureCounting = false;
+
+    [JSInvokable]
+    public void UpdateWebRTCCaptureCountdown(int value)
+    {
+        WebRTCCaptureCountdown = value;
+        IsWebRTCCaptureCounting = value > 0;
+        InvokeAsync(StateHasChanged);
+    }
 }

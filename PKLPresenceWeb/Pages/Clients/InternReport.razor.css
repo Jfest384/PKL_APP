@@ -510,3 +510,91 @@ input[type="radio"].presence-radio-input {
         border-radius: 1px;
         display: block;
     }
+
+.webrtc-modal-videos {
+    width: 340px;
+    height: 260px;
+    object-fit: cover;
+    border-radius: 8px;
+    background: #222;
+    max-width: 90vw;
+}
+
+@media (max-width: 600px), (orientation: portrait) {
+    .webrtc-modal-videos {
+        width: 95vw;
+        max-width: 220px;
+        height: 300px;
+    }
+}
+
+.btn-circle-capture {
+    width: 39px;
+    height: 39px;
+    border-radius: 14%;
+    background: #28a745;
+    color: #28a745;
+    border: 1px solid #28a745;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    box-shadow: 0 2px 8px rgba(40,167,69,0.10);
+}
+
+.webrtc-countdown-anim {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -60%);
+    font-size: 4rem;
+    font-weight: bold;
+    color: white;
+    border-radius: 50%;
+    width: 90px;
+    height: 90px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    animation: webrtc-countdown-pop 0.5s;
+}
+
+@keyframes webrtc-countdown-pop {
+    0% {
+        transform: scale(0.7) translate(-50%, -60%);
+        opacity: 0.5;
+    }
+
+    60% {
+        transform: scale(1.2) translate(-50%, -60%);
+        opacity: 1;
+    }
+
+    100% {
+        transform: scale(1) translate(-50%, -60%);
+        opacity: 1;
+    }
+}
+
+.checkmark-report-animate {
+    display: inline-block;
+    animation: pop-check 0.5s cubic-bezier(.17,.67,.83,.67);
+}
+
+@keyframes pop-check {
+    0% {
+        transform: scale(0.2);
+        opacity: 0;
+    }
+
+    60% {
+        transform: scale(1.2);
+        opacity: 1;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}

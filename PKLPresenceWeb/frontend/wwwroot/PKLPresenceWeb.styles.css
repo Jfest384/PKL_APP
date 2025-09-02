@@ -939,6 +939,94 @@ input[type="radio"].presence-radio-input[b-yabyv8rrba] {
         border-radius: 1px;
         display: block;
     }
+
+.webrtc-modal-videos[b-yabyv8rrba] {
+    width: 340px;
+    height: 260px;
+    object-fit: cover;
+    border-radius: 8px;
+    background: #222;
+    max-width: 90vw;
+}
+
+@media (max-width: 600px), (orientation: portrait) {
+    .webrtc-modal-videos[b-yabyv8rrba] {
+        width: 95vw;
+        max-width: 220px;
+        height: 300px;
+    }
+}
+
+.btn-circle-capture[b-yabyv8rrba] {
+    width: 39px;
+    height: 39px;
+    border-radius: 14%;
+    background: #28a745;
+    color: #28a745;
+    border: 1px solid #28a745;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    box-shadow: 0 2px 8px rgba(40,167,69,0.10);
+}
+
+.webrtc-countdown-anim[b-yabyv8rrba] {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -60%);
+    font-size: 4rem;
+    font-weight: bold;
+    color: white;
+    border-radius: 50%;
+    width: 90px;
+    height: 90px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    animation: webrtc-countdown-pop-b-yabyv8rrba 0.5s;
+}
+
+@keyframes webrtc-countdown-pop-b-yabyv8rrba {
+    0% {
+        transform: scale(0.7) translate(-50%, -60%);
+        opacity: 0.5;
+    }
+
+    60% {
+        transform: scale(1.2) translate(-50%, -60%);
+        opacity: 1;
+    }
+
+    100% {
+        transform: scale(1) translate(-50%, -60%);
+        opacity: 1;
+    }
+}
+
+.checkmark-report-animate[b-yabyv8rrba] {
+    display: inline-block;
+    animation: pop-check-b-yabyv8rrba 0.5s cubic-bezier(.17,.67,.83,.67);
+}
+
+@keyframes pop-check-b-yabyv8rrba {
+    0% {
+        transform: scale(0.2);
+        opacity: 0;
+    }
+
+    60% {
+        transform: scale(1.2);
+        opacity: 1;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
 /* /Pages/Clients/Login.razor.rz.scp.css */
 .login-page[b-wdph3wuyzt] {
     min-height: 100vh;
@@ -1962,7 +2050,24 @@ input[type="radio"].presence-radio-input[b-ku9a753df1] {
 
 .checkmark-presence-animate[b-ku9a753df1] {
     display: inline-block;
-    animation: pop-check 0.5s cubic-bezier(.17,.67,.83,.67);
+    animation: pop-check-b-ku9a753df1 0.5s cubic-bezier(.17,.67,.83,.67);
+}
+
+@keyframes pop-check-b-ku9a753df1 {
+    0% {
+        transform: scale(0.2);
+        opacity: 0;
+    }
+
+    60% {
+        transform: scale(1.2);
+        opacity: 1;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
 }
 
 /*.upload-box {
@@ -2016,27 +2121,26 @@ input[type="radio"].presence-radio-input[b-ku9a753df1] {
     }
 
 .btn-circle-capture[b-ku9a753df1] {
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    background: transparent;
+    width: 39px;
+    height: 39px;
+    border-radius: 14%;
+    background: #28a745;
     color: #28a745;
-    border: 2.5px solid #28a745;
+    border: 1px solid #28a745;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 2rem;
     box-shadow: 0 2px 8px rgba(40,167,69,0.10);
-    transition: background 0.2s, color 0.2s, border-color 0.2s;
 }
-
-    .btn-circle-capture:active[b-ku9a753df1],
-    .btn-circle-capture:focus[b-ku9a753df1] {
+/*
+    .btn-circle-capture:active,
+    .btn-circle-capture:focus {
         background: rgba(40,167,69,0.08);
         color: #218838;
         border-color: #218838;
         outline: none;
-    }
+    }*/
 
 .webrtc-countdown-anim[b-ku9a753df1] {
     position: absolute;

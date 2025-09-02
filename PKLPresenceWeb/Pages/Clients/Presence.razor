@@ -411,7 +411,7 @@
 
                             <!-- Timer dropdown -->
                             <div class="dropdown">
-                                <button class="btn btn-outline-primary" type="button" id="timerMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                                <button class="btn btn-warning" type="button" id="timerMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
                                     <i class="bi bi-clock"></i>
                                 </button>
                                 <ul class="dropdown-menu" aria-labelledby="dropdownTimerBtn">
@@ -423,13 +423,13 @@
 
                             <!-- Capture -->
                             <button class="btn-circle-capture" title="Capture" @onclick="CaptureWebRTCPhoto">
-                                <i class="bi bi-camera"></i>
+                                <i class="bi bi-camera" style="font-size:1.2rem; color: black"></i>
                             </button>
 
-                            <!-- Switch Camera -->
+                            @* <!-- Switch Camera -->
                             <button class="btn btn-outline-secondary px-3" title="Switch Camera" @onclick="SwitchCamera">
                                 <i class="bi bi-arrow-repeat"></i>
-                            </button>
+                            </button> *@
                         </div>
                     </div>
                 </Modal>
@@ -443,7 +443,9 @@
                             <i class="bi bi-check-circle-fill" style="font-size:3rem; color:limegreen;"></i>
                         </span>
                         <p class="mt-2 fw-bold" style="font-size:20px">Success</p>
-                        <p class="mt-1">Presensi berhasil dilakukan!</p>
+                        <p class="mt-1">
+                            @(LastSuccessType == "report" ? "Daily Report berhasil disubmit!" : "Presensi berhasil dilakukan!")
+                        </p>
                     </div>
                 </Modal>
             }
@@ -1005,6 +1007,7 @@
 
     private bool ShowWebRTCModal = false;
     private string? WebRTCField = null;
+    private string LastSuccessType = "";
 
     private string? ActiveWebRTCField = null;
     private DotNetObjectReference<Presence>? dotNetRef;
@@ -1626,6 +1629,7 @@
 
         if (response.IsSuccessStatusCode)
         {
+            LastSuccessType = "presence";
             ShowPresenceModal = false;
             PresencePhotos.Clear();
             SelectedPresenceTypeId = 0;
@@ -1782,7 +1786,12 @@
 
             if (response.IsSuccessStatusCode)
             {
+                LastSuccessType = "report";
                 CancelReportModal();
+                ShowPresenceSuccess = true;
+                StateHasChanged();
+                await Task.Delay(2000);
+                ShowPresenceSuccess = false;
                 Navigation.NavigateTo(Navigation.Uri, forceLoad: true);
             }
             else

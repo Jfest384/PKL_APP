@@ -20,8 +20,8 @@
             const constraints = {
                 video: {
                     facingMode: facingMode,
-                    width: { ideal: 1280 },
-                    height: { ideal: 720 }
+                    width: { ideal: 800 },
+                    height: { ideal: 600 }
                 }
             };
             const stream = await navigator.mediaDevices.getUserMedia(constraints);
@@ -30,7 +30,8 @@
             window.webrtcPhoto.streams[elementId] = stream;
             video.tabIndex = 0;
         } catch (e) {
-            alert("tidak bisa mengakses kamera");
+            alert("tidak bisa mengakses kamera: " + e.message);
+            console.error(e);
         }
     },
 
