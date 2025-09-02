@@ -38,24 +38,18 @@
         const video = document.getElementById(elementId);
         if (!video) return;
 
-        // Gunakan ukuran asli video
-        let sw = video.videoWidth;
-        let sh = video.videoHeight;
-        let sx = 0;
-        let sy = 0;
-
-        // Ukuran awal hasil (misalnya max width 6000px tapi tetap sesuai rasio asli kamera)
-        let targetWidth = 600;
-        let targetHeight = Math.floor(targetWidth * (sh / sw));
+        // Ambil ukuran asli video
+        const sw = video.videoWidth;
+        const sh = video.videoHeight;
 
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
 
-        // Fungsi kompresi hingga <= 2MB
+        // Kompresi langsung dari ukuran asli
         async function compressToMax2MB() {
-            canvas.width = targetWidth;
-            canvas.height = targetHeight;
-            ctx.drawImage(video, sx, sy, sw, sh, 0, 0, targetWidth, targetHeight);
+            canvas.width = sw;
+            canvas.height = sh;
+            ctx.drawImage(video, 0, 0, sw, sh);
 
             let quality = 0.9;
             let blob = await new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", quality));
@@ -68,11 +62,9 @@
 
             // Jika masih lebih dari 2MB → perkecil resolusi bertahap
             while (blob.size > 2 * 1024 * 1024) {
-                targetWidth = Math.floor(targetWidth * 0.9);
-                targetHeight = Math.floor(targetWidth * (sh / sw)); // pakai rasio asli
-                canvas.width = targetWidth;
-                canvas.height = targetHeight;
-                ctx.drawImage(video, sx, sy, sw, sh, 0, 0, targetWidth, targetHeight);
+                canvas.width = Math.floor(canvas.width * 0.9);
+                canvas.height = Math.floor(canvas.height * 0.9);
+                ctx.drawImage(video, 0, 0, sw, sh, 0, 0, canvas.width, canvas.height);
                 blob = await new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", quality));
             }
 
