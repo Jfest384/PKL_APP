@@ -388,12 +388,48 @@
 
             @if (ShowWebRTCModal && WebRTCField != null)
             {
-                <Modal IsVisible="true" Title="Ambil Foto">
-                    <div class="d-flex flex-column align-items-center">
+                <Modal IsVisible="true">
+                    <div class="modal-header position-relative">
+                        <button type="button" class="btn-close position-absolute top-0 end-0 m-2"
+                                aria-label="Close" @onclick="CloseWebRTCModal">
+                        </button>
+
+                        <h5 class="modal-title fw-bold w-100 text-center">Ambil Foto</h5>
+                    </div>
+
+                    <div class="position-relative d-flex flex-column align-items-center mt-3">
                         <video id="webrtc_@WebRTCField" autoplay playsinline class="webrtc-modal-video"></video>
-                        <div class="d-flex gap-2 mt-3">
-                            <button class="btn btn-danger" @onclick="CloseWebRTCModal">Cancel</button>
-                            <button class="btn btn-success" @onclick="CaptureWebRTCPhoto">Capture</button>
+                        @if (IsWebRTCCaptureCounting && WebRTCCaptureCountdown > 0)
+                        {
+                            <div class="webrtc-countdown-anim">
+                                @WebRTCCaptureCountdown
+                            </div>
+                        }
+
+                        <!-- Tombol kontrol -->
+                        <div class="d-flex gap-3 mt-3 align-items-center">
+
+                            <!-- Timer dropdown -->
+                            <div class="dropdown">
+                                <button class="btn btn-outline-primary" type="button" id="timerMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-clock"></i>
+                                </button>
+                                <ul class="dropdown-menu" aria-labelledby="dropdownTimerBtn">
+                                    <li><a class="dropdown-item" @onclick="@(() => SetTimer(0))">None</a></li>
+                                    <li><a class="dropdown-item" @onclick="@(() => SetTimer(3))">3s</a></li>
+                                    <li><a class="dropdown-item" @onclick="@(() => SetTimer(5))">5s</a></li>
+                                </ul>
+                            </div>
+
+                            <!-- Capture -->
+                            <button class="btn-circle-capture" title="Capture" @onclick="CaptureWebRTCPhoto">
+                                <i class="bi bi-camera"></i>
+                            </button>
+
+                            <!-- Switch Camera -->
+                            <button class="btn btn-outline-secondary px-3" title="Switch Camera" @onclick="SwitchCamera">
+                                <i class="bi bi-arrow-repeat"></i>
+                            </button>
                         </div>
                     </div>
                 </Modal>
@@ -1072,6 +1108,24 @@
                 await JS.InvokeVoidAsync("renderPresenceMapWithMarker", "detailPresenceMap", lat, lng, null);
             }
         }
+
+        // if (ShowPresenceModal || ShowReportModalFlag || ShowWebRTCModal || ShowDetailModal || ShowFeedbackModal || ShowPresencePhotoModal)
+        // {
+        //     if (escDotNetRef == null)
+        //     {
+        //         escDotNetRef = DotNetObjectReference.Create(this);
+        //         await JS.InvokeVoidAsync("modalEscHelper.registerEsc", escDotNetRef);
+        //     }
+        // }
+        // else
+        // {
+        //     if (escDotNetRef != null)
+        //     {
+        //         await JS.InvokeVoidAsync("modalEscHelper.unregisterEsc", escDotNetRef);
+        //         escDotNetRef.Dispose();
+        //         escDotNetRef = null;
+        //     }
+        // }
     }
 
     private bool HasPresenceTodayGlobal = false;
@@ -1851,5 +1905,41 @@
             SelectedPresenceIndex++;
             SelectedPresenceDetail = list[SelectedPresenceIndex];
         }
+    }
+
+    // private DotNetObjectReference<Presence>? escDotNetRef;
+    // [JSInvokable]
+    // public void OnEscPressed()
+    // {
+    //     Tutup semua modal yang terbuka
+    //     bool IsSubmittingPresence = false;
+    //     CancelPresenceModal();
+    //     ShowReportModalFlag = false;
+    //     ShowWebRTCModal = false;
+    //     ShowDetailModal = false;
+    //     ShowFeedbackModal = false;
+    //     ShowPresencePhotoModal = false;
+    //     StateHasChanged();
+    // }
+
+    async Task SetTimer(int seconds)
+    {
+        await JS.InvokeVoidAsync("window.webrtcPhoto.SetTimer", $"webrtc_{WebRTCField}", seconds);
+    }
+
+    async Task SwitchCamera()
+    {
+        await JS.InvokeVoidAsync("window.webrtcPhoto.switchCamera", $"webrtc_{WebRTCField}");
+    }
+
+    private int WebRTCCaptureCountdown = 0;
+    private bool IsWebRTCCaptureCounting = false;
+
+    [JSInvokable]
+    public void UpdateWebRTCCaptureCountdown(int value)
+    {
+        WebRTCCaptureCountdown = value;
+        IsWebRTCCaptureCounting = value > 0;
+        InvokeAsync(StateHasChanged);
     }
 }

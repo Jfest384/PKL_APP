@@ -2014,6 +2014,64 @@ input[type="radio"].presence-radio-input[b-ku9a753df1] {
         border-radius: 1px;
         display: block;
     }
+
+.btn-circle-capture[b-ku9a753df1] {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: transparent;
+    color: #28a745;
+    border: 2.5px solid #28a745;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    box-shadow: 0 2px 8px rgba(40,167,69,0.10);
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+    .btn-circle-capture:active[b-ku9a753df1],
+    .btn-circle-capture:focus[b-ku9a753df1] {
+        background: rgba(40,167,69,0.08);
+        color: #218838;
+        border-color: #218838;
+        outline: none;
+    }
+
+.webrtc-countdown-anim[b-ku9a753df1] {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -60%);
+    font-size: 4rem;
+    font-weight: bold;
+    color: white;
+    border-radius: 50%;
+    width: 90px;
+    height: 90px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    animation: webrtc-countdown-pop-b-ku9a753df1 0.5s;
+}
+
+@keyframes webrtc-countdown-pop-b-ku9a753df1 {
+    0% {
+        transform: scale(0.7) translate(-50%, -60%);
+        opacity: 0.5;
+    }
+
+    60% {
+        transform: scale(1.2) translate(-50%, -60%);
+        opacity: 1;
+    }
+
+    100% {
+        transform: scale(1) translate(-50%, -60%);
+        opacity: 1;
+    }
+}
 /* /Pages/Clients/Profile.razor.rz.scp.css */
 /* Container halaman */
 .profile-page[b-t1gp74n82c] {
