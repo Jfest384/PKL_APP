@@ -48,12 +48,37 @@
                         }
                     </select>
                 </div>
-                @if ((UserRole == "Admin" || UserRole == "Kepala Jurusan") && CurrentTab == "Siswa TKJ")
+                @* @if ((UserRole == "Admin" || UserRole == "Kepala Jurusan") && CurrentTab == "Siswa TKJ")
                 {
                     <div class="col-12 col-md-auto d-flex align-items-center gap-2 mt-2 mt-md-0">
                         <button class="btn btn-warning w-100 w-md-auto" @onclick="OnAssignStudentPKLClicked">
                             <i class="bi bi-person-plus"></i> Assign Student PKL
                         </button>
+                    </div>
+                }
+                @if ((UserRole == "Admin" || UserRole == "Kepala Jurusan") && CurrentTab == "Siswa PKL")
+                {
+                    <div class="col-12 col-md-auto d-flex align-items-center gap-2 mt-2 mt-md-0">
+                        <button class="btn btn-danger w-100 w-md-auto" @onclick="OnDeleteStudentPKLClicked">
+                            <i class="bi bi-trash"></i> Delete
+                        </button>
+                    </div>
+                } *@
+                @if (UserRole == "Admin" || UserRole == "Kepala Jurusan")
+                {
+                    <div class="col-12 col-md-auto d-flex align-items-center gap-2 mt-2 mt-md-0">
+                        @if (CurrentTab == "Siswa TKJ")
+                        {
+                            <button class="btn btn-warning w-100 w-md-auto" @onclick="OnAssignStudentPKLClicked">
+                                <i class="bi bi-person-plus"></i> Assign Student PKL
+                            </button>
+                        }
+                        @if (CurrentTab == "Siswa PKL")
+                        {
+                            <button class="btn btn-danger w-100 w-md-auto" @onclick="OnDeleteStudentPKLClicked">
+                                <i class="bi bi-trash"></i> Delete
+                            </button>
+                        }
                     </div>
                 }
             </div>
@@ -101,7 +126,7 @@
                 <table class="table table-bordered @GetTableCode()">
                     <thead>
                         <tr>
-                            @if ((UserRole == "Admin" || UserRole == "Kepala Jurusan") && CurrentTab == "Siswa TKJ")
+                            @if ((UserRole == "Admin" || UserRole == "Kepala Jurusan") && (CurrentTab == "Siswa TKJ" || CurrentTab == "Siswa PKL"))
                             {
                                 <th class="text-center">
                                     <input type="checkbox" @bind="IsHeaderCheckboxChecked" />
@@ -112,7 +137,7 @@
                             {
                                 var sortable = false;
                                 if (CurrentTab == "Siswa TKJ" && (header == "NIS" || header == "Nama" || header == "Kelas")) sortable = true;
-                                else if (CurrentTab == "Pembimbing PKL" && header == "Nama") sortable = true;
+                                else if (CurrentTab == "Pembimbing PKL" && (header == "Nama" || header == "NIP")) sortable = true;
                                 else if (CurrentTab == "Siswa PKL" && (header == "NIS" || header == "Nama" || header == "Kelas" || header == "Pembimbing" || header == "Tempat PKL")) sortable = true;
                                 else if (CurrentTab == "Manajemen Kelas" && (header == "Kelas" || header == "Total Siswa" || header == "Wali Kelas" || header == "Tahun")) sortable = true;
 
@@ -138,7 +163,7 @@
                         @if (GetPagedSortedData().Count == 0)
                         {
                             int colspan = 0;
-                            if ((UserRole == "Admin" || UserRole == "Kepala Jurusan") && CurrentTab == "Siswa TKJ")
+                            @if ((UserRole == "Admin" || UserRole == "Kepala Jurusan") && (CurrentTab == "Siswa TKJ" || CurrentTab == "Siswa PKL"))
                                 colspan += 1;
                             colspan += 1;
                             colspan += GetHeaders().Count;
@@ -158,7 +183,7 @@
                             {
                                 rowIndex++;
                                 <tr>
-                                    @if ((UserRole == "Admin" || UserRole == "Kepala Jurusan") && CurrentTab == "Siswa TKJ")
+                                    @if ((UserRole == "Admin" || UserRole == "Kepala Jurusan") && (CurrentTab == "Siswa TKJ" || CurrentTab == "Siswa PKL"))
                                     {
                                         <td class="text-center">
                                             <input type="checkbox"
@@ -186,8 +211,17 @@
                                     }
                                     else if (CurrentTab == "Pembimbing PKL")
                                     {
-                                        <td>@item[1]</td>
+                                        @if (UserRole != "Student")
+                                        {
+                                            <td>@item[1]</td>
+                                        }
                                         <td>@item[2]</td>
+                                        <td>
+                                            @{
+                                                var kelasDibimbing = string.IsNullOrWhiteSpace(item[3]) ? "-" : item[3];
+                                            }
+                                            @kelasDibimbing
+                                        </td>
                                         @if (UserRole == "Admin" || UserRole == "Kepala Jurusan")
                                         {
                                             <td class="justify-content-center">
@@ -603,12 +637,18 @@
         {
             <Modal IsVisible="true">
                 <div class="text-center">
-                    <i class="bi bi-person-plus fs-1 text-warning"></i>
-                    <p class="fw-bold">Assign Siswa PKL</p>
-                    <p>Apakah Anda yakin ingin memasukkan @AssignBatchData.Count siswa ke data Siswa PKL?</p>
+                    <i class="bi bi-person-plus fs-1 @(IsAssignPKLMode ? "text-warning" : "text-danger")"></i>
+                    <p class="fw-bold">
+                        @(IsAssignPKLMode ? "Assign Siswa PKL" : "Delete Siswa PKL")
+                    </p>
+                    <p>
+                        @(IsAssignPKLMode
+                            ? $"Apakah Anda yakin ingin memasukkan {AssignBatchData.Count} siswa ke data Siswa PKL?"
+                            : $"Apakah Anda yakin ingin menghapus {AssignBatchData.Count} siswa dari data Siswa PKL?")
+                    </p>
                     <div class="d-flex justify-content-center gap-3 mt-4">
                         <button class="btn btn-danger px-4" @onclick="CancelAssignPKL">No</button>
-                        <button class="btn btn-success px-4" @onclick="ConfirmAssignPKL">Yes</button>
+                        <button class="btn btn-success px-4" @onclick="ConfirmAssignOrDeletePKL">Yes</button>
                     </div>
                 </div>
             </Modal>
@@ -619,7 +659,7 @@
                 <div class="text-center">
                     <i class="bi bi-exclamation-triangle fs-1 text-danger"></i>
                     <p class="fw-bold">Error</p>
-                    <p>Silakan pilih minimal satu siswa terlebih dahulu sebelum assign.</p>
+                    <p>Silakan pilih minimal satu siswa terlebih dahulu sebelum @(IsAssignPKLMode ? "assign" : "delete").</p>
                     <button class="btn btn-primary px-4" @onclick="CloseAssignPKLError">OK</button>
                 </div>
             </Modal>
@@ -632,7 +672,11 @@
                         <i class="bi bi-check-circle-fill" style="font-size:3rem; color:limegreen;"></i>
                     </span>
                     <p class="mt-2 fw-bold" style="font-size:20px">Success</p>
-                    <p class="mt-1">Siswa berhasil ditambahkan ke data Siswa PKL!</p>
+                    <p class="mt-1">
+                        @(IsAssignPKLMode
+                            ? "Siswa berhasil ditambahkan ke data Siswa PKL!"
+                            : "Siswa berhasil dihapus dari data Siswa PKL!")
+                    </p>
                 </div>
             </Modal>
         }
@@ -1059,7 +1103,7 @@
         else if (CurrentTab == "Pembimbing PKL")
         {
             var source = IsSortingAllData ? CachedAllMentors : Mentors;
-            return source.Select(m => new[] { m.id.ToString(), m.fullname, string.Join(", ", m.classes) }).ToList();
+            return source.Select(m => new[] { m.id.ToString(), m.nip, m.fullname, string.Join(", ", m.classes) }).ToList();
         }
         return new();
     }
@@ -1067,7 +1111,7 @@
     private List<string> GetHeaders()
     {
         if (CurrentTab == "Siswa TKJ") return new() { "NIS", "Nama", "Kelas" };
-        if (CurrentTab == "Pembimbing PKL") return new() { "Nama", "Kelas Dibimbing" };
+        if (CurrentTab == "Pembimbing PKL") return new() { "NIP", "Nama", "Kelas Dibimbing" };
         if (CurrentTab == "Siswa PKL") return new() { "NIS", "Nama", "Kelas", "Pembimbing", "Tempat PKL" };
         if (CurrentTab == "Manajemen Kelas") return new() { "Kelas", "Total Siswa", "Wali Kelas", "Tahun", "Deskripsi" };
         return new();
@@ -1335,7 +1379,8 @@
         }
         else if (CurrentTab == "Pembimbing PKL")
         {
-            if (SortColumn == "Nama") keySelector = row => row[1];
+            if (SortColumn == "NIP") keySelector = row => row[1];
+            else if (SortColumn == "Nama") keySelector = row => row[2];
         }
         else if (CurrentTab == "Siswa PKL")
         {
@@ -1613,8 +1658,10 @@
         }
     }
 
+    private bool IsAssignPKLMode = true;
     private void OnAssignStudentPKLClicked()
     {
+        IsAssignPKLMode = true;
         if (SelectedSiswaPKLIds.Count == 0)
         {
             ShowAssignPKLError = true;
@@ -1633,7 +1680,28 @@
         StateHasChanged();
     }
 
-    private async Task ConfirmAssignPKL()
+    private void OnDeleteStudentPKLClicked()
+    {
+        IsAssignPKLMode = false;
+        if (SelectedSiswaPKLIds.Count == 0)
+        {
+            ShowAssignPKLError = true;
+            StateHasChanged();
+            return;
+        }
+        AssignBatchData = GetPagedSortedData()
+            .Where(item => SelectedSiswaPKLIds.Contains(int.Parse(item[0])))
+            .Select(item => new EditStudentBatchDTO
+            {
+                studentId = int.Parse(item[0]),
+                isPKL = false,
+                idClass = int.TryParse(item[4], out var idClassValue) ? idClassValue : null
+            }).ToList();
+        ShowAssignPKLModal = true;
+        StateHasChanged();
+    }
+
+    private async Task ConfirmAssignOrDeletePKL()
     {
         var response = await Http.PutAsJsonAsync(APIUrl.Endpoint("assign/batch"), AssignBatchData);
         if (response.IsSuccessStatusCode)

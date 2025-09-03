@@ -83,7 +83,6 @@ namespace PKL_API.Controllers
                     continue;
                 }
 
-                // Cek apakah mentor sudah ada
                 var existingMentor = await _db.Mentors.FirstOrDefaultAsync(m => m.Userid == input.id_user);
                 if (existingMentor != null)
                 {
@@ -91,7 +90,6 @@ namespace PKL_API.Controllers
                     continue;
                 }
 
-                // Tambahkan mentor baru
                 var mentor = new Mentor
                 {
                     Userid = input.id_user,

@@ -259,7 +259,7 @@
             else
             {
                 <div class="scrollable-x">
-                    @if (UserRole == "Mentor" || UserRole == "Kepala Jurusan" || UserRole == "Wali Kelas")
+                    @if (UserRole != "Teacher" && UserRole != "Student")
                     {
                         <table class="table table-bordered mentor-table">
                             <thead>
@@ -335,7 +335,7 @@
                         </table>
                     }
 
-                    @if (UserRole == "Admin" || UserRole == "Teacher")
+                    @if (UserRole == "Teacher")
                     {
                         <table class="table table-bordered admin-table">
                             <thead>

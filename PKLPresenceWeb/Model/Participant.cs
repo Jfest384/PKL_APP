@@ -51,6 +51,7 @@ namespace PKLPresenceWeb.Model
         public int id { get; set; }
         public int userid { get; set; }
         public int teacherid { get; set; }
+        public string nip { get; set; }
         public string fullname { get; set; }
         public List<string> classes { get; set; } = new();
     }
