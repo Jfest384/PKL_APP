@@ -80,7 +80,6 @@ namespace PKL_API.Controllers
             }
 
             var now = DateTime.Now;
-
             var photoEntity = await SaveFileAsync(dto.GuidancePhoto);
             var fileEntity = await SaveFileAsync(dto.ReportFile);
 
@@ -89,7 +88,7 @@ namespace PKL_API.Controllers
             if (fileEntity != null)
                 _db.ReportFiles.Add(fileEntity);
 
-            await _db.SaveChangesAsync(); // simpan file lebih dulu untuk dapat ID-nya
+            await _db.SaveChangesAsync();
 
             var report = new Report
             {
@@ -104,6 +103,21 @@ namespace PKL_API.Controllers
             };
 
             _db.Reports.Add(report);
+
+            DateTime GetStartOfWeek(DateTime date)
+            {
+                int diff = (7 + (date.DayOfWeek - DayOfWeek.Monday)) % 7;
+                return date.AddDays(-diff).Date;
+            }
+            var weekStartDate = GetStartOfWeek(now);
+
+            _db.WeeklyGuidances.Add(new WeeklyGuidance
+            {
+                Studentid = student.id,
+                Mentorid = student.Mentorid.Value,
+                WeekStartDate = weekStartDate,
+                CreatedAt = now
+            });
             await _db.SaveChangesAsync();
 
             return Ok(new
@@ -192,105 +206,428 @@ namespace PKL_API.Controllers
         [Authorize]
         [HttpGet]
         public async Task<IActionResult> GetReports(
+            [FromQuery] DateOnly? date = null,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10,
-            [FromQuery] string? name = null,
-            [FromQuery] int? classId = null)
+            [FromQuery] int? classId = null,
+            [FromQuery] string? search = null)
         {
-            int userId, roleId;
-            try
-            {
-                (userId, roleId) = await _userAccessHelper.GetUserIdAndRoleAsync();
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Unauthorized(ex.Message);
-            }
-
+            if (page < 1) page = 1;
             if (pageSize < 1) pageSize = 10;
 
-            IQueryable<Report> query = _db.Reports
-                .Include(r => r.Student).ThenInclude(s => s.Classroom)
-                .Include(r => r.Student).ThenInclude(s => s.User)
-                .Include(r => r.Student).ThenInclude(s => s.Company)
-                .Include(r => r.Student).ThenInclude(s => s.Mentor).ThenInclude(m => m.User)
-                .Include(r => r.ReportFile)
-                .Include(r => r.ReportPhoto);
+            var userIdClaim = User.FindFirst("id")?.Value;
+            if (userIdClaim == null || !int.TryParse(userIdClaim, out int userId))
+                return Unauthorized("Invalid user token");
 
-            // Role-based filtering
-            if (roleId == 2)
-            {
-                var student = await _db.Students.FirstOrDefaultAsync(s => s.Userid == userId);
-                if (student == null) return BadRequest("Student not found.");
-                query = query.Where(r => r.Studentid == student.id);
-            }
-            else if (roleId == 3)
-            {
-                var mentor = await _db.Mentors.FirstOrDefaultAsync(m => m.Userid == userId);
-                if (mentor == null) return BadRequest("Mentor not found.");
-                query = query.Where(r => r.Student.Mentorid == mentor.id);
-            }
-            else if (roleId == 5)
-            {
-                var wali = await _db.WaliKelas.Include(w => w.Teacher)
-                                              .FirstOrDefaultAsync(w => w.Userid == userId);
-                var classroom = await _db.Classrooms.FirstOrDefaultAsync(c => c.WaliKelasid == wali.id);
-                if (classroom == null) return BadRequest("Classroom not found.");
-                query = query.Where(r => r.Student.Classroomid == classroom.id);
-            }
-
-            // Filter by name
-            if (!string.IsNullOrWhiteSpace(name))
-            {
-                var loweredName = name.ToLower();
-                query = query.Where(r => r.Student.User.fullname.ToLower().Contains(loweredName));
-            }
-
-            // Filter by class
-            if (classId.HasValue)
-            {
-                query = query.Where(r => r.Classroomid == classId.Value);
-            }
-
-            var totalCount = await query.CountAsync();
-            var rawReports = await query
-                .OrderByDescending(r => r.date)
-                .ThenByDescending(r => r.time)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
+            // Ambil semua role user
+            var roleIds = await _db.UserRoles
+                .Where(ur => ur.User.id == userId)
+                .Select(ur => ur.RoleId)
                 .ToListAsync();
 
-            var pagedResult = rawReports.Select(r => new
+            DateTime GetStartOfWeek(DateOnly d)
             {
-                id = r.id,
-                date = ToIndonesianLongDate(r.date),
-                time = r.time,
-                studentId = r.Studentid,
-                nis = r.Student.nis,
-                name = r.Student.User.fullname,
-                classId = r.Classroomid,
-                classroom_name = r.Student.Classroom?.name,
-                company_name = r.Student.Company?.name,
-                mentor = r.Student.Mentor?.User?.fullname ?? "-",
-                description = r.description,
-                feedback = r.feedback ?? "-",
-                reportFileId = r.ReportFileid,
-                reportPhotoId = r.ReportPhotoid,
-                hasAttachment = (r.ReportFileid != null || r.ReportPhotoid != null),
-                isGuidance = _db.WeeklyGuidances.Any(w =>
-                    w.Studentid == r.Studentid &&
-                    w.WeekStartDate.Date == GetStartOfWeek(r.date).Date)
-                        ? "✔️" : "❌"
-            }).ToList();
+                var dt = d.ToDateTime(TimeOnly.MinValue);
+                int diff = (7 + (dt.DayOfWeek - DayOfWeek.Monday)) % 7;
+                return dt.AddDays(-diff).Date;
+            }
 
-            return Ok(new
+            if (roleIds.Contains(2))
             {
-                page,
-                pageSize,
-                totalCount,
-                totalPages = (int)Math.Ceiling(totalCount / (double)pageSize),
-                data = pagedResult
-            });
+                var student = await _db.Students.FirstOrDefaultAsync(s => s.Userid == userId);
+                if (student == null)
+                    return BadRequest("Student data not found.");
+
+                var query = _db.Reports
+                    .Include(r => r.Student).ThenInclude(s => s.Classroom)
+                    .Include(r => r.Student).ThenInclude(s => s.Company)
+                    .Include(r => r.Student).ThenInclude(s => s.User)
+                    .Include(r => r.Mentor).ThenInclude(m => m.User)
+                    .Include(r => r.ReportFile)
+                    .Include(r => r.ReportPhoto)
+                    .Where(r => r.Studentid == student.id);
+
+                var totalCount = await query.CountAsync();
+                var reports = await query
+                    .OrderByDescending(r => r.date)
+                    .ThenByDescending(r => r.time)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .Select(r => new
+                    {
+                        id = r.id.ToString(),
+                        date = ToIndonesianLongDate(r.date),
+                        time = r.time.ToString("HH:mm:ss"),
+                        name = r.Student.User.fullname ?? "-",
+                        description = r.description,
+                        feedback = r.feedback ?? "-",
+                        reportFileId = r.ReportFileid,
+                        reportPhotoId = r.ReportPhotoid,
+                    })
+                    .ToListAsync();
+
+                return Ok(new
+                {
+                    page,
+                    pageSize,
+                    totalCount,
+                    totalPages = (int)Math.Ceiling(totalCount / (double)pageSize),
+                    data = reports
+                });
+            }
+
+            else if (roleIds.Contains(3) && roleIds.Contains(5))
+            {
+                var filterDate = date ?? DateOnly.FromDateTime(DateTime.Now);
+                var mentor = await _db.Mentors.FirstOrDefaultAsync(m => m.Userid == userId);
+                var waliKelas = await _db.WaliKelas.FirstOrDefaultAsync(wk => wk.Userid == userId);
+                var classroom = waliKelas != null
+                    ? await _db.Classrooms.FirstOrDefaultAsync(c => c.WaliKelasid == waliKelas.id) : null;
+
+                var mentorStudentsQuery = _db.Students
+                    .Include(s => s.User)
+                    .Include(s => s.Classroom)
+                    .Where(s => s.Mentorid == mentor.id && s.isPKL == true);
+
+                var waliKelasStudentsQuery = classroom != null
+                    ? _db.Students
+                        .Include(s => s.User)
+                        .Include(s => s.Classroom)
+                        .Where(s => s.Classroomid == classroom.id && s.isPKL == true)
+                    : Enumerable.Empty<Student>().AsQueryable();
+
+                // Gabungkan student, hilangkan duplikat
+                var students = await mentorStudentsQuery
+                    .Union(waliKelasStudentsQuery).ToListAsync();
+                var studentIds = students.Select(s => s.id).ToList();
+
+                // Ambil report
+                var reportsQuery = _db.Reports
+                    .Include(r => r.ReportFile)
+                    .Include(r => r.ReportPhoto)
+                    .Where(r => studentIds.Contains(r.Studentid) && r.date == filterDate);
+
+                var reportsOnDate = await reportsQuery.ToListAsync();
+
+                var weekStart = GetStartOfWeek(filterDate);
+                var weekEnd = weekStart.AddDays(6);
+                var weeklyGuidances = await _db.WeeklyGuidances
+                    .Where(wg => studentIds.Contains(wg.Studentid) && wg.WeekStartDate == weekStart)
+                    .ToListAsync();
+
+                var result = students.Select(s =>
+                {
+                    var report = reportsOnDate.FirstOrDefault(r => r.Studentid == s.id);
+                    var hasGuidance = weeklyGuidances.Any(wg => wg.Studentid == s.id);
+                    return new
+                    {
+                        id = report?.id.ToString() ?? "-",
+                        studentId = report?.Studentid.ToString() ?? "-",
+                        nis = s.nis ?? "-",
+                        name = s.User.fullname ?? "-",
+                        classroom_name = s.Classroom?.name ?? "-",
+                        company_name = s.Company?.name ?? "-",
+                        date = ToIndonesianLongDate(filterDate),
+                        time = report != null ? report.time.ToString("HH:mm:ss") : "-",
+                        description = report?.description ?? "-",
+                        feedback = report?.feedback ?? "-",
+                        reportFileId = report?.ReportFileid,
+                        reportPhotoId = report?.ReportPhotoid,
+                        isGuidance = hasGuidance ? "✔️" : "❌"
+                    };
+                });
+
+                // Search di hasil join (nama, nis, deskripsi)
+                if (!string.IsNullOrWhiteSpace(search))
+                {
+                    var searchLower = search.ToLower();
+                    result = result.Where(r =>
+                        (r.name.ToLower().Contains(searchLower)) ||
+                        (r.nis.ToLower().Contains(searchLower)) ||
+                        (r.description.ToLower().Contains(searchLower))
+                    );
+                }
+
+                var resultList = result.ToList();
+                var totalCount = resultList.Count;
+                List<object> pagedResult;
+                if (pageSize < 0 || pageSize >= totalCount)
+                {
+                    pagedResult = resultList.Cast<object>().ToList();
+                    pageSize = totalCount;
+                    page = 1;
+                }
+                else pagedResult = resultList.Skip((page - 1) * pageSize).Take(pageSize).Cast<object>().ToList();
+
+                return Ok(new
+                {
+                    page,
+                    pageSize,
+                    totalCount,
+                    totalPages = (int)Math.Ceiling(totalCount / (double)pageSize),
+                    data = pagedResult
+                });
+            }
+
+            // Mentor saja: tampilkan semua student yang diampunya (data perhari)
+            else if (roleIds.Contains(3))
+            {
+                var mentor = await _db.Mentors.FirstOrDefaultAsync(m => m.Userid == userId);
+                if (mentor == null)
+                    return BadRequest("Mentor data not found.");
+
+                var filterDate = date ?? DateOnly.FromDateTime(DateTime.Now);
+
+                // Ambil semua siswa PKL bimbingan mentor ini
+                var studentsQuery = _db.Students
+                    .Include(s => s.User)
+                    .Include(s => s.Classroom)
+                    .Where(s => s.Mentorid == mentor.id && s.isPKL == true);
+
+                if (classId.HasValue)
+                    studentsQuery = studentsQuery.Where(s => s.Classroomid == classId.Value);
+
+                var students = await studentsQuery.ToListAsync();
+                var studentIds = students.Select(s => s.id).ToList();
+
+                // Ambil report hari itu
+                var reportsQuery = _db.Reports
+                    .Include(r => r.ReportFile)
+                    .Include(r => r.ReportPhoto)
+                    .Where(r => r.Mentorid == mentor.id && r.date == filterDate);
+
+                var reportsOnDate = await reportsQuery.ToListAsync();
+
+                var weekStart = GetStartOfWeek(filterDate);
+                var weekEnd = weekStart.AddDays(6);
+                var weeklyGuidances = await _db.WeeklyGuidances
+                    .Where(wg => studentIds.Contains(wg.Studentid) && wg.WeekStartDate == weekStart)
+                    .ToListAsync();
+
+                var result = students.Select(s =>
+                {
+                    var report = reportsOnDate.FirstOrDefault(r => r.Studentid == s.id);
+                    var hasGuidance = weeklyGuidances.Any(wg => wg.Studentid == s.id);
+                    return new
+                    {
+                        id = report?.id.ToString() ?? "-",
+                        studentId = report?.Studentid.ToString() ?? "-",
+                        nis = s.nis ?? "-",
+                        name = s.User.fullname ?? "-",
+                        classroom_name = s.Classroom?.name ?? "-",
+                        company_name = s.Company?.name ?? "-",
+                        date = ToIndonesianLongDate(filterDate),
+                        time = report != null ? report.time.ToString("HH:mm:ss") : "-",
+                        description = report?.description ?? "-",
+                        feedback = report?.feedback ?? "-",
+                        reportFileId = report?.ReportFileid,
+                        reportPhotoId = report?.ReportPhotoid,
+                        isGuidance = hasGuidance ? "✔️" : "❌"
+                    };
+                });
+
+                if (!string.IsNullOrWhiteSpace(search))
+                {
+                    var searchLower = search.ToLower();
+                    result = result.Where(r =>
+                        (r.name.ToLower().Contains(searchLower)) ||
+                        (r.nis.ToLower().Contains(searchLower)) ||
+                        (r.description.ToLower().Contains(searchLower))
+                    );
+                }
+
+                var resultList = result.ToList();
+                var totalCount = resultList.Count;
+                List<object> pagedResult;
+                if (pageSize < 0 || pageSize >= totalCount)
+                {
+                    pagedResult = resultList.Cast<object>().ToList();
+                    pageSize = totalCount;
+                    page = 1;
+                }
+                else pagedResult = resultList.Skip((page - 1) * pageSize).Take(pageSize).Cast<object>().ToList();
+
+                return Ok(new
+                {
+                    page,
+                    pageSize,
+                    totalCount,
+                    totalPages = (int)Math.Ceiling(totalCount / (double)pageSize),
+                    data = pagedResult
+                });
+            }
+
+            // Wali Kelas saja: tampilkan semua student yang jadi waliannya (data perhari)
+            else if (roleIds.Contains(5))
+            {
+                var waliKelas = await _db.WaliKelas.FirstOrDefaultAsync(wk => wk.Userid == userId);
+                if (waliKelas == null)
+                    return BadRequest("Homeroom teacher data not found.");
+
+                var classroom = await _db.Classrooms.FirstOrDefaultAsync(c => c.WaliKelasid == waliKelas.id);
+                if (classroom == null)
+                    return BadRequest("Classroom for this homeroom teacher not found.");
+
+                var filterDate = date ?? DateOnly.FromDateTime(DateTime.Now);
+
+                var studentsQuery = _db.Students
+                    .Include(s => s.User)
+                    .Include(s => s.Classroom)
+                    .Where(s => s.Classroomid == classroom.id && s.isPKL == true);
+
+                if (classId.HasValue)
+                    studentsQuery = studentsQuery.Where(s => s.Classroomid == classId.Value);
+
+                var students = await studentsQuery.ToListAsync();
+                var studentIds = students.Select(s => s.id).ToList();
+
+                var reportsQuery = _db.Reports
+                    .Include(r => r.ReportFile)
+                    .Include(r => r.ReportPhoto)
+                    .Where(r => studentIds.Contains(r.Studentid) && r.date == filterDate);
+
+                var reportsOnDate = await reportsQuery.ToListAsync();
+
+                var weekStart = GetStartOfWeek(filterDate);
+                var weekEnd = weekStart.AddDays(6);
+                var weeklyGuidances = await _db.WeeklyGuidances
+                    .Where(wg => studentIds.Contains(wg.Studentid) && wg.WeekStartDate == weekStart)
+                    .ToListAsync();
+
+                var result = students.Select(s =>
+                {
+                    var report = reportsOnDate.FirstOrDefault(r => r.Studentid == s.id);
+                    var hasGuidance = weeklyGuidances.Any(wg => wg.Studentid == s.id);
+                    return new
+                    {
+                        id = report?.id.ToString() ?? "-",
+                        studentId = report?.Studentid.ToString() ?? "-",
+                        nis = s.nis ?? "-",
+                        name = s.User.fullname ?? "-",
+                        classroom_name = s.Classroom?.name ?? "-",
+                        company_name = s.Company?.name ?? "-",
+                        date = ToIndonesianLongDate(filterDate),
+                        time = report != null ? report.time.ToString("HH:mm:ss") : "-",
+                        description = report?.description ?? "-",
+                        feedback = report?.feedback ?? "-",
+                        reportFileId = report?.ReportFileid,
+                        reportPhotoId = report?.ReportPhotoid,
+                        isGuidance = hasGuidance ? "✔️" : "❌"
+                    };
+                });
+
+                if (!string.IsNullOrWhiteSpace(search))
+                {
+                    var searchLower = search.ToLower();
+                    result = result.Where(r =>
+                        (r.name.ToLower().Contains(searchLower)) ||
+                        (r.nis.ToLower().Contains(searchLower)) ||
+                        (r.description.ToLower().Contains(searchLower))
+                    );
+                }
+
+                var resultList = result.ToList();
+                var totalCount = resultList.Count;
+                List<object> pagedResult;
+                if (pageSize < 0 || pageSize >= totalCount)
+                {
+                    pagedResult = resultList.Cast<object>().ToList();
+                    pageSize = totalCount;
+                    page = 1;
+                }
+                else pagedResult = resultList.Skip((page - 1) * pageSize).Take(pageSize).Cast<object>().ToList();
+
+                return Ok(new
+                {
+                    page,
+                    pageSize,
+                    totalCount,
+                    totalPages = (int)Math.Ceiling(totalCount / (double)pageSize),
+                    data = pagedResult
+                });
+            }
+
+            // Admin/Operator: tampilkan semua student (data perhari)
+            else
+            {
+                var filterDate = date ?? DateOnly.FromDateTime(DateTime.Now);
+
+                var studentsQuery = _db.Students
+                    .Include(s => s.User)
+                    .Include(s => s.Classroom)
+                    .Where(s => s.isPKL == true);
+
+                if (classId.HasValue)
+                    studentsQuery = studentsQuery.Where(s => s.Classroomid == classId.Value);
+
+                var students = await studentsQuery.ToListAsync();
+                var studentIds = students.Select(s => s.id).ToList();
+
+                var reportsQuery = _db.Reports
+                    .Include(r => r.ReportFile)
+                    .Include(r => r.ReportPhoto)
+                    .Where(r => studentIds.Contains(r.Studentid) && r.date == filterDate);
+
+                var reportsOnDate = await reportsQuery.ToListAsync();
+
+                var weekStart = GetStartOfWeek(filterDate);
+                var weekEnd = weekStart.AddDays(6);
+                var weeklyGuidances = await _db.WeeklyGuidances
+                    .Where(wg => studentIds.Contains(wg.Studentid) && wg.WeekStartDate == weekStart)
+                    .ToListAsync();
+
+                var result = students.Select(s =>
+                {
+                    var report = reportsOnDate.FirstOrDefault(r => r.Studentid == s.id);
+                    var hasGuidance = weeklyGuidances.Any(wg => wg.Studentid == s.id);
+                    return new
+                    {
+                        id = report?.id.ToString() ?? "-",
+                        studentId = report?.Studentid.ToString() ?? "-",
+                        nis = s.nis ?? "-",
+                        name = s.User.fullname ?? "-",
+                        classroom_name = s.Classroom?.name ?? "-",
+                        company_name = s.Company?.name ?? "-",
+                        date = ToIndonesianLongDate(filterDate),
+                        time = report != null ? report.time.ToString("HH:mm:ss") : "-",
+                        description = report?.description ?? "-",
+                        feedback = report?.feedback ?? "-",
+                        reportFileId = report?.ReportFileid,
+                        reportPhotoId = report?.ReportPhotoid,
+                        isGuidance = hasGuidance ? "✔️" : "❌"
+                    };
+                });
+
+                if (!string.IsNullOrWhiteSpace(search))
+                {
+                    var searchLower = search.ToLower();
+                    result = result.Where(r =>
+                        (r.name.ToLower().Contains(searchLower)) ||
+                        (r.nis.ToLower().Contains(searchLower)) ||
+                        (r.description.ToLower().Contains(searchLower))
+                    );
+                }
+
+                var resultList = result.ToList();
+                var totalCount = resultList.Count;
+                List<object> pagedResult;
+                if (pageSize < 0 || pageSize >= totalCount)
+                {
+                    pagedResult = resultList.Cast<object>().ToList();
+                    pageSize = totalCount;
+                    page = 1;
+                }
+                else pagedResult = resultList.Skip((page - 1) * pageSize).Take(pageSize).Cast<object>().ToList();
+
+                return Ok(new
+                {
+                    page,
+                    pageSize,
+                    totalCount,
+                    totalPages = (int)Math.Ceiling(totalCount / (double)pageSize),
+                    data = pagedResult
+                });
+            }
         }
 
         private DateTime GetStartOfWeek(DateOnly date)
