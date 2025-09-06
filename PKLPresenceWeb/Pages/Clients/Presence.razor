@@ -1175,16 +1175,6 @@
         StateHasChanged();
     }
 
-    private async void OnPageSizeChanged(ChangeEventArgs e)
-    {
-        if (int.TryParse(e.Value?.ToString(), out var size))
-        {
-            PageSize = size;
-            CurrentPage = 1;
-            await LoadStudentPresences();
-        }
-    }
-
     async Task LoadClasses()
     {
         var response = await Http.GetFromJsonAsync<ClassListResponse>(APIUrl.Endpoint($"classes?page={CurrentPage}"));
@@ -1270,15 +1260,6 @@
         SelectedPresenceIndex = -1;
     }
 
-    // async void PreviewFoto()
-    // {
-    //     if (SelectedPresenceDetail != null)
-    //     {
-    //         if (PresenceTypes == null || PresenceTypes.Count == 0) await LoadPresenceTypes();
-    //         await ShowPresencePhotoModalForPresence(SelectedPresenceDetail);
-    //     }
-    // }
-
     async void ShowFeedback(PresenceItem item)
     {
         SelectedPresenceDetail = item;
@@ -1307,11 +1288,6 @@
                 StateHasChanged();
             }
         }
-    }
-
-    void ToggleDatePicker()
-    {
-        showDatePicker = !showDatePicker;
     }
 
     async Task OnDateSelected(ChangeEventArgs e)
@@ -1672,16 +1648,6 @@
                 break;
         }
         return query;
-    }
-
-    private async void OnMentorPageSizeChanged(ChangeEventArgs e)
-    {
-        if (int.TryParse(e.Value?.ToString(), out var size))
-        {
-            PageSize = size;
-            CurrentPage = 1;
-            await LoadPresence(selectedDate);
-        }
     }
 
     void ShowPrevPresence()

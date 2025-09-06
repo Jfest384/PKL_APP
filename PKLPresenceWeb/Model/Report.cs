@@ -1,4 +1,4 @@
-﻿namespace PKLPresenceWeb.Model
+﻿  namespace PKLPresenceWeb.Model
 {
     public class ReportListResponse
     {

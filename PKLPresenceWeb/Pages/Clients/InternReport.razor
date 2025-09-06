@@ -246,6 +246,15 @@
                         }
                     </select>
                 </div>
+                <div class="col-12 col-md-auto d-flex align-items-center gap-2 mt-2 mt-md-0">
+                    <input type="date"
+                           class="form-control"
+                           style="w-100 w-md-auto"
+                           value="@selectedDate"
+                           min="@MinDate"
+                           max="@MaxDate"
+                           @onchange="OnDateSelected" />
+                </div>
             </div>
 
             @if (isLoading)
@@ -258,7 +267,7 @@
             }
             else
             {
-                <div class="scrollable-x">
+                @* <div class="scrollable-x">
                     @if (UserRole != "Teacher" && UserRole != "Student")
                     {
                         <table class="table table-bordered mentor-table">
@@ -391,6 +400,154 @@
                             </tbody>
                         </table>
                     }
+                </div> *@
+
+                <div class="scrollable-x">
+                    <table class="table table-bordered @(UserRole == "Teacher" ? "admin-table" : "mentor-table")">
+                        <thead>
+                            <tr>
+                                <th class="text-center">No</th>
+                                <th class="text-center sortable" @onclick="() => SortBy(nameof(ReportItem.nis))">
+                                    NIS
+                                    @if (SortColumn == nameof(ReportItem.nis))
+                                    {
+                                        <span class="sort-arrow">
+                                            @(SortAscending ? "▲" : "▼")
+                                        </span>
+                                    }
+                                </th>
+                                <th class="text-center sortable" @onclick="() => SortBy(nameof(ReportItem.name))">
+                                    Nama Lengkap
+                                    @if (SortColumn == nameof(ReportItem.name))
+                                    {
+                                        <span class="sort-arrow">
+                                            @(SortAscending ? "▲" : "▼")
+                                        </span>
+                                    }
+                                </th>
+                                <th class="text-center sortable" @onclick="() => SortBy(nameof(ReportItem.classroom_name))">
+                                    Kelas
+                                    @if (SortColumn == nameof(ReportItem.classroom_name))
+                                    {
+                                        <span class="sort-arrow">
+                                            @(SortAscending ? "▲" : "▼")
+                                        </span>
+                                    }
+                                </th>
+                                <th class="text-center">Hari/Tanggal</th>
+                                <th class="text-center sortable" @onclick="() => SortBy(nameof(ReportItem.time))">
+                                    Jam
+                                    @if (SortColumn == nameof(ReportItem.time))
+                                    {
+                                        <span class="sort-arrow">
+                                            @(SortAscending ? "▲" : "▼")
+                                        </span>
+                                    }
+                                </th>
+                                <th class="text-center sortable" @onclick="() => SortBy(nameof(ReportItem.company_name))">
+                                    Nama PT
+                                    @if (SortColumn == nameof(ReportItem.company_name))
+                                    {
+                                        <span class="sort-arrow">
+                                            @(SortAscending ? "▲" : "▼")
+                                        </span>
+                                    }
+                                </th>
+                                <th class="text-center sortable" @onclick="() => SortBy(nameof(ReportItem.description))">
+                                    Deskripsi
+                                    @if (SortColumn == nameof(ReportItem.description))
+                                    {
+                                        <span class="sort-arrow">
+                                            @(SortAscending ? "▲" : "▼")
+                                        </span>
+                                    }
+                                </th>
+                                <th class="text-center sortable" @onclick="() => SortBy(nameof(ReportItem.feedback))">
+                                    Feedback
+                                    @if (SortColumn == nameof(ReportItem.feedback))
+                                    {
+                                        <span class="sort-arrow">
+                                            @(SortAscending ? "▲" : "▼")
+                                        </span>
+                                    }
+                                </th>
+                                <th class="text-center sortable" @onclick='() => SortBy("Bimbingan")'>
+                                    Bimbingan
+                                    @if (SortColumn == "Bimbingan")
+                                    {
+                                        <span class="sort-arrow">
+                                            @(SortAscending ? "▲" : "▼")
+                                        </span>
+                                    }
+                                </th>
+                                @if (UserRole != "Teacher" && UserRole != "Student")
+                                {
+                                    <th class="text-center">Action</th>
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Reports is not null && Reports.Count > 0)
+                            {
+                                var sortedPresences = PageSize == 1000
+                                ? GetSortedReports()
+                                : GetSortedReports().Skip((CurrentPage - 1) * PageSize).Take(PageSize);
+                                var rowIndex = PageSize == 1000 ? 0 : (CurrentPage - 1) * PageSize;
+                                foreach (var item in sortedPresences)
+                                {
+                                    rowIndex++;
+                                    <tr>
+                                        <td class="text-center">@rowIndex</td>
+                                        <td>@item.nis</td>
+                                        <td>@item.name</td>
+                                        <td>@item.classroom_name</td>
+                                        <td>@item.date</td>
+                                        <td>@item.time</td>
+                                        <td>@item.company_name</td>
+                                        <td>@item.description</td>
+                                        <td>@item.feedback</td>
+                                        <td class="text-center">
+                                            @if (item.isGuidance == "✔️")
+                                            {
+                                                <span class="bi bi-check text-success" style="font-size: 2rem; font-weight: bold"></span>
+                                            }
+                                            else
+                                            {
+                                                <span class="bi bi-x text-danger" style="font-size: 2rem; font-weight: bold"></span>
+                                            }
+                                        </td>
+                                        @if (UserRole != "Teacher" && UserRole != "Student")
+                                        {
+                                            <td>
+                                                <div class="d-flex flex-column gap-2 align-items-center">
+                                                    <button class="btn btn-sm btn-success" @onclick="() => ShowFeedback(item)">Feedback</button>
+                                                    @if (UserRole == "Mentor")
+                                                    {
+                                                        <button class="btn btn-sm btn-warning"
+                                                                @onclick="() => ShowGuidance(item.studentId, item.name)"
+                                                                disabled="@(item.isGuidance == "✔️")"
+                                                                style="font-size: 0.8rem;">
+                                                            Bimbingan
+                                                        </button>
+                                                    }
+                                                    <button class="btn btn-sm btn-info" style="padding-left: 1.15rem; padding-right: 1.15rem;"
+                                                            @onclick="() => ShowReportDetail(item)">
+                                                        Detail
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        }
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="10" class="text-center text-muted">Tidak ada data presensi.</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
                 </div>
 
                 <div class="row justify-content-end mb-2">
@@ -404,20 +561,25 @@
                     </div>
                 </div>
 
+                <select class="form-select page-size-dropdown my-3" style="max-width:170px;" @bind="PageSize">
+                    <option value="10">Show 10 Entries</option>
+                    <option value="50">Show 50 Entries</option>
+                    <option value="100">Show 100 Entries</option>
+                    <option value="1000">Show All Entries</option>
+                </select>
+
                 <nav class="d-flex justify-content-center mt-2" style="padding: 1rem;">
                     <ul class="pagination d-flex flex-wrap justify-content-center">
                         <li class="page-item @(CurrentPage == 1 ? "disabled" : null)">
                             <button class="page-link" @onclick="() => ChangePage(CurrentPage - 1)">Previous</button>
                         </li>
 
-                        @* Selalu tampilkan page 1 *@
                         <li class="page-item @(CurrentPage == 1 ? "active" : null)">
                             <button class="page-link" @onclick="() => ChangePage(1)" disabled="@(CurrentPage == 1)">1</button>
                         </li>
 
                         @if (CurrentPage <= 3)
                         {
-                            // Tampilkan halaman 2 sampai 4
                             for (int i = 2; i <= Math.Min(4, TotalPages - 1); i++)
                             {
                                 var pageNumber = i;
@@ -464,7 +626,6 @@
                             <li class="page-item disabled"><span class="page-link">...</span></li>
                         }
 
-                        @* Selalu tampilkan halaman terakhir (jika > 1) *@
                         @if (TotalPages > 1)
                         {
                             <li class="page-item @(CurrentPage == TotalPages ? "active" : null)">
@@ -629,6 +790,7 @@
 @code {
     private string UserRole = "";
     private List<ReportItem> Reports = new();
+    private List<ReportItem> AllReports = new();
     private List<ClassItem> ClassList = new();
     private string searchName = "";
     private int? selectedClassId;
@@ -639,7 +801,10 @@
     private int TotalPages = 1;
 
     private CancellationTokenSource? searchDebounceCts;
-    private string selectedDate = "";
+    private bool showDatePicker = false;
+    private string selectedDate = DateTime.Today.ToString("yyyy-MM-dd");
+    private string MinDate => DateTime.Today.AddYears(-1).ToString("yyyy-MM-dd"); // Optional: set min date
+    private string MaxDate => DateTime.Today.ToString("yyyy-MM-dd");
 
     bool ShowReportModal = false;
     int SelectedPresenceTypeId = 0;
@@ -702,7 +867,6 @@
         ) && dt.Date == DateTime.Today
     );
 
-    private List<PresenceTypeItem> PresenceTypes = new();
     private int pageSize = 10;
     private int PageSize
     {
@@ -713,7 +877,8 @@
             {
                 pageSize = value;
                 CurrentPage = 1;
-                _ = LoadReports();
+                if (UserRole == "Student") _ = LoadStudentReports();
+                else _ = LoadReports(selectedDate);
             }
         }
     }
@@ -750,36 +915,6 @@
 
         await LoadReports();
         if (UserRole != "Student") await LoadClasses();
-    }
-
-    private async Task LoadReports()
-    {
-        var url = APIUrl.Endpoint($"repots?page={CurrentPage}&pageSize={PageSize}");
-        if (!string.IsNullOrWhiteSpace(searchName))
-            url += $"&name={Uri.EscapeDataString(searchName)}";
-        if (selectedClassId.HasValue)
-            url += $"&classId={selectedClassId.Value}";
-        var response = await Http.GetFromJsonAsync<ReportListResponse>(url);
-        if (response != null)
-        {
-            Reports = response.data ?? new();
-            TotalPages = response.totalPages;
-        }
-        StateHasChanged();
-    }
-
-    private async void OnPresenceTypeChanged(int typeId)
-    {
-        if (HasReportToday)
-        {
-            await JS.InvokeVoidAsync("alert", "Kamu sudah melakukan presensi hari ini.");
-            return;
-        }
-        SelectedPresenceTypeId = typeId;
-        SelectedPresenceTypeName = PresenceTypes.FirstOrDefault(x => x.id == typeId)?.name ?? "";
-        PresencePhotos.Clear();
-        ShowReportModal = true;
-        StateHasChanged();
     }
 
     private void ShowAddReport()
@@ -827,30 +962,30 @@
         StateHasChanged();
     }
 
-    private async void OnFilterChanged(ChangeEventArgs e)
-    {
-        searchName = e.Value?.ToString() ?? "";
-        searchDebounceCts?.Cancel();
-        searchDebounceCts = new CancellationTokenSource();
-        var token = searchDebounceCts.Token;
-        try
-        {
-            await Task.Delay(300, token);
-            if (!token.IsCancellationRequested)
-            {
-                CurrentPage = 1;
-                await LoadReports();
-            }
-        }
-        catch (TaskCanceledException) { }
-    }
+    // private async void OnFilterChanged(ChangeEventArgs e)
+    // {
+    //     searchName = e.Value?.ToString() ?? "";
+    //     searchDebounceCts?.Cancel();
+    //     searchDebounceCts = new CancellationTokenSource();
+    //     var token = searchDebounceCts.Token;
+    //     try
+    //     {
+    //         await Task.Delay(300, token);
+    //         if (!token.IsCancellationRequested)
+    //         {
+    //             CurrentPage = 1;
+    //             await LoadReports();
+    //         }
+    //     }
+    //     catch (TaskCanceledException) { }
+    // }
 
-    private async void OnClassChange(ChangeEventArgs e)
-    {
-        selectedClassId = int.TryParse(e.Value?.ToString(), out var id) ? id : null;
-        CurrentPage = 1;
-        await LoadReports();
-    }
+    // private async void OnClassChange(ChangeEventArgs e)
+    // {
+    //     selectedClassId = int.TryParse(e.Value?.ToString(), out var id) ? id : null;
+    //     CurrentPage = 1;
+    //     await LoadReports();
+    // }
 
     void GoBack() => Navigation.NavigateTo("/home");
 
@@ -872,10 +1007,21 @@
 
     private async Task ChangePage(int page)
     {
-        if (page >= 1 && page <= TotalPages)
+        if (page >= 1 && page <= TotalPages && page != CurrentPage)
         {
             CurrentPage = page;
-            await LoadReports();
+            if (UserRole == "Student")
+            {
+                await LoadStudentReports();
+            }
+            else
+            {
+                Reports = GetSortedReports()
+                    .Skip((CurrentPage - 1) * PageSize)
+                    .Take(PageSize)
+                    .ToList();
+                StateHasChanged();
+            }
         }
     }
 
@@ -1120,5 +1266,167 @@
         WebRTCCaptureCountdown = value;
         IsWebRTCCaptureCounting = value > 0;
         InvokeAsync(StateHasChanged);
+    }
+
+    private string SortColumn = "";
+    private bool SortAscending = true;
+
+    private void SortBy(string column)
+    {
+        if (SortColumn == column) SortAscending = !SortAscending;
+        else
+        {
+            SortColumn = column;
+            SortAscending = true;
+        }
+        Reports = GetSortedReports()
+            .Skip((CurrentPage - 1) * PageSize)
+            .Take(PageSize)
+            .ToList();
+        StateHasChanged();
+    }
+
+    private IEnumerable<ReportItem> GetSortedReports()
+    {
+        IEnumerable<ReportItem> query = AllReports;
+
+        switch (SortColumn)
+        {
+            case nameof(ReportItem.nis):
+                query = SortAscending
+                    ? query.OrderBy(x => x.nis)
+                    : query.OrderByDescending(x => x.nis);
+                break;
+            case nameof(ReportItem.name):
+                query = SortAscending
+                    ? query.OrderBy(x => x.name)
+                    : query.OrderByDescending(x => x.name);
+                break;
+            case nameof(ReportItem.classroom_name):
+                query = SortAscending
+                    ? query.OrderBy(x => x.classroom_name)
+                    : query.OrderByDescending(x => x.classroom_name);
+                break;
+            case nameof(ReportItem.time):
+                query = SortAscending
+                    ? query.OrderBy(x => x.time)
+                    : query.OrderByDescending(x => x.time);
+                break;
+            case nameof(ReportItem.company_name):
+                query = SortAscending
+                    ? query.OrderBy(x => x.company_name)
+                    : query.OrderByDescending(x => x.company_name);
+                break;
+            case nameof(ReportItem.description):
+                query = SortAscending
+                    ? query.OrderBy(x => x.description)
+                    : query.OrderByDescending(x => x.description);
+                break;
+            case nameof(ReportItem.feedback):
+                query = SortAscending
+                    ? query.OrderBy(x => x.feedback)
+                    : query.OrderByDescending(x => x.feedback);
+                break;
+            case "Bimbingan":
+                query = SortAscending
+                    ? query.OrderBy(x => x.isGuidance == "✔️" ? 0 : 1)
+                    : query.OrderByDescending(x => x.isGuidance == "✔️" ? 0 : 1);
+                break;
+        }
+        return query;
+    }
+
+    private async Task LoadStudentReports()
+    {
+        var url = APIUrl.Endpoint($"repots?page={CurrentPage}&pageSize={PageSize}");
+        var response = await Http.GetFromJsonAsync<ReportListResponse>(url);
+        if (response != null)
+        {
+            Reports = response.data ?? new();
+            TotalPages = response.totalPages;
+        }
+        StateHasChanged();
+    }
+
+    async Task LoadReports(string dateFilter = null)
+    {
+        isLoading = true;
+        StateHasChanged();
+
+        string url = APIUrl.Endpoint("repots");
+        if (!string.IsNullOrWhiteSpace(searchName))
+            url += $"?search={searchName}";
+        if (selectedClassId.HasValue)
+            url += (url.Contains("?") ? "&" : "?") + $"classId={selectedClassId}";
+        if (!string.IsNullOrWhiteSpace(dateFilter ?? selectedDate))
+            url += (url.Contains("?") ? "&" : "?") + $"date={dateFilter ?? selectedDate}";
+
+        // Ambil semua data (tanpa paginasi)
+        url += (url.Contains("?") ? "&" : "?") + "pageSize=1000";
+
+        var response = await Http.GetFromJsonAsync<ReportListResponse>(url);
+        if (response != null)
+        {
+            AllReports = response.data ?? new();
+            TotalPages = (int)Math.Ceiling((double)AllReports.Count / PageSize);
+            // Data yang ditampilkan di halaman aktif
+            Reports = GetSortedReports()
+                .Skip((CurrentPage - 1) * PageSize)
+                .Take(PageSize)
+                .ToList();
+        }
+        isLoading = false;
+        StateHasChanged();
+    }
+
+    async Task OnDateSelected(ChangeEventArgs e)
+    {
+        var dateValue = e.Value?.ToString();
+        if (string.IsNullOrWhiteSpace(dateValue))
+            return;
+
+        if (DateTime.TryParse(dateValue, out var dt))
+        {
+            if (dt > DateTime.Today)
+            {
+                await JS.InvokeVoidAsync("alert", "Tanggal lebih dari hari ini tidak bisa dipilih.");
+                return;
+            }
+            if (dt.DayOfWeek == DayOfWeek.Sunday)
+            {
+                await JS.InvokeVoidAsync("alert", "Hari Minggu tidak bisa dipilih.");
+                return;
+            }
+        }
+
+        showDatePicker = false;
+        selectedDate = dateValue;
+        CurrentPage = 1;
+        await LoadReports(selectedDate);
+    }
+
+    private async void OnFilterChanged(ChangeEventArgs e)
+    {
+        searchName = e.Value?.ToString() ?? "";
+        searchDebounceCts?.Cancel();
+        searchDebounceCts = new CancellationTokenSource();
+        var token = searchDebounceCts.Token;
+        try
+        {
+            await Task.Delay(300, token);
+            if (!token.IsCancellationRequested)
+            {
+                CurrentPage = 1;
+                await LoadPresence(selectedDate); // pastikan date tetap dikirim
+            }
+        }
+        catch (TaskCanceledException) { }
+    }
+
+    private async void OnClassChange(ChangeEventArgs e)
+    {
+        selectedClassId = int.TryParse(e.Value?.ToString(), out var id) ? id : null;
+        CurrentPage = 1;
+        await LoadPresence(selectedDate); // pastikan date tetap dikirim
     }
 }
