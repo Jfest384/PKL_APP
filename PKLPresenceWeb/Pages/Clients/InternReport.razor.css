@@ -598,3 +598,9 @@ input[type="radio"].presence-radio-input {
         opacity: 1;
     }
 }
+
+.sort-arrow {
+    font-size: 0.6em;
+    vertical-align: middle;
+    margin-left: 4px;
+}

@@ -154,7 +154,7 @@
                     <div class="mb-3 text-center">
                         <label class="mb-2">File Laporan</label>
                         <div class="file-upload-center">
-                            <InputFile OnChange="OnReportFileSelected" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                            <InputFile OnChange="OnReportFileSelected" accept=".pdf"
                                     style="max-width: 300px; width: 90%;" />
                         </div>
                     </div>
@@ -233,9 +233,9 @@
         }
         else
         {
-            <div class="row g-2 mb-3">
+            <div class="row g-2 mb-3 align-items-end">
                 <div class="col">
-                    <input class="form-control" placeholder="Nama Siswa..." @bind="searchName" @oninput="OnFilterChanged" />
+                    <input class="form-control" placeholder="Search..." @bind="searchName" @oninput="OnFilterChanged" />
                 </div>
                 <div class="col">
                     <select class="form-select" @onchange="OnClassChange">
@@ -267,141 +267,6 @@
             }
             else
             {
-                @* <div class="scrollable-x">
-                    @if (UserRole != "Teacher" && UserRole != "Student")
-                    {
-                        <table class="table table-bordered mentor-table">
-                            <thead>
-                                <tr>
-                                    <th class="text-center">No</th>
-                                    <th class="text-center">NIS</th>
-                                    <th class="text-center">Nama Lengkap</th>
-                                    <th class="text-center">Kelas</th>
-                                    <th class="text-center">Hari/Tanggal</th>
-                                    <th class="text-center">Jam</th>
-                                    <th class="text-center">Nama PT</th>
-                                    <th class="text-center">Deskripsi</th>
-                                    <th class="text-center">Feedback</th>
-                                    <th class="text-center">Bimbingan</th>
-                                    <th class="text-center">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @if (Reports is not null && Reports.Count > 0)
-                                {
-                                    var rowIndex = (CurrentPage - 1) * 10;
-                                    @foreach (var item in Reports)
-                                    {
-                                        rowIndex++;
-                                        <tr>
-                                            <td class="text-center">@rowIndex</td>
-                                            <td>@item.nis</td>
-                                            <td>@item.name</td>
-                                            <td>@item.classroom_name</td>
-                                            <td>@item.date</td>
-                                            <td>@item.time</td>
-                                            <td>@item.company_name</td>
-                                            <td>@item.description</td>
-                                            <td>@item.feedback</td>
-                                            <td class="text-center">
-                                                @if (item.isGuidance == "✔️")
-                                                {
-                                                    <span class="bi bi-check text-success" style="font-size: 2rem; font-weight: bold"></span>
-                                                }
-                                                else
-                                                {
-                                                    <span class="bi bi-x text-danger" style="font-size: 2rem; font-weight: bold"></span>
-                                                }
-                                            </td>
-                                            <td>
-                                                <div class="d-flex flex-column gap-2 align-items-center">
-                                                    <button class="btn btn-sm btn-success" @onclick="() => ShowFeedback(item)">Feedback</button>
-                                                    @if (UserRole == "Mentor")
-                                                    {
-                                                        <button class="btn btn-sm btn-warning"
-                                                                @onclick="() => ShowGuidance(item.studentId, item.name)"
-                                                                disabled="@(item.isGuidance == "✔️")"
-                                                                style="font-size: 0.8rem;">
-                                                            Bimbingan
-                                                        </button>
-                                                    }
-                                                    <button class="btn btn-sm btn-info" style="padding-left: 1.15rem; padding-right: 1.15rem;"
-                                                            @onclick="() => ShowReportDetail(item)">
-                                                        Detail
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    }
-                                }
-                                else
-                                {
-                                    <tr>
-                                        <td colspan="11" class="text-center text-muted">Tidak ada data laporan PKL.</td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    }
-
-                    @if (UserRole == "Teacher")
-                    {
-                        <table class="table table-bordered admin-table">
-                            <thead>
-                                <tr>
-                                    <th class="text-center">No</th>
-                                    <th class="text-center">NIS</th>
-                                    <th class="text-center">Nama Lengkap</th>
-                                    <th class="text-center">Kelas</th>
-                                    <th class="text-center">Hari/Tanggal</th>
-                                    <th class="text-center">Jam</th>
-                                    <th class="text-center">Nama PT</th>
-                                    <th class="text-center">Deskripsi</th>
-                                    <th class="text-center">Feedback</th>
-                                    <th class="text-center">Bimbingan</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @if (Reports is not null && Reports.Count > 0)
-                                {
-                                    var rowIndex = (CurrentPage - 1) * 10;
-                                    @foreach (var item in Reports)
-                                    {
-                                        rowIndex++;
-                                        <tr>
-                                            <td class="text-center">@rowIndex</td>
-                                            <td>@item.nis</td>
-                                            <td>@item.name</td>
-                                            <td>@item.classroom_name</td>
-                                            <td>@item.date</td>
-                                            <td>@item.time</td>
-                                            <td>@item.company_name</td>
-                                            <td>@item.description</td>
-                                            <td>@item.feedback</td>
-                                            <td class="text-center">
-                                                @if (item.isGuidance == "✔️")
-                                                {
-                                                    <span class="bi bi-check text-success" style="font-size: 2rem; font-weight: bold"></span>
-                                                }
-                                                else
-                                                {
-                                                    <span class="bi bi-x text-danger" style="font-size: 2rem; font-weight: bold"></span>
-                                                }
-                                            </td>
-                                        </tr>
-                                    }
-                                }
-                                else
-                                {
-                                    <tr>
-                                        <td colspan="10" class="text-center text-muted">Tidak ada data laporan PKL.</td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    }
-                </div> *@
-
                 <div class="scrollable-x">
                     <table class="table table-bordered @(UserRole == "Teacher" ? "admin-table" : "mentor-table")">
                         <thead>
@@ -520,18 +385,10 @@
                                         {
                                             <td>
                                                 <div class="d-flex flex-column gap-2 align-items-center">
-                                                    <button class="btn btn-sm btn-success" @onclick="() => ShowFeedback(item)">Feedback</button>
-                                                    @if (UserRole == "Mentor")
-                                                    {
-                                                        <button class="btn btn-sm btn-warning"
-                                                                @onclick="() => ShowGuidance(item.studentId, item.name)"
-                                                                disabled="@(item.isGuidance == "✔️")"
-                                                                style="font-size: 0.8rem;">
-                                                            Bimbingan
-                                                        </button>
-                                                    }
+                                                    <button class="btn btn-sm btn-success" @onclick="() => ShowFeedback(item)" disabled="@(item.id == "-")">Feedback</button>
                                                     <button class="btn btn-sm btn-info" style="padding-left: 1.15rem; padding-right: 1.15rem;"
-                                                            @onclick="() => ShowReportDetail(item)">
+                                                            @onclick="() => ShowReportDetail(item)"
+                                                            disabled="@(item.id == "-")">
                                                         Detail
                                                     </button>
                                                 </div>
@@ -543,7 +400,7 @@
                             else
                             {
                                 <tr>
-                                    <td colspan="10" class="text-center text-muted">Tidak ada data presensi.</td>
+                                    <td colspan="11" class="text-center text-muted">Tidak ada data presensi.</td>
                                 </tr>
                             }
                         </tbody>
@@ -913,8 +770,12 @@
             photoUrl = $"data:{contentType};base64,{base64}";
         }
 
-        await LoadReports();
-        if (UserRole != "Student") await LoadClasses();
+        if (UserRole != "Student")
+        {
+            await LoadClasses();
+            await LoadReports();
+        }
+        else await LoadStudentReports();
     }
 
     private void ShowAddReport()
@@ -923,69 +784,11 @@
         StateHasChanged();
     }
 
-    private async void OnPageSizeChanged(ChangeEventArgs e)
-    {
-        if (int.TryParse(e.Value?.ToString(), out var size))
-        {
-            PageSize = size;
-            CurrentPage = 1;
-            await LoadReports();
-        }
-    }
-
     async Task LoadClasses()
     {
         var response = await Http.GetFromJsonAsync<ClassListResponse>(APIUrl.Endpoint($"classes?page={CurrentPage}"));
         if (response != null) ClassList = response.classrooms ?? new();
     }
-
-    async Task LoadPresence(string dateFilter = null)
-    {
-        isLoading = true;
-        StateHasChanged();
-
-        string url = APIUrl.Endpoint($"presence?page={CurrentPage}");
-        if (!string.IsNullOrWhiteSpace(searchName))
-            url += $"&search={searchName}";
-        if (selectedClassId.HasValue)
-            url += $"&classId={selectedClassId}";
-        if (!string.IsNullOrWhiteSpace(dateFilter))
-            url += $"&date={dateFilter}";
-
-        var response = await Http.GetFromJsonAsync<ReportListResponse>(url);
-        if (response != null)
-        {
-            Reports = response?.data ?? new();
-            TotalPages = response?.totalPages ?? 1;
-        }
-        isLoading = false;
-        StateHasChanged();
-    }
-
-    // private async void OnFilterChanged(ChangeEventArgs e)
-    // {
-    //     searchName = e.Value?.ToString() ?? "";
-    //     searchDebounceCts?.Cancel();
-    //     searchDebounceCts = new CancellationTokenSource();
-    //     var token = searchDebounceCts.Token;
-    //     try
-    //     {
-    //         await Task.Delay(300, token);
-    //         if (!token.IsCancellationRequested)
-    //         {
-    //             CurrentPage = 1;
-    //             await LoadReports();
-    //         }
-    //     }
-    //     catch (TaskCanceledException) { }
-    // }
-
-    // private async void OnClassChange(ChangeEventArgs e)
-    // {
-    //     selectedClassId = int.TryParse(e.Value?.ToString(), out var id) ? id : null;
-    //     CurrentPage = 1;
-    //     await LoadReports();
-    // }
 
     void GoBack() => Navigation.NavigateTo("/home");
 
@@ -1040,6 +843,7 @@
 
     async Task ConfirmReport()
     {
+		if (IsSubmittingReport) return;
         if (string.IsNullOrWhiteSpace(ContentInput))
         {
             CloseDetailModal();
@@ -1417,7 +1221,7 @@
             if (!token.IsCancellationRequested)
             {
                 CurrentPage = 1;
-                await LoadPresence(selectedDate); // pastikan date tetap dikirim
+                await LoadReports(selectedDate); // pastikan date tetap dikirim
             }
         }
         catch (TaskCanceledException) { }
@@ -1427,6 +1231,6 @@
     {
         selectedClassId = int.TryParse(e.Value?.ToString(), out var id) ? id : null;
         CurrentPage = 1;
-        await LoadPresence(selectedDate); // pastikan date tetap dikirim
+        await LoadReports(selectedDate); // pastikan date tetap dikirim
     }
 }

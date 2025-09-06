@@ -256,6 +256,9 @@ namespace PKL_API.Controllers
                     .Select(r => new
                     {
                         id = r.id.ToString(),
+                        nis = r.Student.nis ?? "-",
+                        classroom_name = r.Classroom.name ?? "-",
+                        company_name = r.Student.Company.name ?? "-",
                         date = ToIndonesianLongDate(r.date),
                         time = r.time.ToString("HH:mm:ss"),
                         name = r.Student.User.fullname ?? "-",
@@ -331,8 +334,8 @@ namespace PKL_API.Controllers
                         time = report != null ? report.time.ToString("HH:mm:ss") : "-",
                         description = report?.description ?? "-",
                         feedback = report?.feedback ?? "-",
-                        reportFileId = report?.ReportFileid,
-                        reportPhotoId = report?.ReportPhotoid,
+                        reportFileId = report?.ReportFileid != null ? report.ReportFileid.ToString() : "-",
+                        reportPhotoId = report?.ReportPhotoid != null ? report.ReportPhotoid.ToString() : "-",
                         isGuidance = hasGuidance ? "✔️" : "❌"
                     };
                 });
@@ -344,7 +347,8 @@ namespace PKL_API.Controllers
                     result = result.Where(r =>
                         (r.name.ToLower().Contains(searchLower)) ||
                         (r.nis.ToLower().Contains(searchLower)) ||
-                        (r.description.ToLower().Contains(searchLower))
+                        (r.classroom_name.ToLower().Contains(searchLower)) ||
+                        (r.company_name.ToLower().Contains(searchLower))
                     );
                 }
 
@@ -420,8 +424,8 @@ namespace PKL_API.Controllers
                         time = report != null ? report.time.ToString("HH:mm:ss") : "-",
                         description = report?.description ?? "-",
                         feedback = report?.feedback ?? "-",
-                        reportFileId = report?.ReportFileid,
-                        reportPhotoId = report?.ReportPhotoid,
+                        reportFileId = report?.ReportFileid != null ? report.ReportFileid.ToString() : "-",
+                        reportPhotoId = report?.ReportPhotoid != null ? report.ReportPhotoid.ToString() : "-",
                         isGuidance = hasGuidance ? "✔️" : "❌"
                     };
                 });
@@ -432,7 +436,8 @@ namespace PKL_API.Controllers
                     result = result.Where(r =>
                         (r.name.ToLower().Contains(searchLower)) ||
                         (r.nis.ToLower().Contains(searchLower)) ||
-                        (r.description.ToLower().Contains(searchLower))
+                        (r.classroom_name.ToLower().Contains(searchLower)) ||
+                        (r.company_name.ToLower().Contains(searchLower))
                     );
                 }
 
@@ -510,8 +515,8 @@ namespace PKL_API.Controllers
                         time = report != null ? report.time.ToString("HH:mm:ss") : "-",
                         description = report?.description ?? "-",
                         feedback = report?.feedback ?? "-",
-                        reportFileId = report?.ReportFileid,
-                        reportPhotoId = report?.ReportPhotoid,
+                        reportFileId = report?.ReportFileid != null ? report.ReportFileid.ToString() : "-",
+                        reportPhotoId = report?.ReportPhotoid != null ? report.ReportPhotoid.ToString() : "-",
                         isGuidance = hasGuidance ? "✔️" : "❌"
                     };
                 });
@@ -522,7 +527,8 @@ namespace PKL_API.Controllers
                     result = result.Where(r =>
                         (r.name.ToLower().Contains(searchLower)) ||
                         (r.nis.ToLower().Contains(searchLower)) ||
-                        (r.description.ToLower().Contains(searchLower))
+                        (r.classroom_name.ToLower().Contains(searchLower)) ||
+                        (r.company_name.ToLower().Contains(searchLower))
                     );
                 }
 
@@ -555,6 +561,7 @@ namespace PKL_API.Controllers
                 var studentsQuery = _db.Students
                     .Include(s => s.User)
                     .Include(s => s.Classroom)
+                    .Include(s => s.Company)
                     .Where(s => s.isPKL == true);
 
                 if (classId.HasValue)
@@ -592,8 +599,8 @@ namespace PKL_API.Controllers
                         time = report != null ? report.time.ToString("HH:mm:ss") : "-",
                         description = report?.description ?? "-",
                         feedback = report?.feedback ?? "-",
-                        reportFileId = report?.ReportFileid,
-                        reportPhotoId = report?.ReportPhotoid,
+                        reportFileId = report?.ReportFileid != null ? report.ReportFileid.ToString() : "-",
+                        reportPhotoId = report?.ReportPhotoid != null ? report.ReportPhotoid.ToString() : "-",
                         isGuidance = hasGuidance ? "✔️" : "❌"
                     };
                 });
@@ -604,7 +611,8 @@ namespace PKL_API.Controllers
                     result = result.Where(r =>
                         (r.name.ToLower().Contains(searchLower)) ||
                         (r.nis.ToLower().Contains(searchLower)) ||
-                        (r.description.ToLower().Contains(searchLower))
+                        (r.classroom_name.ToLower().Contains(searchLower)) ||
+                        (r.company_name.ToLower().Contains(searchLower))
                     );
                 }
 

@@ -1,4 +1,4 @@
-﻿  namespace PKLPresenceWeb.Model
+﻿namespace PKLPresenceWeb.Model
 {
     public class ReportListResponse
     {
@@ -11,14 +11,14 @@
 
     public class ReportItem
     {
-        public int id { get; set; }
-        public string date { get; set; }
-        public string time { get; set; }
-        public int studentId { get; set; }
+        public string id { get; set; }
+        public string studentId { get; set; }
         public string nis { get; set; }
         public string name { get; set; }
         public string classroom_name { get; set; }
         public string company_name { get; set; }
+        public string date { get; set; }
+        public string time { get; set; }
         public string description { get; set; }
         public string feedback { get; set; }
         public string reportFileId { get; set; }
