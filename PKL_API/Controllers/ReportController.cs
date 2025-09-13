@@ -299,9 +299,12 @@ namespace PKL_API.Controllers
                         .Where(s => s.Classroomid == classroom.id && s.isPKL == true)
                     : Enumerable.Empty<Student>().AsQueryable();
 
-                // Gabungkan student, hilangkan duplikat
-                var students = await mentorStudentsQuery
-                    .Union(waliKelasStudentsQuery).ToListAsync();
+                var studentsQuery = mentorStudentsQuery.Union(waliKelasStudentsQuery);
+
+                if (classId.HasValue)
+                    studentsQuery = studentsQuery.Where(s => s.Classroomid == classId.Value);
+
+                var students = await studentsQuery.ToListAsync();
                 var studentIds = students.Select(s => s.id).ToList();
 
                 // Ambil report
