@@ -290,6 +290,7 @@ namespace PKL_API.Controllers
                 var mentorStudentsQuery = _db.Students
                     .Include(s => s.User)
                     .Include(s => s.Classroom)
+                    .Include(s => s.Company)
                     .Where(s => s.Mentorid == mentor.id && s.isPKL == true);
 
                 var waliKelasStudentsQuery = classroom != null
