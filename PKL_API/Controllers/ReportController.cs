@@ -296,6 +296,7 @@ namespace PKL_API.Controllers
                     ? _db.Students
                         .Include(s => s.User)
                         .Include(s => s.Classroom)
+                        .Include(s => s.Company)
                         .Where(s => s.Classroomid == classroom.id && s.isPKL == true)
                     : Enumerable.Empty<Student>().AsQueryable();
 
@@ -389,6 +390,7 @@ namespace PKL_API.Controllers
                 var studentsQuery = _db.Students
                     .Include(s => s.User)
                     .Include(s => s.Classroom)
+                    .Include(s => s.Company)
                     .Where(s => s.Mentorid == mentor.id && s.isPKL == true);
 
                 if (classId.HasValue)
@@ -481,6 +483,7 @@ namespace PKL_API.Controllers
                 var studentsQuery = _db.Students
                     .Include(s => s.User)
                     .Include(s => s.Classroom)
+                    .Include(s => s.Company)
                     .Where(s => s.Classroomid == classroom.id && s.isPKL == true);
 
                 if (classId.HasValue)
