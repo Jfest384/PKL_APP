@@ -101,6 +101,13 @@
                                         {
                                             <span class="bi bi-check text-success" style="font-size: 2rem; font-weight: bold"></span>
                                         }
+                                        else if (item.isComplete == "✔️ ⚠️")
+                                        {
+                                            <span class="bi bi-check text-success"
+                                                  style="font-size: 2rem; font-weight: bold; vertical-align: middle;"></span>
+                                            <span class="bi bi-exclamation-triangle-fill text-warning"
+                                                  style="font-size: 1.2rem; font-weight: bold; vertical-align: middle; position: relative; top: 1.5px;"></span>
+                                        }
                                         else
                                         {
                                             <span class="bi bi-x text-danger" style="font-size: 2rem; font-weight: bold"></span>
@@ -114,7 +121,7 @@
                                             </button>
                                             <button class="btn btn-sm btn-warning"
                                                     @onclick="() => ShowReportModal(item)"
-                                                    disabled="@(item.presence_type == "-" || GetPresenceTypeId(item) == 4 || item.isComplete == "✔️")">
+                                                    disabled="@(item.presence_type == "-" || GetPresenceTypeId(item) == 4 || item.isComplete != "❌")">
                                                 Report
                                             </button>
                                         </div>
@@ -671,6 +678,13 @@
                                             @if (item.isComplete == "✔️")
                                             {
                                                 <span class="bi bi-check text-success" style="font-size: 2rem; font-weight: bold"></span>
+                                            }
+                                            else if (item.isComplete == "✔️ ⚠️")
+                                            {
+                                                <span class="bi bi-check text-success"
+                                                      style="font-size: 2rem; font-weight: bold; vertical-align: middle;"></span>
+                                                <span class="bi bi-exclamation-triangle-fill text-warning"
+                                                      style="font-size: 1.2rem; font-weight: bold; vertical-align: middle; position: relative; top: 1.5px;"></span>
                                             }
                                             else
                                             {

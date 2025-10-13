@@ -390,8 +390,6 @@
                                         </label>
                                         @if ((field.Field == "FullBodyPhoto") && !string.IsNullOrWhiteSpace(PreviewPresenceReport))
                                         {
-                                            <div class="mt-3 mb-1">Laporan Harian</div>
-                                            <textarea class="form-control" rows="4" readonly style="background:#f8f9fa;">@PreviewPresenceReport</textarea>
                                             <div class="mt-3 mb-1">Location</div>
                                             <div class="presence-modal-value">
                                                 <div id="detailPresenceMap" class="detail-presence-map"></div>
@@ -706,7 +704,7 @@
                 foreach (var field in PreviewPresenceFields)
                 {
                     var photo = photos.FirstOrDefault(p => MapPhotoTypeToField(p.type) == field.Field);
-                    var apiBase = "http://localhost:5027";
+                    var apiBase = "https://presensi.smksabdev.my.id";
                     if (photo != null)
                     {
                         var base64 = await GetPhotoBase64Async($"{apiBase}{photo.url}");
