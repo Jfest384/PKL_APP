@@ -65,7 +65,7 @@ builder.Services.AddCors(options =>
         policy.WithOrigins(
                 "https://localhost:7235",
                 "https://presensi.smksabdev.my.id",
-                "https://b383210c6b51.ngrok-free.app",
+                "https://39e5d25c0d0b.ngrok-free.app",
                 "http://localhost:5125")
               .AllowAnyMethod()
               .AllowAnyHeader()
