@@ -19,12 +19,20 @@
         public string date { get; set; }
         public string time { get; set; }
         public string presence_type { get; set; }
-        public string feedback { get; set; }
+        public FeedbackItem feedback { get; set; }
         public string isPresence { get; set; }
         public string lat { get; set; }
         public string longitude { get; set; }
         public string report { get; set; }
+        public string updateAt { get; set; }
         public string isComplete { get; set; }
+    }
+
+    public class FeedbackItem
+    {
+        public string kajur { get; set; }
+        public string mentor { get; set; }
+        public string walas { get; set; }
     }
 
     public class PresenceTypeItem

@@ -55,7 +55,7 @@
             if (dotNetRef) {
                 dotNetRef.invokeMethodAsync('UpdateWebRTCCaptureCountdown', 0);
             }
-            await new Promise(resolve => setTimeout(resolve, 200));
+            await new Promise(resolve => setTimeout(resolve, 350));
         }
 
         if (video.readyState < 2 || video.videoWidth === 0 || video.videoHeight === 0) {

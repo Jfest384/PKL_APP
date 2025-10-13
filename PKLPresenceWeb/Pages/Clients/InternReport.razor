@@ -42,8 +42,7 @@
                             <th class="text-center">No</th>
                             <th class="text-center">Hari/Tanggal</th>
                             <th class="text-center">Jam</th>
-                            <th class="text-center">Ringkasan</th>
-                            <th class="text-center">Feedback</th>
+                            <th class="text-center">Deskripsi</th>
                             <th class="text-center">Action</th>
                         </tr>
                     </thead>
@@ -59,9 +58,8 @@
                                     <td>@item.date</td>
                                     <td>@item.time</td>
                                     <td>@item.description</td>
-                                    <td>@item.feedback</td>
-                                    <td>
-                                        <button class="btn btn-sm btn-info" style="padding-left: 1.15rem; padding-right: 1.15rem;"
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-success" style="padding-left: 1.15rem; padding-right: 1.15rem;"
                                                 @onclick="() => ShowReportDetail(item)">
                                             Detail
                                         </button>
@@ -99,7 +97,10 @@
                     else
                     {
                         <li class="page-item @(CurrentPage == 1 ? "disabled" : null)">
-                            <button class="page-link" @onclick="() => ChangePage(CurrentPage - 1)">Previous</button>
+                            <button class="page-link btn-text" @onclick="() => ChangePage(CurrentPage - 1)">Previous</button>
+                            <button class="page-link btn-icon" @onclick="() => ChangePage(CurrentPage - 1)">
+                                <i class="bi bi-chevron-left"></i>
+                            </button>
                         </li>
                         @for (int i = 1; i <= TotalPages; i++)
                         {
@@ -113,7 +114,10 @@
                             </li>
                         }
                         <li class="page-item @(CurrentPage == TotalPages ? "disabled" : null)">
-                            <button class="page-link" @onclick="() => ChangePage(CurrentPage + 1)">Next</button>
+                            <button class="page-link btn-text" @onclick="() => ChangePage(CurrentPage + 1)">Next</button>
+                            <button class="page-link btn-icon" @onclick="() => ChangePage(CurrentPage + 1)">
+                                <i class="bi bi-chevron-right"></i>
+                            </button>
                         </li>
                     }
                 </ul>
@@ -201,6 +205,7 @@
                                     <li><a class="dropdown-item" @onclick="@(() => SetTimer(0))">None</a></li>
                                     <li><a class="dropdown-item" @onclick="@(() => SetTimer(3))">3s</a></li>
                                     <li><a class="dropdown-item" @onclick="@(() => SetTimer(5))">5s</a></li>
+                                    <li><a class="dropdown-item" @onclick="@(() => SetTimer(7))">7s</a></li>
                                 </ul>
                             </div>
 
@@ -257,6 +262,26 @@
                 </div>
             </div>
 
+            <div class="d-flex align-items-center mb-3 report-toolbar">
+                <div class="d-flex gap-2 btn-group-toolbar">
+                    <button class="btn btn-warning flex-grow-1 flex-md-grow-0" style="min-width:120px;" @onclick="PrintPerMentor">
+                        <span class="d-flex align-items-center justify-content-center gap-2">
+                            <i class="bi bi-printer"></i>
+                            <span class="d-none d-sm-inline">Per Mentor</span>
+                            <span class="d-inline d-sm-none">Mentor</span>
+                        </span>
+                    </button>
+
+                    <button class="btn btn-primary flex-grow-1 flex-md-grow-0" style="min-width:120px;" @onclick="PrintPerClass">
+                        <span class="d-flex align-items-center justify-content-center gap-2">
+                            <i class="bi bi-printer"></i>
+                            <span class="d-none d-sm-inline">Per Class</span>
+                            <span class="d-inline d-sm-none">Class</span>
+                        </span>
+                    </button>
+                </div>
+            </div>
+
             @if (isLoading)
             {
                 <div class="text-center my-5">
@@ -299,6 +324,15 @@
                                         </span>
                                     }
                                 </th>
+                                <th class="text-center sortable" @onclick="() => SortBy(nameof(ReportItem.company_name))">
+                                    Nama PT
+                                    @if (SortColumn == nameof(ReportItem.company_name))
+                                    {
+                                        <span class="sort-arrow">
+                                            @(SortAscending ? "▲" : "▼")
+                                        </span>
+                                    }
+                                </th>
                                 <th class="text-center">Hari/Tanggal</th>
                                 <th class="text-center sortable" @onclick="() => SortBy(nameof(ReportItem.time))">
                                     Jam
@@ -309,27 +343,9 @@
                                         </span>
                                     }
                                 </th>
-                                <th class="text-center sortable" @onclick="() => SortBy(nameof(ReportItem.company_name))">
-                                    Nama PT
-                                    @if (SortColumn == nameof(ReportItem.company_name))
-                                    {
-                                        <span class="sort-arrow">
-                                            @(SortAscending ? "▲" : "▼")
-                                        </span>
-                                    }
-                                </th>
                                 <th class="text-center sortable" @onclick="() => SortBy(nameof(ReportItem.description))">
                                     Deskripsi
                                     @if (SortColumn == nameof(ReportItem.description))
-                                    {
-                                        <span class="sort-arrow">
-                                            @(SortAscending ? "▲" : "▼")
-                                        </span>
-                                    }
-                                </th>
-                                <th class="text-center sortable" @onclick="() => SortBy(nameof(ReportItem.feedback))">
-                                    Feedback
-                                    @if (SortColumn == nameof(ReportItem.feedback))
                                     {
                                         <span class="sort-arrow">
                                             @(SortAscending ? "▲" : "▼")
@@ -366,11 +382,10 @@
                                         <td>@item.nis</td>
                                         <td>@item.name</td>
                                         <td>@item.classroom_name</td>
+                                        <td>@item.company_name</td>
                                         <td>@item.date</td>
                                         <td>@item.time</td>
-                                        <td>@item.company_name</td>
                                         <td>@item.description</td>
-                                        <td>@item.feedback</td>
                                         <td class="text-center">
                                             @if (item.isGuidance == "✔️")
                                             {
@@ -385,11 +400,15 @@
                                         {
                                             <td>
                                                 <div class="d-flex flex-column gap-2 align-items-center">
-                                                    <button class="btn btn-sm btn-success" @onclick="() => ShowFeedback(item)" disabled="@(item.id == "-")">Feedback</button>
-                                                    <button class="btn btn-sm btn-info" style="padding-left: 1.15rem; padding-right: 1.15rem;"
+                                                    <button class="btn btn-sm btn-success" style="padding-left: 1.2rem; padding-right: 1.2rem;"
                                                             @onclick="() => ShowReportDetail(item)"
                                                             disabled="@(item.id == "-")">
                                                         Detail
+                                                    </button>
+                                                    <button class="btn btn-sm btn-warning" @onclick="() => ShowFeedback(item)" disabled="@(item.id == "-")">Feedback</button>
+                                                    <button class="btn btn-sm btn-danger" style="padding-left: 1.4rem; padding-right: 1.4rem;"
+                                                            disabled="@(item.id == "-")">
+                                                        Print
                                                     </button>
                                                 </div>
                                             </td>
@@ -400,7 +419,7 @@
                             else
                             {
                                 <tr>
-                                    <td colspan="11" class="text-center text-muted">Tidak ada data presensi.</td>
+                                    <td colspan="11" class="text-center text-muted">Tidak ada data report.</td>
                                 </tr>
                             }
                         </tbody>
@@ -428,7 +447,10 @@
                 <nav class="d-flex justify-content-center mt-2" style="padding: 1rem;">
                     <ul class="pagination d-flex flex-wrap justify-content-center">
                         <li class="page-item @(CurrentPage == 1 ? "disabled" : null)">
-                            <button class="page-link" @onclick="() => ChangePage(CurrentPage - 1)">Previous</button>
+                            <button class="page-link btn-text" @onclick="() => ChangePage(CurrentPage - 1)">Previous</button>
+                            <button class="page-link btn-icon" @onclick="() => ChangePage(CurrentPage - 1)">
+                                <i class="bi bi-chevron-left"></i>
+                            </button>
                         </li>
 
                         <li class="page-item @(CurrentPage == 1 ? "active" : null)">
@@ -491,153 +513,143 @@
                         }
 
                         <li class="page-item @(CurrentPage == TotalPages ? "disabled" : null)">
-                            <button class="page-link" @onclick="() => ChangePage(CurrentPage + 1)">Next</button>
+                            <button class="page-link btn-text" @onclick="() => ChangePage(CurrentPage + 1)">Next</button>
+                            <button class="page-link btn-icon" @onclick="() => ChangePage(CurrentPage + 1)">
+                                <i class="bi bi-chevron-right"></i>
+                            </button>
                         </li>
                     </ul>
                 </nav>
             }
+
+            @if (ShowFeedbackSuccess)
+            {
+                <Modal IsVisible="true">
+                    <div class="text-center">
+                        <span class="checkmark-report-animate">
+                            <i class="bi bi-check-circle-fill" style="font-size:3rem; color:limegreen;"></i>
+                        </span>
+                        <p class="mt-2 fw-bold" style="font-size:20px">Success</p>
+                        <p class="mt-1">Feedback berhasil ditambahkan!</p>
+                    </div>
+                </Modal>
+            }
         }
 
-        @if (ShowReportDetailModal && SelectedReportDetail != null)
-        {
-            <Modal IsVisible="true" Title="Report Detail">
-                <div class="modal-scrollable-content">
-                    <div class="report-modal-grid mb-3 mt-3 text-start">
-                        <div class="report-modal-label">NIS</div>
-                        <div class="report-modal-colon">:</div>
-                        <div class="report-modal-value">@SelectedReportDetail.nis</div>
-
-                        <div class="report-modal-label">Nama Lengkap</div>
-                        <div class="report-modal-colon">:</div>
-                        <div class="report-modal-value">@SelectedReportDetail.name</div>
-
-                        <div class="report-modal-label">Kelas</div>
-                        <div class="report-modal-colon">:</div>
-                        <div class="report-modal-value">@SelectedReportDetail.classroom_name</div>
-
-                        <div class="report-modal-label">Hari/Tanggal</div>
-                        <div class="report-modal-colon">:</div>
-                        <div class="report-modal-value">@SelectedReportDetail.date</div>
-
-                        <div class="report-modal-label">Jam</div>
-                        <div class="report-modal-colon">:</div>
-                        <div class="report-modal-value">@SelectedReportDetail.time WIB</div>
-
-                        <div class="report-modal-label">Nama PT</div>
-                        <div class="report-modal-colon">:</div>
-                        <div class="report-modal-value">@SelectedReportDetail.company_name</div>
-
-                        <div class="report-modal-label">Feedback</div>
-                        <div class="report-modal-colon">:</div>
-                        <div class="report-modal-value">@SelectedReportDetail.feedback</div>
-
-                        <div class="report-modal-label">Detail</div>
-                        <div class="report-modal-colon">:</div>
-                        <div class="report-modal-value">
-                            @if (!string.IsNullOrEmpty(SelectedReportDetail.reportPhotoId))
-                            {
-                                <button class="btn btn-link text-primary p-0" @onclick="ShowPreviewModalHandler">Preview</button>
-                            }
-                            else
-                            {
-                                <span class="text-muted">-</span>
-                            }
-                        </div>
-                    </div>
-                </div>
-                <button class="btn btn-primary w-100 mt-2" @onclick="CloseReportDetailModal">Close</button>
-            </Modal>
-        }
-
-        @if (ShowFeedbackModal && SelectedReportDetail != null)
-        {
-            <Modal IsVisible="true" Title="Give Feedback">
-                <div class="modal-scrollable-content">
-                    <div class="report-modal-grid mb-3 mt-3 text-start">
-                        <div class="report-modal-label">NIS</div>
-                        <div class="report-modal-colon">:</div>
-                        <div class="report-modal-value">@SelectedReportDetail.nis</div>
-
-                        <div class="report-modal-label">Nama Lengkap</div>
-                        <div class="report-modal-colon">:</div>
-                        <div class="report-modal-value">@SelectedReportDetail.name</div>
-
-                        <div class="report-modal-label">Kelas</div>
-                        <div class="report-modal-colon">:</div>
-                        <div class="report-modal-value">@SelectedReportDetail.classroom_name</div>
-
-                        <div class="report-modal-label">Hari/Tanggal</div>
-                        <div class="report-modal-colon">:</div>
-                        <div class="report-modal-value">@SelectedReportDetail.date</div>
-
-                        <div class="report-modal-label">Jam</div>
-                        <div class="report-modal-colon">:</div>
-                        <div class="report-modal-value">@SelectedReportDetail.time WIB</div>
-
-                        <div class="report-modal-label">Nama PT</div>
-                        <div class="report-modal-colon">:</div>
-                        <div class="report-modal-value">@SelectedReportDetail.company_name</div>
-
-                        <div class="report-modal-label">Feedback</div>
-                        <div class="report-modal-colon">:</div>
-                    </div>
-                    <div class="mb-2 mx-1">
-                        <textarea id="feedbackInput"
-                                  class="form-control"
-                                  placeholder="Masukkan Feedback"
-                                  @bind="FeedbackInput"
-                                  @oninput="OnFeedbackInput"
-                                  maxlength="100"
-                                  rows="3"></textarea>
-                        <div class="char-counter-outer">@FeedbackInput.Length/100</div>
-                    </div>
-                </div>
-                <button class="btn btn-primary w-100"
-                        @onclick="OnFeedbackButtonClick"
-                        disabled="@IsSubmittingFeedback">
-                    @(string.IsNullOrWhiteSpace(FeedbackInput) ? "Close" : "Confirm")
-                </button>
-            </Modal>
-        }
-
-        @if (ShowPreviewModal && SelectedReportDetail != null)
-        {
-            <Modal IsVisible="true" Title="Detail">
-                <div class="modal-scrollable-content text-center mx-1">
-                    <div class="mb-2">Foto Saat Bimbingan</div>
-                    <img src="@APIUrl.Endpoint($"repots/preview/{SelectedReportDetail.reportPhotoId}")"
-                         alt="Foto Saat Bimbingan" class="uploaded-photo-preview" />
-                    <div class="mb-2">Deskripsi Kegiatan</div>
-                    <div class="mb-3 mx-2">
-                        <textarea class="form-control" readonly rows="3">@SelectedReportDetail.description</textarea>
-                    </div>
-                    <div class="mb-2">File Laporan</div>
-                    <button class="btn btn-outline-primary btn-sm"
-                            @onclick="() => OpenFileInNewTab(SelectedReportDetail.reportFileId)">
-                        Preview
-                    </button>
-                </div>
-                <div class="mt-2 mx-2">
-                    <button class="btn btn-danger w-100" @onclick="ClosePreviewModal">Close</button>
-                </div>
-            </Modal>
-        }
-
-        @if (ShowGuidanceModal)
+        @if ((ShowReportDetailModal || ShowFeedbackModal) && SelectedReportDetail != null)
         {
             <Modal IsVisible="true">
-                <div class="modal-scrollable-content">
-                    <div class="d-flex flex-column align-items-center mb-3">
-                        <span class="bi bi-file-earmark-text text-warning" style="font-size: 2.5rem; margin-bottom: 0.5rem;"></span>
-                        <h5 class="fw-bold mb-2">Konfirmasi Bimbingan</h5>
-                        <div class="mb-3 text-center">
-                            Apakah siswa atas nama <b>@GuidanceStudentName</b> sudah melakukan bimbingan dengan Anda pada minggu ini?
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    @if (UserRole != "Student")
+                    {
+                        <button class="btn btn-link" @onclick="ShowPrevReport" disabled="@IsPrevReportDisabled">
+                            <i class="bi bi-chevron-left"></i>
+                        </button>
+                    }
+                    <span class="fw-bold" style="flex:1;text-align:center; font-size:20px">
+                        @(ShowFeedbackModal ? "Give Feedback" : "Report Detail")
+                    </span>
+                    @if (UserRole != "Student")
+                    {
+                        <button class="btn btn-link" @onclick="ShowNextReport" disabled="@IsNextReportDisabled">
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
+                    }
+                </div>
+                <div class="mb-2" style="max-height:400px;overflow-y:auto;">
+                    <div class="report-modal-grid mb-3 mt-3 text-start">
+                        <div class="report-modal-label">NIS</div>
+                        <div class="report-modal-colon">:</div>
+                        <div class="report-modal-value">@SelectedReportDetail.nis</div>
+
+                        <div class="report-modal-label">Nama Lengkap</div>
+                        <div class="report-modal-colon">:</div>
+                        <div class="report-modal-value">@SelectedReportDetail.name</div>
+
+                        <div class="report-modal-label">Kelas</div>
+                        <div class="report-modal-colon">:</div>
+                        <div class="report-modal-value">@SelectedReportDetail.classroom_name</div>
+
+                        <div class="report-modal-label">Hari/Tanggal</div>
+                        <div class="report-modal-colon">:</div>
+                        <div class="report-modal-value">@SelectedReportDetail.date</div>
+
+                        <div class="report-modal-label">Jam</div>
+                        <div class="report-modal-colon">:</div>
+                        <div class="report-modal-value">@SelectedReportDetail.time WIB</div>
+
+                        <div class="report-modal-label">Nama PT</div>
+                        <div class="report-modal-colon">:</div>
+                        <div class="report-modal-value">@SelectedReportDetail.company_name</div>
+                    </div>
+
+                    <h6 class="fw-bold my-3" style="font-size:17px">Feedback</h6>
+
+                    @if (ShowFeedbackModal)
+                    {
+                        <div class="mb-2 mx-1">
+                            <textarea id="feedbackInput"
+                                      class="form-control"
+                                      placeholder="Masukkan Feedback"
+                                      @bind="FeedbackInput"
+                                      @oninput="OnFeedbackInput"
+                                      maxlength="100"
+                                      rows="3"></textarea>
+                            <div class="char-counter-outer">@FeedbackInput.Length/100</div>
                         </div>
-                    </div>
-                    <div class="d-flex justify-content-around mt-2">
-                        <button class="btn btn-danger px-4" @onclick="CancelGuidance" disabled="@IsSubmittingGuidance">No</button>
-                        <button class="btn btn-success px-4" @onclick="ConfirmGuidance" disabled="@IsSubmittingGuidance">Yes</button>
-                    </div>
+                    }
+                    else
+                    {
+                        <div class="feedback-grid text-start mb-3">
+                            <div class="feedback-label">Kepala Jurusan</div>
+                            <div class="feedback-colon">:</div>
+                            <div class="feedback-value">@((SelectedReportDetail.feedback?.kajur))</div>
+
+                            <div class="feedback-label">Mentor</div>
+                            <div class="feedback-colon">:</div>
+                            <div class="feedback-value">@((SelectedReportDetail.feedback?.mentor))</div>
+
+                            <div class="feedback-label">Wali Kelas</div>
+                            <div class="feedback-colon">:</div>
+                            <div class="feedback-value">@((SelectedReportDetail.feedback?.walas))</div>
+                        </div>
+                    }
+
+                    @if (!ShowFeedbackModal)
+                    {
+                        <div class="modal-preview-section mt-3 mb-2">
+                            <h6 class="fw-bold mt-3">Description</h6>
+                            <div class="my-2">Foto Saat Bimbingan</div>
+                            <img src="@APIUrl.Endpoint($"repots/preview/{SelectedReportDetail.reportPhotoId}")"
+                                 alt="Foto Saat Bimbingan" class="uploaded-photo-preview" />
+                            <div class="mb-2 mt-3">Deskripsi Kegiatan</div>
+                            <div class="mb-2 mx-2">
+                                <textarea class="form-control" readonly rows="3">@SelectedReportDetail.description</textarea>
+                            </div>
+                            <div class="mb-2">File Laporan</div>
+                            <button class="btn btn-outline-primary btn-sm"
+                                    @onclick="() => OpenFileInNewTab(SelectedReportDetail.reportFileId)">
+                                Preview
+                            </button>
+                        </div>
+                    }
+                </div>
+                <div class="d-flex gap-2 w-100 mt-2">
+                    @if (ShowFeedbackModal)
+                    {
+                        <button class="btn btn-primary w-100"
+                                @onclick="OnFeedbackButtonClick"
+                                disabled="@IsSubmittingFeedback">
+                            @(string.IsNullOrWhiteSpace(FeedbackInput) ? "Close" : "Confirm")
+                        </button>
+                    }
+                    else
+                    {
+                        <button class="btn btn-danger w-100"
+                                @onclick="CloseReportDetailModal">
+                            Close
+                        </button>
+                    }
                 </div>
             </Modal>
         }
@@ -677,41 +689,8 @@
     string ContentInput = "";
     bool IsSubmittingFeedback = false;
     bool IsSubmittingReport = false;
-
-    bool ShowPresencePhotoModal = false;
-    int PreviewPresenceTypeId = 0;
-    string PreviewPresenceTypeName = "";
-
-    bool ShowGuidanceModal = false;
-    int GuidanceStudentId = 0;
-    string GuidanceStudentName = "";
-    bool IsSubmittingGuidance = false;
     private bool ShowReportSuccess = false;
-
-    void ShowGuidance(int studentId, string studentName)
-    {
-        GuidanceStudentId = studentId;
-        GuidanceStudentName = studentName;
-        ShowGuidanceModal = true;
-    }
-
-    void CancelGuidance()
-    {
-        GuidanceStudentId = 0;
-        GuidanceStudentName = "";
-        ShowGuidanceModal = false;
-        IsSubmittingGuidance = false;
-    }
-
-    async Task ConfirmGuidance()
-    {
-        if (GuidanceStudentId == 0) return;
-        IsSubmittingGuidance = true;
-        var response = await Http.PostAsync(APIUrl.Endpoint($"repots/weekly-guidance/{GuidanceStudentId}"), null);
-        IsSubmittingGuidance = false;
-        CancelGuidance();
-        await LoadReports();
-    }
+    private bool ShowFeedbackSuccess = false;
 
     private bool HasReportToday =>
     Reports.Any(p =>
@@ -804,8 +783,25 @@
     void ShowFeedback(ReportItem item)
     {
         SelectedReportDetail = item;
+        ShowReportDetailModal = true;
         ShowFeedbackModal = true;
         FeedbackInput = "";
+    }
+
+    void ShowReportDetail(ReportItem item)
+    {
+        SelectedReportDetail = item;
+        ShowReportDetailModal = true;
+        ShowFeedbackModal = false;
+    }
+
+    void CloseReportDetailModal()
+    {
+        ShowReportDetailModal = false;
+        ShowFeedbackModal = false;
+        SelectedReportDetail = null;
+        FeedbackInput = "";
+        IsSubmittingFeedback = false;
     }
 
     private async Task ChangePage(int page)
@@ -813,10 +809,7 @@
         if (page >= 1 && page <= TotalPages && page != CurrentPage)
         {
             CurrentPage = page;
-            if (UserRole == "Student")
-            {
-                await LoadStudentReports();
-            }
+            if (UserRole == "Student") await LoadStudentReports();
             else
             {
                 Reports = GetSortedReports()
@@ -851,10 +844,7 @@
         }
 
         IsSubmittingReport = true;
-
         var formData = new MultipartFormDataContent();
-
-        // Deskripsi kegiatan
         formData.Add(new StringContent(ContentInput), "description");
 
         // Foto bimbingan dari WebRTC
@@ -900,10 +890,7 @@
             ShowReportSuccess = false;
             await LoadReports();
         }
-        else
-        {
-            await JS.InvokeVoidAsync("alert", "Gagal submit report.");
-        }
+        else await JS.InvokeVoidAsync("alert", "Gagal submit report.");
     }
 
     async Task OnFeedbackButtonClick()
@@ -930,6 +917,10 @@
         if (response.IsSuccessStatusCode)
         {
             CloseDetailModal();
+            ShowFeedbackSuccess = true;
+            StateHasChanged();
+            await Task.Delay(2000);
+            ShowFeedbackSuccess = false;
             await LoadReports();
         }
         else await JS.InvokeVoidAsync("alert", "Gagal submit feedback.");
@@ -1015,19 +1006,6 @@
     }
 
     bool ShowReportDetailModal = false;
-
-    void ShowReportDetail(ReportItem item)
-    {
-        SelectedReportDetail = item;
-        ShowReportDetailModal = true;
-    }
-
-    void CloseReportDetailModal()
-    {
-        ShowReportDetailModal = false;
-        SelectedReportDetail = null;
-    }
-
     bool ShowPreviewModal = false;
 
     void ShowPreviewModalHandler()
@@ -1221,7 +1199,7 @@
             if (!token.IsCancellationRequested)
             {
                 CurrentPage = 1;
-                await LoadReports(selectedDate); // pastikan date tetap dikirim
+                await LoadReports(selectedDate);
             }
         }
         catch (TaskCanceledException) { }
@@ -1231,6 +1209,54 @@
     {
         selectedClassId = int.TryParse(e.Value?.ToString(), out var id) ? id : null;
         CurrentPage = 1;
-        await LoadReports(selectedDate); // pastikan date tetap dikirim
+        await LoadReports(selectedDate);
+    }
+
+    private int SelectedReportIndex => Reports.FindIndex(r => r.id == SelectedReportDetail?.id);
+    private bool IsPrevReportDisabled => GetPrevReportIndex() == -1;
+    private bool IsNextReportDisabled => GetNextReportIndex() == -1;
+
+    private int GetPrevReportIndex()
+    {
+        if (Reports == null || Reports.Count == 0 || SelectedReportDetail == null) return -1;
+        for (int i = SelectedReportIndex - 1; i >= 0; i--)
+        {
+            if (!string.IsNullOrWhiteSpace(Reports[i].id) && Reports[i].id != "-")
+                return i;
+        }
+        return -1;
+    }
+
+    private int GetNextReportIndex()
+    {
+        if (Reports == null || Reports.Count == 0 || SelectedReportDetail == null) return -1;
+        for (int i = SelectedReportIndex + 1; i < Reports.Count; i++)
+        {
+            if (!string.IsNullOrWhiteSpace(Reports[i].id) && Reports[i].id != "-")
+                return i;
+        }
+        return -1;
+    }
+
+    private void ShowPrevReport()
+    {
+        var prevIdx = GetPrevReportIndex();
+        if (prevIdx != -1) SelectedReportDetail = Reports[prevIdx];
+    }
+
+    private void ShowNextReport()
+    {
+        var nextIdx = GetNextReportIndex();
+        if (nextIdx != -1) SelectedReportDetail = Reports[nextIdx];
+    }
+
+    private void PrintPerMentor()
+    {
+        // Implementasi cetak rekap per mentor
+    }
+
+    private void PrintPerClass()
+    {
+        // Implementasi cetak rekap per kelas
     }
 }

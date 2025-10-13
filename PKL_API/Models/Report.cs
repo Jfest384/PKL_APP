@@ -12,7 +12,7 @@ namespace PKL_API.Models
         public int Studentid { get; set; }
 
         [Column("id_mentor")]
-        public int Mentorid { get; set; }
+        public int? Mentorid { get; set; }
 
         [Column("id_class")]
         public int? Classroomid { get; set; }
@@ -23,8 +23,8 @@ namespace PKL_API.Models
         [DataType(DataType.MultilineText)]
         public required string description { get; set; }
 
-        [DataType(DataType.MultilineText)]
-        public string? feedback { get; set; }
+        [Column("id_feedback")]
+        public int? ReportFeedbackid { get; set; }
 
         [Column("id_file")]
         public Guid? ReportFileid { get; set; }
@@ -37,5 +37,6 @@ namespace PKL_API.Models
         public Classroom Classroom { get; set; }
         public ReportFile? ReportFile { get; set; }
         public ReportFile? ReportPhoto { get; set; }
+        public ReportFeedback? ReportFeedback { get; set; }
     }
 }

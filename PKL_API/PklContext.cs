@@ -24,6 +24,10 @@ namespace PKL_API
         public DbSet<WaliKelas> WaliKelas { get; set; }
         public DbSet<WeeklyGuidance> WeeklyGuidances { get; set; }
         public DbSet<ReportFile> ReportFiles { get; set; }
+        public DbSet<LockLocation> LockLocations { get; set; }
+        public DbSet<PresenceFeedback> PresenceFeedbacks { get; set; }
+        public DbSet<ReportFeedback> ReportFeedbacks { get; set; }
+        public DbSet<StatusLockLocation> StatusLockLocations { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -83,6 +87,10 @@ namespace PKL_API
                 entity.HasOne(d => d.HolidayFromCompanyPhoto)
                       .WithMany()
                       .HasForeignKey(d => d.HolidayFromCompanyPhotoid)
+                      .OnDelete(DeleteBehavior.Restrict);
+                entity.HasOne(d => d.WFHFromCompanyPhoto)
+                      .WithMany()
+                      .HasForeignKey(d => d.WFHFromCompanyPhotoid)
                       .OnDelete(DeleteBehavior.Restrict);
             });
 

@@ -32,7 +32,7 @@ namespace PKL_API.Controllers
 
         [Authorize]
         [HttpPost]
-        [RequestSizeLimit(5_000_000)]
+        [RequestSizeLimit(50_000_000)]
         public async Task<IActionResult> SubmitPrecense([FromForm] PrecenseDTO dto)
         {
             var userIdClaim = User.FindFirst("id")?.Value;
@@ -47,16 +47,6 @@ namespace PKL_API.Controllers
                 return NotFound("Student not found");
 
             var allowedExtensions = new[] { ".jpg", ".jpeg", ".png" };
-
-            // Helper to validate file extension
-            bool IsValidFile(IFormFile? file)
-            {
-                if (file == null) return true;
-                var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
-                return allowedExtensions.Contains(ext);
-            }
-
-            // Validate all photo files in dto
             var photoFiles = new IFormFile?[]
             {
                 dto.FullBodyPhoto,
@@ -64,13 +54,140 @@ namespace PKL_API.Controllers
                 dto.PermitToCompany,
                 dto.PermitToMentor,
                 dto.PermitToWalas,
-                dto.HolidayFromCompany
+                dto.HolidayFromCompany,
+                dto.WFHFromCompany
             };
 
+            // Hitung total ukuran semua file
+            long totalSize = photoFiles.Where(f => f != null).Sum(f => f!.Length);
+            if (totalSize > 5_000_000)
+                return BadRequest("Ukuran file terlalu besar.");
+
+            // Validasi ekstensi
             foreach (var file in photoFiles)
             {
-                if (file != null && !IsValidFile(file))
-                    return BadRequest("Only JPG, JPEG, or PNG files are allowed for photo uploads.");
+                if (file != null)
+                {
+                    var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+                    if (!allowedExtensions.Contains(ext))
+                        return BadRequest("Only JPG, JPEG, or PNG files are allowed for photo uploads.");
+                }
+            }
+
+            // --- Validasi lokasi PKL (radius 500 meter, support multi lokasi untuk studentId 53/55) ---
+            if (dto.PresenceTypeid == 1)
+            {
+                var statusLockLocation = await _db.StatusLockLocations.FirstOrDefaultAsync();
+                if (statusLockLocation != null && statusLockLocation.status)
+                {
+                    // Khusus studentId 53/55: support 2 lokasi
+                    if (student.id == 53 || student.id == 55)
+                    {
+                        var lockLocations = await _db.LockLocations
+                            .Where(l => l.Studentid == student.id)
+                            .ToListAsync();
+
+                        double userLat = (double)dto.Lat.Value;
+                        double userLng = (double)dto.Long.Value;
+
+                        if (lockLocations.Count == 0)
+                        {
+                            // Simpan lokasi pertama kali
+                            var newLock = new LockLocation
+                            {
+                                Userid = userId,
+                                Studentid = student.id,
+                                lat = dto.Lat,
+                                longitude = dto.Long
+                            };
+                            _db.LockLocations.Add(newLock);
+                            await _db.SaveChangesAsync();
+                        }
+                        else if (lockLocations.Count == 1)
+                        {
+                            var loc = lockLocations[0];
+                            if (loc.lat.HasValue && loc.longitude.HasValue)
+                            {
+                                double baseLat = (double)loc.lat.Value;
+                                double baseLng = (double)loc.longitude.Value;
+                                double distance = GetDistanceInMeters(baseLat, baseLng, userLat, userLng);
+
+                                if (distance <= 1000)
+                                {
+                                    if (distance > 500)
+                                        return BadRequest("Anda berada terlalu jauh dari tempat PKL");
+                                }
+                                else
+                                {
+                                    var newLock = new LockLocation
+                                    {
+                                        Userid = userId,
+                                        Studentid = student.id,
+                                        lat = dto.Lat,
+                                        longitude = dto.Long
+                                    };
+                                    _db.LockLocations.Add(newLock);
+                                    await _db.SaveChangesAsync();
+                                }
+                            }
+                        }
+                        else // Sudah ada 2 lokasi
+                        {
+                            bool isWithin500m = false;
+                            foreach (var loc in lockLocations)
+                            {
+                                if (loc.lat.HasValue && loc.longitude.HasValue)
+                                {
+                                    double baseLat = (double)loc.lat.Value;
+                                    double baseLng = (double)loc.longitude.Value;
+                                    double distance = GetDistanceInMeters(baseLat, baseLng, userLat, userLng);
+                                    if (distance <= 500)
+                                    {
+                                        isWithin500m = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (!isWithin500m)
+                                return BadRequest("Anda berada terlalu jauh dari semua lokasi PKL yang terdaftar");
+                        }
+                    }
+                    else
+                    {
+                        // Default: hanya 1 lokasi per student
+                        var existingLock = await _db.LockLocations.FirstOrDefaultAsync(l => l.Studentid == student.id);
+                        if (existingLock == null)
+                        {
+                            // Simpan lokasi pertama kali
+                            var newLock = new LockLocation
+                            {
+                                Userid = userId,
+                                Studentid = student.id,
+                                lat = dto.Lat,
+                                longitude = dto.Long
+                            };
+                            _db.LockLocations.Add(newLock);
+                            await _db.SaveChangesAsync();
+                        }
+                        else
+                        {
+                            // Validasi radius 500 meter
+                            if (existingLock.lat.HasValue && existingLock.longitude.HasValue)
+                            {
+                                double baseLat = (double)existingLock.lat.Value;
+                                double baseLng = (double)existingLock.longitude.Value;
+                                double userLat = (double)dto.Lat.Value;
+                                double userLng = (double)dto.Long.Value;
+
+                                double distance = GetDistanceInMeters(baseLat, baseLng, userLat, userLng);
+                                if (distance > 500)
+                                {
+                                    return BadRequest("Anda berada terlalu jauh dari tempat PKL");
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
             var detail = new PresenceDetail();
@@ -98,6 +215,7 @@ namespace PKL_API.Controllers
             detail.PermitToMentorPhotoid = await SavePhotoAsync(dto.PermitToMentor);
             detail.PermitToWalasPhotoid = await SavePhotoAsync(dto.PermitToWalas);
             detail.HolidayFromCompanyPhotoid = await SavePhotoAsync(dto.HolidayFromCompany);
+            detail.WFHFromCompanyPhotoid = await SavePhotoAsync(dto.WFHFromCompany);
 
             if (dto.Lat.HasValue)
                 detail.lat = Math.Round(dto.Lat.Value, 7, MidpointRounding.AwayFromZero);
@@ -117,7 +235,7 @@ namespace PKL_API.Controllers
                 date = DateOnly.FromDateTime(DateTime.Now),
                 time = TimeOnly.FromDateTime(DateTime.Now),
                 PresenceTypeid = dto.PresenceTypeid,
-                feedback = null,
+                PresenceFeedbackid = null,
                 PresenceDetailid = detail.id,
                 Mentorid = student.Mentorid ?? throw new Exception("Student does not have a mentor assigned."),
                 Classroomid = student.Classroomid ?? throw new Exception("Student does not have a classroom assigned."),
@@ -130,11 +248,103 @@ namespace PKL_API.Controllers
         }
 
         [Authorize]
+        [HttpPut("{presenceId}/edit")]
+        [RequestSizeLimit(50_000_000)]
+        public async Task<IActionResult> EditPresence(int presenceId, [FromForm] Presence_ReportDTO dto)
+        {
+            var userIdClaim = User.FindFirst("id")?.Value;
+            if (userIdClaim == null || !int.TryParse(userIdClaim, out int userId))
+                return Unauthorized("Invalid user token");
+
+            var presence = await _db.Presences
+                .Include(p => p.Detail)
+                .FirstOrDefaultAsync(p => p.id == presenceId);
+
+            if (presence == null)
+                return NotFound("Presence not found.");
+
+            var student = await _db.Students.FirstOrDefaultAsync(s => s.Userid == userId);
+            if (student == null || presence.Studentid != student.id)
+                return StatusCode(403, "You are not allowed to edit this presence.");
+
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".pdf" };
+
+            var photoFilesForSize = new IFormFile?[]
+            {
+                dto.MedicalCertificate,
+                dto.SickToCompany,
+                dto.SickToMentor,
+                dto.SickToWalas,
+                dto.Activity
+            };
+
+            long totalSize = photoFilesForSize.Where(f => f != null).Sum(f => f!.Length);
+            if (totalSize > 5_000_000)
+                return BadRequest("Ukuran file terlalu besar.");
+
+            bool IsValidFile(IFormFile? file)
+            {
+                if (file == null) return true;
+                var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+                return allowedExtensions.Contains(ext);
+            }
+
+            var photoFiles = new (IFormFile? file, Action<Guid?> setId, string propName)[]
+            {
+                (dto.MedicalCertificate, id => presence.Detail.MedicalCertificatePhotoid = id, "MedicalCertificate"),
+                (dto.SickToCompany, id => presence.Detail.SickToCompanyPhotoid = id, "SickToCompany"),
+                (dto.SickToMentor, id => presence.Detail.SickToMentorPhotoid = id, "SickToMentor"),
+                (dto.SickToWalas, id => presence.Detail.SickToWalasPhotoid = id, "SickToWalas"),
+                (dto.Activity, id => presence.Detail.ActivityPhotoid = id, "Activity")
+            };
+
+            foreach (var (file, _, propName) in photoFiles)
+            {
+                if (file != null && !IsValidFile(file))
+                    return BadRequest($"Only JPG, JPEG, PNG, or PDF files are allowed for {propName}.");
+            }
+
+            async Task<Guid?> SavePhotoAsync(IFormFile? file)
+            {
+                if (file == null || file.Length == 0)
+                    return null;
+                using var ms = new MemoryStream();
+                await file.CopyToAsync(ms);
+                var photo = new PresencePhoto
+                {
+                    id = Guid.NewGuid(),
+                    photo = ms.ToArray(),
+                    extension = Path.GetExtension(file.FileName)
+                };
+                _db.PresencePhotos.Add(photo);
+                return photo.id;
+            }
+
+            foreach (var (file, setId, _) in photoFiles)
+            {
+                if (file != null)
+                {
+                    var photoId = await SavePhotoAsync(file);
+                    setId(photoId);
+                }
+            }
+
+            if (presence.Detail != null)
+            {
+                presence.Detail.daily_report = dto.daily_report;
+                presence.Detail.update_at = DateOnly.FromDateTime(DateTime.Now);
+            }
+            await _db.SaveChangesAsync();
+            return Ok(new { message = "Presence updated successfully" });
+        }
+
+        [Authorize]
         [HttpPut("feedback/{presenceId}")]
         public async Task<IActionResult> GiveFeedback(int presenceId, FeedbackDTO feedbackDTO)
         {
             if (feedbackDTO == null || string.IsNullOrWhiteSpace(feedbackDTO.feedback))
                 return BadRequest("Feedback is required.");
+
             int userId, roleId;
             try
             {
@@ -145,30 +355,40 @@ namespace PKL_API.Controllers
                 return Unauthorized(ex.Message);
             }
 
-            // Only allow role id 3 (mentor) to give feedback
-            if (roleId == 1 || roleId == 2 || roleId == 6)
+            if (roleId == 2 || roleId == 6)
                 return StatusCode(403, "You are not allowed to give feedback.");
 
             var presence = await _db.Presences
                 .Include(r => r.Student)
+                .Include(r => r.PresenceFeedback)
                 .FirstOrDefaultAsync(r => r.id == presenceId);
+
             if (presence == null)
-                return NotFound("Report not found.");
+                return NotFound("Presence not found.");
 
-            if (roleId == 3)
+            // Find or create PresenceFeedback
+            PresenceFeedback feedback = presence.PresenceFeedback ?? new PresenceFeedback();
+
+            if (roleId == 1 || roleId == 4)
+                feedback.kajur = feedbackDTO.feedback;
+            else if (roleId == 3) feedback.mentor = feedbackDTO.feedback;
+            else if (roleId == 5) feedback.walas = feedbackDTO.feedback;
+            else if (roleId == 3 && roleId == 5)
             {
-                var mentor = await _db.Mentors.FirstOrDefaultAsync(m => m.Userid == userId);
-                if (mentor == null)
-                    return Unauthorized("Mentor data not found.");
-
-                // Cek apakah student pada report dimentori oleh mentor ini
-                if (presence.Student?.Mentorid != mentor.id)
-                    return StatusCode(403, "You can only give feedback to your own students' reports.");
+                feedback.mentor = feedbackDTO.feedback;
+                feedback.walas = feedbackDTO.feedback;
             }
 
-            presence.feedback = feedbackDTO.feedback;
-            await _db.SaveChangesAsync();
+            // Save feedback
+            if (presence.PresenceFeedback == null)
+            {
+                _db.PresenceFeedbacks.Add(feedback);
+                await _db.SaveChangesAsync();
+                presence.PresenceFeedbackid = feedback.id;
+            }
+            else _db.PresenceFeedbacks.Update(feedback);
 
+            await _db.SaveChangesAsync();
             return Ok(new { message = "Feedback submitted successfully" });
         }
 
@@ -188,7 +408,6 @@ namespace PKL_API.Controllers
             if (userIdClaim == null || !int.TryParse(userIdClaim, out int userId))
                 return Unauthorized("Invalid user token");
 
-            // Ambil semua role user
             var roleIds = await _db.UserRoles
                 .Where(ur => ur.User.id == userId)
                 .Select(ur => ur.RoleId)
@@ -207,6 +426,7 @@ namespace PKL_API.Controllers
                         .ThenInclude(s => s.Mentor!)
                     .Include(p => p.PresenceType)
                     .Include(p => p.Detail)
+                    .Include(p => p.PresenceFeedback)
                     .Where(p => p.Studentid == student.id);
 
                 if (date.HasValue)
@@ -226,10 +446,22 @@ namespace PKL_API.Controllers
                         name = p.Student != null ? p.Student.User.fullname ?? "-" : "-",
                         classroom_name = p.Student != null && p.Student.Classroom != null ? p.Student.Classroom.name ?? "-" : "-",
                         presence_type = p.PresenceType != null ? p.PresenceType.name : "-",
-                        feedback = p.feedback ?? "-",
+                        feedback = p.PresenceFeedback != null
+                            ? new
+                            {
+                                kajur = !string.IsNullOrWhiteSpace(p.PresenceFeedback.kajur) ? p.PresenceFeedback.kajur : "-",
+                                mentor = !string.IsNullOrWhiteSpace(p.PresenceFeedback.mentor) ? p.PresenceFeedback.mentor : "-",
+                                walas = !string.IsNullOrWhiteSpace(p.PresenceFeedback.walas) ? p.PresenceFeedback.walas : "-"
+                            }
+                            : new
+                            {
+                                kajur = "-",
+                                mentor = "-",
+                                walas = "-"
+                            },
                         lat = p.Detail != null ? (p.Detail.lat.ToString()) : "-",
                         longitude = p.Detail != null ? (p.Detail.longitude.ToString()) : "-",
-                        report = p.Detail.daily_report ?? "-",
+                        report = p.Detail != null ? p.Detail.daily_report ?? "-" : "-",
                         isComplete = GetPresenceCompleteSymbol(p)
                     })
                     .ToListAsync();
@@ -272,10 +504,10 @@ namespace PKL_API.Controllers
                 var students = await studentsQuery.ToListAsync();
                 var studentIds = students.Select(s => s.id).ToList();
 
-                // Ambil presensi
                 var presencesQuery = _db.Presences
                     .Include(p => p.PresenceType)
                     .Include(p => p.Detail)
+                    .Include(p => p.PresenceFeedback)
                     .Where(p => studentIds.Contains(p.Studentid) && p.date == filterDate);
 
                 if (date.HasValue)
@@ -285,6 +517,9 @@ namespace PKL_API.Controllers
                 var result = students.Select(s =>
                 {
                     var presence = presencesOnDate.FirstOrDefault(p => p.Studentid == s.id);
+                    string updateAt = presence?.Detail?.update_at.HasValue == true
+                        ? presence.Detail.update_at.Value.ToString("dd/MM/yyyy")
+                        : "-";
                     return new
                     {
                         id_presence = presence?.id.ToString() ?? "-",
@@ -294,11 +529,24 @@ namespace PKL_API.Controllers
                         date = date.HasValue ? ToIndonesianLongDate(date.Value) : "-",
                         time = presence != null ? presence.time.ToString("HH:mm:ss") : "-",
                         presence_type = presence?.PresenceType?.name ?? "-",
-                        feedback = presence?.feedback ?? "-",
+                        feedback = presence != null && presence.PresenceFeedback != null
+                            ? new
+                            {
+                                kajur = !string.IsNullOrWhiteSpace(presence.PresenceFeedback.kajur) ? presence.PresenceFeedback.kajur : "-",
+                                mentor = !string.IsNullOrWhiteSpace(presence.PresenceFeedback.mentor) ? presence.PresenceFeedback.mentor : "-",
+                                walas = !string.IsNullOrWhiteSpace(presence.PresenceFeedback.walas) ? presence.PresenceFeedback.walas : "-"
+                            }
+                            : new
+                            {
+                                kajur = "-",
+                                mentor = "-",
+                                walas = "-"
+                            },
                         isPresence = presence != null ? "✔️" : "❌",
                         lat = presence?.Detail?.lat.ToString() ?? "-",
                         longitude = presence?.Detail?.longitude?.ToString() ?? "-",
                         report = presence?.Detail?.daily_report ?? "-",
+                        updateAt,
                         isComplete = GetPresenceCompleteSymbol(presence)
                     };
                 });
@@ -360,6 +608,7 @@ namespace PKL_API.Controllers
                 var presencesQuery = _db.Presences
                     .Include(p => p.PresenceType)
                     .Include(p => p.Detail)
+                    .Include(p => p.PresenceFeedback)
                     .Where(p => p.Mentorid == mentor.id && p.date == filterDate);
 
                 if (date.HasValue)
@@ -370,6 +619,9 @@ namespace PKL_API.Controllers
                 var result = students.Select(s =>
                 {
                     var presence = presencesOnDate.FirstOrDefault(p => p.Studentid == s.id);
+                    string updateAt = presence?.Detail?.update_at.HasValue == true
+                        ? presence.Detail.update_at.Value.ToString("dd/MM/yyyy")
+                        : "-";
                     return new
                     {
                         id_presence = presence?.id.ToString() ?? "-",
@@ -380,11 +632,24 @@ namespace PKL_API.Controllers
                         time = presence != null ? presence.time.ToString("HH:mm:ss") : "-",
                         presence_type = presence?.PresenceType?.name ?? "-",
                         id_detail = presence?.PresenceDetailid.ToString() ?? "-",
-                        feedback = presence?.feedback ?? "-",
+                        feedback = presence != null && presence.PresenceFeedback != null
+                            ? new
+                            {
+                                kajur = !string.IsNullOrWhiteSpace(presence.PresenceFeedback.kajur) ? presence.PresenceFeedback.kajur : "-",
+                                mentor = !string.IsNullOrWhiteSpace(presence.PresenceFeedback.mentor) ? presence.PresenceFeedback.mentor : "-",
+                                walas = !string.IsNullOrWhiteSpace(presence.PresenceFeedback.walas) ? presence.PresenceFeedback.walas : "-"
+                            }
+                            : new
+                            {
+                                kajur = "-",
+                                mentor = "-",
+                                walas = "-"
+                            },
                         isPresence = presence != null ? "✔️" : "❌",
                         lat = presence?.Detail?.lat.ToString() ?? "-",
                         longitude = presence?.Detail?.longitude?.ToString() ?? "-",
                         report = presence?.Detail?.daily_report ?? "-",
+                        updateAt,
                         isComplete = GetPresenceCompleteSymbol(presence)
                     };
                 });
@@ -447,6 +712,7 @@ namespace PKL_API.Controllers
                 var presencesQuery = _db.Presences
                     .Include(p => p.PresenceType)
                     .Include(p => p.Detail)
+                    .Include(p => p.PresenceFeedback)
                     .Where(p => studentIds.Contains(p.Studentid) && p.date == filterDate);
 
                 if (date.HasValue)
@@ -456,6 +722,9 @@ namespace PKL_API.Controllers
                 var result = students.Select(s =>
                 {
                     var presence = presencesOnDate.FirstOrDefault(p => p.Studentid == s.id);
+                    string updateAt = presence?.Detail?.update_at.HasValue == true
+                        ? presence.Detail.update_at.Value.ToString("dd/MM/yyyy")
+                        : "-";
                     return new
                     {
                         id_presence = presence?.id.ToString() ?? "-",
@@ -465,11 +734,24 @@ namespace PKL_API.Controllers
                         date = ToIndonesianLongDate(filterDate),
                         time = presence != null ? presence.time.ToString("HH:mm:ss") : "-",
                         presence_type = presence?.PresenceType?.name ?? "-",
-                        feedback = presence?.feedback ?? "-",
+                        feedback = presence != null && presence.PresenceFeedback != null
+                            ? new
+                            {
+                                kajur = !string.IsNullOrWhiteSpace(presence.PresenceFeedback.kajur) ? presence.PresenceFeedback.kajur : "-",
+                                mentor = !string.IsNullOrWhiteSpace(presence.PresenceFeedback.mentor) ? presence.PresenceFeedback.mentor : "-",
+                                walas = !string.IsNullOrWhiteSpace(presence.PresenceFeedback.walas) ? presence.PresenceFeedback.walas : "-"
+                            }
+                            : new
+                            {
+                                kajur = "-",
+                                mentor = "-",
+                                walas = "-"
+                            },
                         isPresence = presence != null ? "✔️" : "❌",
                         lat = presence?.Detail?.lat.ToString() ?? "-",
                         longitude = presence?.Detail?.longitude?.ToString() ?? "-",
                         report = presence?.Detail?.daily_report ?? "-",
+                        updateAt,
                         isComplete = GetPresenceCompleteSymbol(presence)
                     };
                 });
@@ -524,6 +806,7 @@ namespace PKL_API.Controllers
                 var presencesQuery = _db.Presences
                     .Include(p => p.PresenceType)
                     .Include(p => p.Detail)
+                    .Include(p => p.PresenceFeedback)
                     .Where(p => studentIds.Contains(p.Studentid) && p.date == filterDate);
 
                 if (date.HasValue)
@@ -533,6 +816,9 @@ namespace PKL_API.Controllers
                 var result = students.Select(s =>
                 {
                     var presence = presencesOnDate.FirstOrDefault(p => p.Studentid == s.id);
+                    string updateAt = presence?.Detail?.update_at.HasValue == true
+                        ? presence.Detail.update_at.Value.ToString("dd/MM/yyyy")
+                        : "-";
                     return new
                     {
                         id_presence = presence?.id.ToString() ?? "-",
@@ -543,11 +829,24 @@ namespace PKL_API.Controllers
                         date = ToIndonesianLongDate(filterDate),
                         time = presence?.time.ToString("HH:mm:ss") ?? "-",
                         presence_type = presence?.PresenceType?.name ?? "-",
-                        feedback = presence?.feedback ?? "-",
+                        feedback = presence != null && presence.PresenceFeedback != null
+                            ? new
+                            {
+                                kajur = !string.IsNullOrWhiteSpace(presence.PresenceFeedback.kajur) ? presence.PresenceFeedback.kajur : "-",
+                                mentor = !string.IsNullOrWhiteSpace(presence.PresenceFeedback.mentor) ? presence.PresenceFeedback.mentor : "-",
+                                walas = !string.IsNullOrWhiteSpace(presence.PresenceFeedback.walas) ? presence.PresenceFeedback.walas : "-"
+                            }
+                            : new
+                            {
+                                kajur = "-",
+                                mentor = "-",
+                                walas = "-"
+                            },
                         isPresence = presence != null ? "✔️" : "❌",
                         lat = presence?.Detail?.lat.ToString() ?? "-",
                         longitude = presence?.Detail?.longitude.ToString() ?? "-",
                         report = presence?.Detail?.daily_report ?? "-",
+                        updateAt,
                         isComplete = GetPresenceCompleteSymbol(presence)
                     };
                 });
@@ -592,28 +891,36 @@ namespace PKL_API.Controllers
             var typeId = presence.PresenceTypeid;
             var detail = presence.Detail;
 
-            if (typeId == 4)
-                return "✔️";
-
-            if (detail == null)
-                return "❌";
-
-            if (typeId == 1)
-                return !string.IsNullOrWhiteSpace(detail.daily_report) ? "✔️" : "❌";
-
-            if (typeId == 2)
+            // Cek update_at
+            bool showWarning = false;
+            if (detail != null && detail.update_at.HasValue)
             {
-                return (detail.MedicalCertificatePhotoid != null
+                if (detail.update_at.Value != presence.date)
+                    showWarning = true;
+            }
+
+            string checkSymbol = "❌";
+            if (typeId == 4)
+                checkSymbol = "✔️";
+            else if (detail == null)
+                checkSymbol = "❌";
+            else if (typeId == 1)
+                checkSymbol = !string.IsNullOrWhiteSpace(detail.daily_report) ? "✔️" : "❌";
+            else if (typeId == 2)
+            {
+                checkSymbol = (detail.MedicalCertificatePhotoid != null
                     && detail.SickToCompanyPhotoid != null
                     && detail.SickToMentorPhotoid != null
                     && detail.SickToWalasPhotoid != null)
                     ? "✔️" : "❌";
             }
+            else if (typeId == 3)
+                checkSymbol = detail.ActivityPhotoid != null ? "✔️" : "❌";
 
-            if (typeId == 3)
-                return detail.ActivityPhotoid != null ? "✔️" : "❌";
-
-            return "❌";
+            if (showWarning && checkSymbol == "✔️")
+                return checkSymbol + " ⚠️";
+            else
+                return checkSymbol;
         }
 
         [Authorize]
@@ -643,6 +950,8 @@ namespace PKL_API.Controllers
                     .ThenInclude(d => d.PermitToMentorPhoto)
                 .Include(p => p.Detail)
                     .ThenInclude(d => d.HolidayFromCompanyPhoto)
+                .Include(p => p.Detail)
+                    .ThenInclude(d => d.WFHFromCompanyPhoto)
                 .FirstOrDefaultAsync(p => p.id == presenceId);
 
             if (presence == null || presence.Detail == null)
@@ -663,7 +972,8 @@ namespace PKL_API.Controllers
                 { "permitToCompany", detail.PermitToCompanyPhoto },
                 { "permitToMentor", detail.PermitToMentorPhoto },
                 { "permitToWalas", detail.PermitToWalasPhoto },
-                { "holidayFromCompany", detail.HolidayFromCompanyPhoto }
+                { "holidayFromCompany", detail.HolidayFromCompanyPhoto },
+                { "wfhFromCompany", detail.WFHFromCompanyPhoto }
             };
 
             var result = photoMap
@@ -876,7 +1186,7 @@ namespace PKL_API.Controllers
                                 table.Cell().Element(CellStyle).Text(r.date.ToString("yyyy-MM-dd"));
                                 table.Cell().Element(CellStyle).Text(r.Student?.Company?.name ?? "-");
                                 table.Cell().Element(CellStyle).Text(r.PresenceType?.name ?? "-");
-                                table.Cell().Element(CellStyle).Text(r.feedback ?? "-");
+                                //table.Cell().Element(CellStyle).Text(r.feedback ?? "-");
                             }
 
                             IContainer CellStyle(IContainer container) =>
@@ -1077,84 +1387,154 @@ namespace PKL_API.Controllers
             }).GeneratePdf();
         }
 
-        [Authorize]
-        [HttpPut("{presenceId}/edit")]
-        [RequestSizeLimit(5_000_000)]
-        public async Task<IActionResult> EditPresence(int presenceId, [FromForm] Presence_ReportDTO dto)
+        // Haversine formula for distance in meters
+        private static double GetDistanceInMeters(double lat1, double lon1, double lat2, double lon2)
         {
-            var userIdClaim = User.FindFirst("id")?.Value;
-            if (userIdClaim == null || !int.TryParse(userIdClaim, out int userId))
-                return Unauthorized("Invalid user token");
+            const double R = 6371000; // Earth radius in meters
+            double dLat = DegreesToRadians(lat2 - lat1);
+            double dLon = DegreesToRadians(lon2 - lon1);
+            double a =
+                Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
+                Math.Cos(DegreesToRadians(lat1)) * Math.Cos(DegreesToRadians(lat2)) *
+                Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
+            double c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+            return R * c;
+        }
 
-            var presence = await _db.Presences
+        private static double DegreesToRadians(double deg) => deg * (Math.PI / 180.0);
+
+        [Authorize]
+        [HttpGet("history")]
+        public async Task<IActionResult> GetHistoryPresences(
+            [FromQuery] int studentId,
+            [FromQuery] int page = 1)
+        {
+            // Cek role
+            var (userId, roleId) = await _userAccessHelper.GetUserIdAndRoleAsync();
+            if (roleId == 2 || roleId == 6)
+                return StatusCode(403, "You are not allowed to access this resource.");
+
+            if (studentId <= 0)
+                return BadRequest("studentId is required.");
+
+            // Ambil data student
+            var student = await _db.Students
+                .Include(s => s.User)
+                .Include(s => s.Classroom)
+                .FirstOrDefaultAsync(s => s.id == studentId);
+
+            if (student == null)
+                return NotFound("Student not found.");
+
+            // Range tanggal
+            var startDate = new DateOnly(2025, 6, 30);
+            var endDate = new DateOnly(2026, 1, 4);
+
+            // Ambil semua presensi student di rentang tanggal
+            var presences = await _db.Presences
+                .Include(p => p.PresenceType)
                 .Include(p => p.Detail)
-                .FirstOrDefaultAsync(p => p.id == presenceId);
-            if (presence == null)
-                return NotFound("Presence not found.");
+                .Where(p => p.Studentid == studentId && p.date >= startDate && p.date <= endDate)
+                .ToListAsync();
 
-            // Only allow the student who owns the presence to edit
-            var student = await _db.Students.FirstOrDefaultAsync(s => s.Userid == userId);
-            if (student == null || presence.Studentid != student.id)
-                return StatusCode(403, "You are not allowed to edit this presence.");
+            // Buat dictionary presensi per tanggal
+            var presenceDict = presences
+                .GroupBy(p => p.date)
+                .ToDictionary(g => g.Key, g => g.First());
 
-            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".pdf" };
+            // Generate semua tanggal dalam rentang
+            var allDates = new List<DateOnly>();
+            for (var d = startDate; d <= endDate; d = d.AddDays(1))
+                allDates.Add(d);
 
-            bool IsValidFile(IFormFile? file)
+            // Pagination: 1 page = 7 hari (senin-minggu)
+            const int pageSize = 7;
+            var totalDays = allDates.Count;
+            var totalPages = (int)Math.Ceiling(totalDays / (double)pageSize);
+
+            if (page < 1) page = 1;
+            if (page > totalPages) page = totalPages;
+
+            var pagedDates = allDates
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            // Compose response
+            var result = pagedDates.Select(date =>
             {
-                if (file == null) return true;
-                var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
-                return allowedExtensions.Contains(ext);
-            }
-
-            var photoFiles = new (IFormFile? file, Action<Guid?> setId, string propName)[]
-            {
-                (dto.MedicalCertificate, id => presence.Detail.MedicalCertificatePhotoid = id, "MedicalCertificate"),
-                (dto.SickToCompany, id => presence.Detail.SickToCompanyPhotoid = id, "SickToCompany"),
-                (dto.SickToMentor, id => presence.Detail.SickToMentorPhotoid = id, "SickToMentor"),
-                (dto.SickToWalas, id => presence.Detail.SickToWalasPhotoid = id, "SickToWalas"),
-                (dto.Activity, id => presence.Detail.ActivityPhotoid = id, "Activity")
-            };
-
-            foreach (var (file, _, propName) in photoFiles)
-            {
-                if (file != null && !IsValidFile(file))
-                    return BadRequest($"Only JPG, JPEG, PNG, or PDF files are allowed for {propName}.");
-            }
-
-            async Task<Guid?> SavePhotoAsync(IFormFile? file)
-            {
-                if (file == null || file.Length == 0)
-                    return null;
-                using var ms = new MemoryStream();
-                await file.CopyToAsync(ms);
-                var photo = new PresencePhoto
+                if (presenceDict.TryGetValue(date, out var p))
                 {
-                    id = Guid.NewGuid(),
-                    photo = ms.ToArray(),
-                    extension = Path.GetExtension(file.FileName)
-                };
-                _db.PresencePhotos.Add(photo);
-                return photo.id;
-            }
+                    string reportStatus = "-";
+                    var typeId = p.PresenceTypeid;
+                    var detail = p.Detail;
 
-            foreach (var (file, setId, _) in photoFiles)
-            {
-                if (file != null)
-                {
-                    var photoId = await SavePhotoAsync(file);
-                    setId(photoId);
+                    if (typeId == 1 || typeId == 5) // Hadir
+                    {
+                        reportStatus = !string.IsNullOrWhiteSpace(detail?.daily_report)
+                            ? detail.daily_report
+                            : "Report tidak lengkap";
+                    }
+                    else if (typeId == 2) // Sakit
+                    {
+                        if (detail == null ||
+                            detail.MedicalCertificatePhotoid == null ||
+                            detail.SickToCompanyPhotoid == null ||
+                            detail.SickToMentorPhotoid == null ||
+                            detail.SickToWalasPhotoid == null)
+                        {
+                            reportStatus = "Report tidak lengkap";
+                        }
+                        else reportStatus = "Report Lengkap";
+                    }
+                    else if (typeId == 3) // Izin
+                    {
+                        reportStatus = (detail != null && detail.ActivityPhotoid != null)
+                            ? "Report Lengkap"
+                            : "Report tidak lengkap";
+                    }
+                    else if (typeId == 4) reportStatus = "Report Lengkap";
+
+                    return new
+                    {
+                        id_presence = p.id.ToString(),
+                        nis = student.nis,
+                        name = student.User.fullname,
+                        classroom_name = student.Classroom?.name ?? "-",
+                        date = ToIndonesianLongDate(date),
+                        time = p.time.ToString("HH:mm:ss"),
+                        presence_type = p.PresenceType?.name ?? "-",
+                        report = reportStatus,
+                        lat = detail?.lat?.ToString() ?? "-",
+                        longitude = detail?.longitude?.ToString() ?? "-"
+                    };
                 }
-            }
+                else
+                {
+                    return new
+                    {
+                        id_presence = "-",
+                        nis = student.nis,
+                        name = student.User.fullname,
+                        classroom_name = student.Classroom?.name ?? "-",
+                        date = ToIndonesianLongDate(date),
+                        time = "-",
+                        presence_type = "-",
+                        report = "-",
+                        lat = "-",
+                        longitude = "-"
+                    };
+                }
+            }).ToList();
 
-            // Set daily_report as string (text) from dto
-            if (presence.Detail != null)
+            return Ok(new
             {
-                presence.Detail.daily_report = dto.daily_report;
-            }
-
-            await _db.SaveChangesAsync();
-
-            return Ok(new { message = "Presence updated successfully" });
+                page,
+                pageSize,
+                totalPages,
+                totalDays,
+                data = result
+            });
         }
     }
 }

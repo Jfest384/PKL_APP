@@ -110,6 +110,15 @@ namespace PKLPresenceWeb.Model
         public required string description { get; set; }
     }
 
+    public class NewStudent
+    {
+        [StringLength(50)]
+        public required string nis { get; set; }
+        public required string name { get; set; }
+        [Column("id_class")]
+        public required int Classid { get; set; }
+    }
+
     public class UserResponse
     {
         public int id { get; set; }

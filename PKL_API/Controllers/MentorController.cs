@@ -129,6 +129,91 @@ namespace PKL_API.Controllers
         }
 
         [Authorize]
+        [HttpDelete("delete")]
+        public async Task<IActionResult> DeleteMentor([FromBody] int mentorId)
+        {
+            // Validasi input
+            if (mentorId <= 0)
+                return BadRequest("MentorId tidak valid.");
+
+            // Ambil user dari token
+            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "id");
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+                return Unauthorized("User ID not found in token.");
+
+            // Ambil role user
+            var user = await _db.Users
+                .Include(u => u.UserRoles)
+                .ThenInclude(ur => ur.Role)
+                .FirstOrDefaultAsync(u => u.id == userId);
+
+            if (user == null)
+                return Unauthorized("User not found.");
+
+            var roleIds = user.UserRoles.Select(ur => ur.RoleId).ToList();
+            if (!roleIds.Contains(1) && !roleIds.Contains(4))
+                return Forbid("Hanya roleId 1/4 yang bisa melakukan aksi ini.");
+
+            // 1. Ambil mentor yang akan dihapus
+            var mentorToDelete = await _db.Mentors.FirstOrDefaultAsync(m => m.id == mentorId);
+            if (mentorToDelete == null)
+                return NotFound("Mentor tidak ditemukan.");
+
+            var mentorUserId = mentorToDelete.Userid;
+
+            // 2. Hapus/ubah UserRole sesuai aturan
+            var mentorUserRoles = await _db.UserRoles
+                .Where(ur => ur.Userid == mentorUserId)
+                .ToListAsync();
+
+            if (mentorUserRoles.Count > 1)
+            {
+                // Jika ada lebih dari satu, hapus yang roleId == 3
+                var rolesToRemove = mentorUserRoles.Where(ur => ur.RoleId == 3).ToList();
+                _db.UserRoles.RemoveRange(rolesToRemove);
+            }
+            else if (mentorUserRoles.Count == 1)
+            {
+                // Jika hanya satu, ubah roleId menjadi 6
+                var singleRole = mentorUserRoles.First();
+                singleRole.RoleId = 6;
+            }
+
+            // 3. Set mentorId di Students menjadi NULL
+            var studentsToUpdate = await _db.Students
+                .Where(s => s.Mentorid == mentorId)
+                .ToListAsync();
+            foreach (var student in studentsToUpdate)
+                student.Mentorid = null;
+
+            // 4. Set mentorId di Presences menjadi NULL
+            var presencesToUpdate = await _db.Presences
+                .Where(p => p.Mentorid == mentorId)
+                .ToListAsync();
+            foreach (var presence in presencesToUpdate)
+                presence.Mentorid = null;
+
+            // 5. Set mentorId di Reports menjadi NULL
+            var reportsToUpdate = await _db.Reports
+                .Where(r => r.Mentorid == mentorId)
+                .ToListAsync();
+            foreach (var report in reportsToUpdate)
+                report.Mentorid = null;
+
+            var weeklyGuidancesToUpdate = await _db.WeeklyGuidances
+                .Where(r => r.Mentorid == mentorId)
+                .ToListAsync();
+            foreach (var weeklyGuidances in weeklyGuidancesToUpdate)
+                weeklyGuidances.Mentorid = null;
+
+            // 6. Hapus mentor
+            _db.Mentors.Remove(mentorToDelete);
+
+            await _db.SaveChangesAsync();
+            return Ok(new { message = "Data mentor berhasil dihapus." });
+        }
+
+        [Authorize]
         [HttpGet("students")]
         public IActionResult GetStudentsByCurrentMentor()
         {

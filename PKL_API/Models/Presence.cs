@@ -12,7 +12,7 @@ namespace PKL_API.Models
         public int Studentid { get; set; }
 
         [Column("id_mentor")]
-        public int Mentorid { get; set; }
+        public int? Mentorid { get; set; }
 
         [Column("id_class")]
         public int? Classroomid { get; set; }
@@ -23,8 +23,8 @@ namespace PKL_API.Models
         [Column("id_presence")]
         public int PresenceTypeid { get; set; }
 
-        [DataType(DataType.MultilineText)]
-        public required string? feedback { get; set; }
+        [Column("id_feedback")]
+        public int? PresenceFeedbackid { get; set; }
 
         [Column("id_detail")]
         public int PresenceDetailid { get; set; }
@@ -35,5 +35,6 @@ namespace PKL_API.Models
         public PresenceDetail? Detail { get; set; }
         public Mentor? Mentor { get; set; }
         public Classroom? Classroom { get; set; }
+        public PresenceFeedback? PresenceFeedback { get; set; }
     }
 }

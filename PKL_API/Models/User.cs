@@ -21,12 +21,12 @@ namespace PKL_API.Models
         public Guid? Photoid { get; set; }
         public bool gender { get; set; }
 
-        public required Photo Photo { get; set; }
+        public Photo Photo { get; set; }
 
-        public required ICollection<Student> Students { get; set; }
-        public required ICollection<Mentor> Mentors { get; set; }
-        public required ICollection<WaliKelas> WaliKelas { get; set; }
-        public required ICollection<UserRole> UserRoles { get; set; }
-        public required ICollection<Teacher> Teachers { get; set; }
+        public ICollection<Student> Students { get; set; }
+        public ICollection<Mentor> Mentors { get; set; }
+        public ICollection<WaliKelas> WaliKelas { get; set; }
+        public ICollection<UserRole> UserRoles { get; set; }
+        public ICollection<Teacher> Teachers { get; set; }
     }
 }

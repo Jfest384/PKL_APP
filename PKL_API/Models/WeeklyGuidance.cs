@@ -10,7 +10,7 @@ namespace PKL_API.Models
         [Column("Id_Student")]
         public int Studentid { get; set; }
         [Column("Id_Mentor")]
-        public int Mentorid { get; set; }
+        public int? Mentorid { get; set; }
         public DateTime WeekStartDate { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 

@@ -139,68 +139,49 @@ namespace PKL_API.Controllers
             if (feedbackDTO == null || string.IsNullOrWhiteSpace(feedbackDTO.feedback))
                 return BadRequest("Feedback is required.");
 
-            // Get user id from claims
-            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "id");
-            if (userIdClaim == null)
-                return Unauthorized("User ID not found in token.");
+            int userId, roleId;
+            try
+            {
+                (userId, roleId) = await _userAccessHelper.GetUserIdAndRoleAsync();
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(ex.Message);
+            }
 
-            if (!int.TryParse(userIdClaim.Value, out int userId))
-                return Unauthorized("Invalid user ID in token.");
-
-            // Get user from database to check role
-            var user = await _db.Users
-                .Include(u => u.UserRoles)
-                    .ThenInclude(ur => ur.Role)
-                .FirstOrDefaultAsync(u => u.id == userId);
-            if (user == null)
-                return Unauthorized("User not found.");
-
-            // Ambil roleId dari UserRoles (asumsi satu role per user)
-            var userRole = user.UserRoles.FirstOrDefault();
-            if (userRole == null)
-                return Unauthorized("User role not found.");
-            int roleId = userRole.RoleId;
-
-            // Only allow role id 3 (mentor) to give feedback
-            if (roleId == 1 || roleId == 2 || roleId == 6)
+            if (roleId == 2 || roleId == 6)
                 return StatusCode(403, "You are not allowed to give feedback.");
 
-            // Get report by id (include Student for nis/name, and Student.Mentor for mentor check)
             var report = await _db.Reports
                 .Include(r => r.Student)
+                .Include(r => r.ReportFeedback)
                 .FirstOrDefaultAsync(r => r.id == reportId);
+
             if (report == null)
                 return NotFound("Report not found.");
 
-            // If mentor, only allow giving feedback to their own students' reports
-            if (roleId == 3)
-            {
-                var mentor = await _db.Mentors.FirstOrDefaultAsync(m => m.Userid == userId);
-                if (mentor == null)
-                    return Unauthorized("Mentor data not found.");
+            ReportFeedback feedback = report.ReportFeedback ?? new ReportFeedback();
 
-                // Cek apakah student pada report dimentori oleh mentor ini
-                if (report.Student.Mentorid != mentor.id)
-                    return StatusCode(403, "You can only give feedback to your own students' reports.");
+            if (roleId == 1 || roleId == 4)
+                feedback.kajur = feedbackDTO.feedback;
+            else if (roleId == 3) feedback.mentor = feedbackDTO.feedback;
+            else if (roleId == 5) feedback.walas = feedbackDTO.feedback;
+            else if (roleId == 3 && roleId == 5)
+            {
+                feedback.mentor = feedbackDTO.feedback;
+                feedback.walas = feedbackDTO.feedback;
             }
 
-            report.feedback = feedbackDTO.feedback;
-            await _db.SaveChangesAsync();
-
-            // Get classroom and company info
-            var classroom = await _db.Classrooms.FirstOrDefaultAsync(c => c.id == report.Student.Classroomid);
-            var company = await _db.Companies.FirstOrDefaultAsync(c => c.id == report.Student.Companyid);
-
-            return Ok(new
+            if (report.ReportFeedback == null)
             {
-                id_student = report.Studentid,
-                nis = report.Student.nis,
-                name = report.Student.User?.fullname,
-                classroom_name = classroom?.name,
-                company_name = company?.name,
-                content = report.description,
-                feedback = report.feedback
-            });
+                _db.ReportFeedbacks.Add(feedback);
+                await _db.SaveChangesAsync();
+                report.ReportFeedbackid = feedback.id;
+            }
+            else _db.ReportFeedbacks.Update(feedback);
+
+            await _db.SaveChangesAsync();
+            return Ok(new { message = "Feedback submitted successfully" });
         }
 
         [Authorize]
@@ -245,6 +226,7 @@ namespace PKL_API.Controllers
                     .Include(r => r.Mentor).ThenInclude(m => m.User)
                     .Include(r => r.ReportFile)
                     .Include(r => r.ReportPhoto)
+                    .Include(p => p.ReportFeedback)
                     .Where(r => r.Studentid == student.id);
 
                 var totalCount = await query.CountAsync();
@@ -263,7 +245,19 @@ namespace PKL_API.Controllers
                         time = r.time.ToString("HH:mm:ss"),
                         name = r.Student.User.fullname ?? "-",
                         description = r.description,
-                        feedback = r.feedback ?? "-",
+                        feedback = r.ReportFeedback != null
+                        ? new
+                        {
+                            kajur = !string.IsNullOrWhiteSpace(r.ReportFeedback.kajur) ? r.ReportFeedback.kajur : "-",
+                            mentor = !string.IsNullOrWhiteSpace(r.ReportFeedback.mentor) ? r.ReportFeedback.mentor : "-",
+                            walas = !string.IsNullOrWhiteSpace(r.ReportFeedback.walas) ? r.ReportFeedback.walas : "-"
+                        }
+                        : new
+                        {
+                            kajur = "-",
+                            mentor = "-",
+                            walas = "-"
+                        },
                         reportFileId = r.ReportFileid,
                         reportPhotoId = r.ReportPhotoid,
                     })
@@ -313,6 +307,7 @@ namespace PKL_API.Controllers
                 var reportsQuery = _db.Reports
                     .Include(r => r.ReportFile)
                     .Include(r => r.ReportPhoto)
+                    .Include(p => p.ReportFeedback)
                     .Where(r => studentIds.Contains(r.Studentid) && r.date == filterDate);
 
                 var reportsOnDate = await reportsQuery.ToListAsync();
@@ -338,7 +333,19 @@ namespace PKL_API.Controllers
                         date = ToIndonesianLongDate(filterDate),
                         time = report != null ? report.time.ToString("HH:mm:ss") : "-",
                         description = report?.description ?? "-",
-                        feedback = report?.feedback ?? "-",
+                        feedback = report != null && report?.ReportFeedback != null
+                            ? new
+                            {
+                                kajur = !string.IsNullOrWhiteSpace(report.ReportFeedback.kajur) ? report.ReportFeedback.kajur : "-",
+                                mentor = !string.IsNullOrWhiteSpace(report.ReportFeedback.mentor) ? report.ReportFeedback.mentor : "-",
+                                walas = !string.IsNullOrWhiteSpace(report.ReportFeedback.walas) ? report.ReportFeedback.walas : "-"
+                            }
+                            : new
+                            {
+                                kajur = "-",
+                                mentor = "-",
+                                walas = "-"
+                            },
                         reportFileId = report?.ReportFileid != null ? report.ReportFileid.ToString() : "-",
                         reportPhotoId = report?.ReportPhotoid != null ? report.ReportPhotoid.ToString() : "-",
                         isGuidance = hasGuidance ? "✔️" : "❌"
@@ -404,6 +411,7 @@ namespace PKL_API.Controllers
                 var reportsQuery = _db.Reports
                     .Include(r => r.ReportFile)
                     .Include(r => r.ReportPhoto)
+                    .Include(p => p.ReportFeedback)
                     .Where(r => r.Mentorid == mentor.id && r.date == filterDate);
 
                 var reportsOnDate = await reportsQuery.ToListAsync();
@@ -429,7 +437,19 @@ namespace PKL_API.Controllers
                         date = ToIndonesianLongDate(filterDate),
                         time = report != null ? report.time.ToString("HH:mm:ss") : "-",
                         description = report?.description ?? "-",
-                        feedback = report?.feedback ?? "-",
+                        feedback = report != null && report?.ReportFeedback != null
+                            ? new
+                            {
+                                kajur = !string.IsNullOrWhiteSpace(report.ReportFeedback.kajur) ? report.ReportFeedback.kajur : "-",
+                                mentor = !string.IsNullOrWhiteSpace(report.ReportFeedback.mentor) ? report.ReportFeedback.mentor : "-",
+                                walas = !string.IsNullOrWhiteSpace(report.ReportFeedback.walas) ? report.ReportFeedback.walas : "-"
+                            }
+                            : new
+                            {
+                                kajur = "-",
+                                mentor = "-",
+                                walas = "-"
+                            },
                         reportFileId = report?.ReportFileid != null ? report.ReportFileid.ToString() : "-",
                         reportPhotoId = report?.ReportPhotoid != null ? report.ReportPhotoid.ToString() : "-",
                         isGuidance = hasGuidance ? "✔️" : "❌"
@@ -496,6 +516,7 @@ namespace PKL_API.Controllers
                 var reportsQuery = _db.Reports
                     .Include(r => r.ReportFile)
                     .Include(r => r.ReportPhoto)
+                    .Include(p => p.ReportFeedback)
                     .Where(r => studentIds.Contains(r.Studentid) && r.date == filterDate);
 
                 var reportsOnDate = await reportsQuery.ToListAsync();
@@ -521,7 +542,19 @@ namespace PKL_API.Controllers
                         date = ToIndonesianLongDate(filterDate),
                         time = report != null ? report.time.ToString("HH:mm:ss") : "-",
                         description = report?.description ?? "-",
-                        feedback = report?.feedback ?? "-",
+                        feedback = report != null && report?.ReportFeedback != null
+                            ? new
+                            {
+                                kajur = !string.IsNullOrWhiteSpace(report.ReportFeedback.kajur) ? report.ReportFeedback.kajur : "-",
+                                mentor = !string.IsNullOrWhiteSpace(report.ReportFeedback.mentor) ? report.ReportFeedback.mentor : "-",
+                                walas = !string.IsNullOrWhiteSpace(report.ReportFeedback.walas) ? report.ReportFeedback.walas : "-"
+                            }
+                            : new
+                            {
+                                kajur = "-",
+                                mentor = "-",
+                                walas = "-"
+                            },
                         reportFileId = report?.ReportFileid != null ? report.ReportFileid.ToString() : "-",
                         reportPhotoId = report?.ReportPhotoid != null ? report.ReportPhotoid.ToString() : "-",
                         isGuidance = hasGuidance ? "✔️" : "❌"
@@ -580,6 +613,7 @@ namespace PKL_API.Controllers
                 var reportsQuery = _db.Reports
                     .Include(r => r.ReportFile)
                     .Include(r => r.ReportPhoto)
+                    .Include(p => p.ReportFeedback)
                     .Where(r => studentIds.Contains(r.Studentid) && r.date == filterDate);
 
                 var reportsOnDate = await reportsQuery.ToListAsync();
@@ -605,7 +639,19 @@ namespace PKL_API.Controllers
                         date = ToIndonesianLongDate(filterDate),
                         time = report != null ? report.time.ToString("HH:mm:ss") : "-",
                         description = report?.description ?? "-",
-                        feedback = report?.feedback ?? "-",
+                        feedback = report != null && report?.ReportFeedback != null
+                            ? new
+                            {
+                                kajur = !string.IsNullOrWhiteSpace(report.ReportFeedback.kajur) ? report.ReportFeedback.kajur : "-",
+                                mentor = !string.IsNullOrWhiteSpace(report.ReportFeedback.mentor) ? report.ReportFeedback.mentor : "-",
+                                walas = !string.IsNullOrWhiteSpace(report.ReportFeedback.walas) ? report.ReportFeedback.walas : "-"
+                            }
+                            : new
+                            {
+                                kajur = "-",
+                                mentor = "-",
+                                walas = "-"
+                            },
                         reportFileId = report?.ReportFileid != null ? report.ReportFileid.ToString() : "-",
                         reportPhotoId = report?.ReportPhotoid != null ? report.ReportPhotoid.ToString() : "-",
                         isGuidance = hasGuidance ? "✔️" : "❌"
@@ -931,7 +977,7 @@ namespace PKL_API.Controllers
                                 table.Cell().Element(CellStyle).Text(r.date.ToString("yyyy-MM-dd"));
                                 table.Cell().Element(CellStyle).Text(r.Student?.Company?.name ?? "-");
                                 table.Cell().Element(CellStyle).Text(r.description ?? "-");
-                                table.Cell().Element(CellStyle).Text(r.feedback ?? "-");
+                                //table.Cell().Element(CellStyle).Text(r.feedback ?? "-");
                             }
 
                             IContainer CellStyle(IContainer container) =>
@@ -1103,7 +1149,7 @@ namespace PKL_API.Controllers
                                 table.Cell().Element(CellStyle).Text(r.Mentor?.User?.fullname ?? "-");
                                 table.Cell().Element(CellStyle).Text(r.Student?.Company?.name ?? "-");
                                 table.Cell().Element(CellStyle).Text(r.description ?? "-");
-                                table.Cell().Element(CellStyle).Text(r.feedback ?? "-");
+                                //table.Cell().Element(CellStyle).Text(r.feedback ?? "-");
                             }
 
                             IContainer CellStyle(IContainer container) =>
@@ -1248,7 +1294,7 @@ namespace PKL_API.Controllers
                                 table.Cell().Element(CellStyle).Text(r.date.ToString("yyyy-MM-dd"));
                                 table.Cell().Element(CellStyle).Text(r.Student?.Company?.name ?? "-");
                                 table.Cell().Element(CellStyle).Text(r.description ?? "-");
-                                table.Cell().Element(CellStyle).Text(r.feedback ?? "-");
+                                //table.Cell().Element(CellStyle).Text(r.feedback ?? "-");
                             }
 
                             IContainer CellStyle(IContainer container) =>
@@ -1261,6 +1307,90 @@ namespace PKL_API.Controllers
                     });
                 });
             }).GeneratePdf();
+        }
+
+        [Authorize]
+        [HttpGet("history-reports")]
+        public async Task<IActionResult> GetHistoryReports(
+            [FromQuery] int studentId,
+            [FromQuery] int page = 1)
+        {
+            // Ambil userId dan roleId dari helper
+            int userId, roleId;
+            try
+            {
+                (userId, roleId) = await _userAccessHelper.GetUserIdAndRoleAsync();
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(ex.Message);
+            }
+
+            // Hanya roleId 2 & 6 yang tidak boleh akses
+            if (roleId == 2 || roleId == 6)
+                return StatusCode(403, "You are not allowed to access this resource.");
+
+            if (studentId <= 0)
+                return BadRequest("studentId is required.");
+
+            // Ambil data student
+            var student = await _db.Students
+                .Include(s => s.User)
+                .FirstOrDefaultAsync(s => s.id == studentId);
+
+            if (student == null)
+                return NotFound("Student not found.");
+
+            // Ambil semua report milik student
+            var query = _db.Reports
+                .Include(r => r.ReportFile)
+                .Include(r => r.ReportPhoto)
+                .Where(r => r.Studentid == studentId);
+
+            // Pagination
+            const int pageSize = 4;
+            if (page < 1) page = 1;
+
+            var totalCount = await query.CountAsync();
+            var reports = await query
+                .OrderByDescending(r => r.date)
+                .ThenByDescending(r => r.time)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(r => new
+                {
+                    id = r.id.ToString(),
+                    nis = student.nis,
+                    name = student.User.fullname,
+                    date = ToIndonesianLongDate(r.date),
+                    time = r.time.ToString("HH:mm:ss"),
+                    description = r.description,
+                    reportFileId = r.ReportFileid,
+                    reportPhotoId = r.ReportPhotoid,
+                    feedback = r.ReportFeedback != null
+                        ? new
+                        {
+                            kajur = !string.IsNullOrWhiteSpace(r.ReportFeedback.kajur) ? r.ReportFeedback.kajur : "-",
+                            mentor = !string.IsNullOrWhiteSpace(r.ReportFeedback.mentor) ? r.ReportFeedback.mentor : "-",
+                            walas = !string.IsNullOrWhiteSpace(r.ReportFeedback.walas) ? r.ReportFeedback.walas : "-"
+                        }
+                        : new
+                        {
+                            kajur = "-",
+                            mentor = "-",
+                            walas = "-"
+                        }
+                })
+                .ToListAsync();
+
+            return Ok(new
+            {
+                page,
+                pageSize,
+                totalCount,
+                totalPages = (int)Math.Ceiling(totalCount / (double)pageSize),
+                data = reports
+            });
         }
     }
 }

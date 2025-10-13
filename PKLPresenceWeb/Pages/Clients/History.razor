@@ -1,0 +1,759 @@
+﻿@attribute [Authorize]
+@page "/participant/history"
+@inject HttpClient Http
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+@inject HistoryState HistoryState
+@inject IJSRuntime JS
+
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using PKLPresenceWeb.Model
+
+<div class="class-wrapper">
+    <div class="header-section d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center">
+            <button class="btn btn-link text-white fw-bold p-0 me-2" @onclick="GoBack">
+                <i class="bi-chevron-left fw-bold"></i>
+            </button>
+            <h5 class="mb-0 fw-bold text-white">History</h5>
+        </div>
+        <div class="photo-wrapper" @onclick="GoToProfile">
+            <img src="@photoUrl" onerror="this.src='/images/default_profile.jpg'" class="profile-photo" />
+        </div>
+    </div>
+
+    @if (ShowWarningModal)
+    {
+        <Modal IsVisible="true">
+            <div class="d-flex flex-column align-items-center p-3">
+                <i class="bi bi-exclamation-triangle-fill text-warning" style="font-size: 3rem;"></i>
+                <h5 class="fw-bold mt-3 mb-2">Peringatan!</h5>
+                <div class="mb-4 text-center">
+                    Tidak ada siswa yang dipilih untuk ditampilkan datanya.
+                </div>
+                <button class="btn btn-danger w-100" @onclick="CloseWarningModal">Close</button>
+            </div>
+        </Modal>
+    }
+
+    <div class="content-section">
+        <div class="section-title mb-3">Presence History</div>
+        <div class="scrollable-x mb-4">
+            <table class="table table-bordered presence-table">
+                <thead class="text-center">
+                    <tr>
+                        <th>No</th>
+                        <th>Hari/Tanggal</th>
+                        <th>Jam</th>
+                        <th>Status</th>
+                        <th>Report</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (PresenceHistory?.data?.Count > 0)
+                    {
+                        var rowIndex = (PresencePage - 1) * PresenceHistory.data.Count;
+                        @foreach (var item in PresenceHistory.data)
+                        {
+                            rowIndex++;
+                            <tr>
+                                <td class="text-center">@rowIndex</td>
+                                <td>@item.date</td>
+                                <td>@item.time</td>
+                                <td>@item.presence_type</td>
+                                <td class="@(item.report == "Report Lengkap" ? "text-success" : (item.report == "Report tidak lengkap" ? "text-danger" : ""))">@item.report</td>
+                                <td class="text-center">
+                                    <button class="btn btn-sm btn-info"
+                                            @onclick="() => ShowDetail(MapToPresenceItem(item))"
+                                            disabled="@(string.IsNullOrWhiteSpace(item.presence_type) || item.presence_type == "-")">
+                                        Preview
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">Tidak ada data presensi.</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <nav class="d-flex justify-content-center mt-2" style="padding: 1rem;">
+            <ul class="pagination d-flex flex-wrap justify-content-center">
+                <li class="page-item @(PresencePage == 1 ? "disabled" : null)">
+                    <button class="page-link btn-text" @onclick="() => ChangePresencePage(PresencePage - 1)">Previous</button>
+                    <button class="page-link btn-icon" @onclick="() => ChangePresencePage(PresencePage - 1)">
+                        <i class="bi bi-chevron-left"></i>
+                    </button>
+                </li>
+
+                <li class="page-item @(PresencePage == 1 ? "active" : null)">
+                    <button class="page-link" @onclick="() => ChangePresencePage(1)" disabled="@(PresencePage == 1)">1</button>
+                </li>
+
+                @if (PresencePage <= 3)
+                {
+                    // Tampilkan halaman 2 sampai 4
+                    for (int i = 2; i <= Math.Min(4, TotalPagesPresence - 1); i++)
+                    {
+                        var pageNumber = i;
+                        <li class="page-item @(pageNumber == PresencePage ? "active" : null)">
+                            <button class="page-link" @onclick="() => ChangePresencePage(pageNumber)" disabled="@(pageNumber == PresencePage)">@pageNumber</button>
+                        </li>
+                    }
+
+                    if (TotalPagesPresence > 5)
+                    {
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                    }
+                }
+
+                else if (PresencePage >= TotalPagesPresence - 2)
+                {
+                    if (TotalPagesPresence > 5)
+                    {
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                    }
+
+                    for (int i = TotalPagesPresence - 3; i < TotalPagesPresence; i++)
+                    {
+                        if (i > 1)
+                        {
+                            var pageNumber = i;
+                            <li class="page-item @(pageNumber == PresencePage ? "active" : null)">
+                                <button class="page-link" @onclick="() => ChangePresencePage(pageNumber)" disabled="@(pageNumber == PresencePage)">@pageNumber</button>
+                            </li>
+                        }
+                    }
+                }
+
+                else
+                {
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+
+                    for (int i = PresencePage - 1; i <= PresencePage + 1; i++)
+                    {
+                        var pageNumber = i;
+                        <li class="page-item @(pageNumber == PresencePage ? "active" : null)">
+                            <button class="page-link" @onclick="() => ChangePresencePage(pageNumber)" disabled="@(pageNumber == PresencePage)">@pageNumber</button>
+                        </li>
+                    }
+
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                }
+
+                @if (TotalPagesPresence > 1)
+                {
+                    <li class="page-item @(PresencePage == TotalPagesPresence ? "active" : null)">
+                        <button class="page-link" @onclick="() => ChangePresencePage(TotalPagesPresence)" disabled="@(PresencePage == TotalPagesPresence)">@TotalPagesPresence</button>
+                    </li>
+                }
+
+                <li class="page-item @(PresencePage == TotalPagesPresence ? "disabled" : null)">
+                    <button class="page-link btn-text" @onclick="() => ChangePresencePage(PresencePage + 1)">Next</button>
+                    <button class="page-link btn-icon" @onclick="() => ChangePresencePage(PresencePage + 1)">
+                        <i class="bi bi-chevron-right"></i>
+                    </button>
+                </li>
+            </ul>
+        </nav>
+
+        <div class="section-title mb-3">Report History</div>
+        <div class="scrollable-x mb-4">
+            <table class="table table-bordered report-table">
+                <thead class="text-center">
+                    <tr>
+                        <th rowspan="2">No</th>
+                        <th rowspan="2">Hari/Tanggal</th>
+                        <th rowspan="2">Jam</th>
+                        <th rowspan="2">Deskripsi</th>
+                        <th colspan="3">Feedback</th>
+                        <th rowspan="2">Action</th>
+                    </tr>
+                    <tr>
+                        <th>Mentor</th>
+                        <th>Walas</th>
+                        <th>Kajur</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (ReportHistory?.data?.Count > 0)
+                    {
+                        var rowIndex = (ReportPage - 1) * ReportHistory.data.Count;
+                        @foreach (var item in ReportHistory.data)
+                        {
+                            rowIndex++;
+                            <tr>
+                                <td class ="text-center">@rowIndex</td>
+                                <td>@item.date</td>
+                                <td>@item.time</td>
+                                <td>@item.description</td>
+                                <td>@item.feedback?.mentor</td>
+                                <td>@item.feedback?.walas</td>
+                                <td>@item.feedback?.kajur</td>
+                                <td>
+                                    <div class="d-flex flex-column gap-2 align-items-center">
+                                        <button class="btn btn-sm btn-success" style="padding-left: 0.9rem; padding-right: 0.9rem;"
+                                                @onclick='() => ShowReportDetail(item, "photo")'>
+                                            Photo
+                                        </button>
+                                        <button class="btn btn-sm btn-warning"
+                                                @onclick='() => ShowReportDetail(item, "file")'>
+                                            Laporan
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center text-muted">Tidak ada data laporan.</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <nav class="d-flex justify-content-center mt-2" style="padding: 1rem;">
+            <ul class="pagination d-flex flex-wrap justify-content-center">
+                <li class="page-item @(ReportPage == 1 ? "disabled" : null)">
+                    <button class="page-link btn-text" @onclick="() => ChangeReportPage(ReportPage - 1)">Previous</button>
+                    <button class="page-link btn-icon" @onclick="() => ChangeReportPage(ReportPage - 1)">
+                        <i class="bi bi-chevron-left"></i>
+                    </button>
+                </li>
+
+                <li class="page-item @(ReportPage == 1 ? "active" : null)">
+                    <button class="page-link" @onclick="() => ChangeReportPage(1)" disabled="@(ReportPage == 1)">1</button>
+                </li>
+
+                @if (ReportPage <= 3)
+                {
+                    // Tampilkan halaman 2 sampai 4
+                    for (int i = 2; i <= Math.Min(4, TotalPagesReport - 1); i++)
+                    {
+                        var pageNumber = i;
+                        <li class="page-item @(pageNumber == ReportPage ? "active" : null)">
+                            <button class="page-link" @onclick="() => ChangeReportPage(pageNumber)" disabled="@(pageNumber == ReportPage)">@pageNumber</button>
+                        </li>
+                    }
+
+                    if (TotalPagesReport > 5)
+                    {
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                    }
+                }
+
+                else if (ReportPage >= TotalPagesReport - 2)
+                {
+                    if (TotalPagesReport > 5)
+                    {
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                    }
+
+                    for (int i = TotalPagesReport - 3; i < TotalPagesReport; i++)
+                    {
+                        if (i > 1)
+                        {
+                            var pageNumber = i;
+                            <li class="page-item @(pageNumber == ReportPage ? "active" : null)">
+                                <button class="page-link" @onclick="() => ChangeReportPage(pageNumber)" disabled="@(pageNumber == ReportPage)">@pageNumber</button>
+                            </li>
+                        }
+                    }
+                }
+
+                else
+                {
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+
+                    for (int i = ReportPage - 1; i <= ReportPage + 1; i++)
+                    {
+                        var pageNumber = i;
+                        <li class="page-item @(pageNumber == ReportPage ? "active" : null)">
+                            <button class="page-link" @onclick="() => ChangeReportPage(pageNumber)" disabled="@(pageNumber == ReportPage)">@pageNumber</button>
+                        </li>
+                    }
+
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                }
+
+                @if (TotalPagesReport > 1)
+                {
+                    <li class="page-item @(ReportPage == TotalPagesReport ? "active" : null)">
+                        <button class="page-link" @onclick="() => ChangeReportPage(TotalPagesReport)" disabled="@(ReportPage == TotalPagesReport)">@TotalPagesReport</button>
+                    </li>
+                }
+
+                <li class="page-item @(ReportPage == TotalPagesReport ? "disabled" : null)">
+                    <button class="page-link btn-text" @onclick="() => ChangeReportPage(ReportPage + 1)">Next</button>
+                    <button class="page-link btn-icon" @onclick="() => ChangeReportPage(ReportPage + 1)">
+                        <i class="bi bi-chevron-right"></i>
+                    </button>
+                </li>
+            </ul>
+        </nav>
+
+        @if (ShowDetailModal && SelectedPresenceDetail != null)
+        {
+            <Modal IsVisible="true">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <button class="btn btn-link"
+                            @onclick="ShowPrevPresence"
+                            disabled="@(SelectedPresenceIndex <= 0)">
+                        <i class="bi bi-chevron-left"></i>
+                    </button>
+                    <span class="fw-bold" style="flex:1;text-align:center; font-size:20px">Presence Detail</span>
+                    <button class="btn btn-link"
+                            @onclick="ShowNextPresence"
+                            disabled="@(SelectedPresenceIndex >= Presences?.Where(p => !string.IsNullOrWhiteSpace(p.presence_type) && p.presence_type != "-").Count() - 1)">
+                        <i class="bi bi-chevron-right"></i>
+                    </button>
+                </div>
+                <div class="mb-2" style="max-height:400px;overflow-y:auto;">
+                    @if (PreviewPresenceFields != null && PreviewPresenceFields.Count > 0)
+                    {
+                        @if (PreviewPresenceTypeId == 5)
+                        {
+                            <div class="mb-3">
+                                <!-- Foto Full Body -->
+                                <div class="mx-1">
+                                    <label class="d-block mt-2 mb-1 fw-normal">Foto Full Body</label>
+                                    <label class="upload-box-report">
+                                        @if (PreviewPresencePhotoUrls.ContainsKey("FullBodyPhoto") && PreviewPresencePhotoUrls["FullBodyPhoto"] != null)
+                                        {
+                                            <img src="@PreviewPresencePhotoUrls["FullBodyPhoto"]" class="img-upload-preview" />
+                                        }
+                                        else
+                                        {
+                                            <span class="upload-box text-muted d-flex flex-column align-items-center justify-content-center" style="height:120px;">
+                                                <i class="bi bi-image" style="font-size:2rem;"></i>
+                                                <br />Upload Foto
+                                            </span>
+                                        }
+                                    </label>
+                                </div>
+                                <!-- Info WFH dari Perusahaan -->
+                                <div class="mx-1">
+                                    <label class="d-block mt-2 mb-1 fw-normal">Info WFH dari Perusahaan</label>
+                                    <label class="upload-box-report">
+                                        @if (PreviewPresencePhotoUrls.ContainsKey("WFHFromCompany") && PreviewPresencePhotoUrls["WFHFromCompany"] != null)
+                                        {
+                                            <img src="@PreviewPresencePhotoUrls["WFHFromCompany"]" class="img-upload-preview" />
+                                        }
+                                        else
+                                        {
+                                            <span class="upload-box text-muted d-flex flex-column align-items-center justify-content-center" style="height:120px;">
+                                                <i class="bi bi-image" style="font-size:2rem;"></i>
+                                                <br />Upload Foto
+                                            </span>
+                                        }
+                                    </label>
+                                </div>
+                                <!-- Location -->
+                                <div class="mx-1">
+                                    <div class="mt-3 mb-1">Location</div>
+                                    <div class="presence-modal-value">
+                                        <div id="detailPresenceMap" class="detail-presence-map"></div>
+                                        <div class="mt-2 text-muted" style="font-size:small;">
+                                            * Klik Peta untuk preview pada Google Maps
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="mb-3">
+                                @foreach (var field in PreviewPresenceFields)
+                                {
+                                    <div class="mx-1">
+                                        <label class="d-block mt-2 mb-1 fw-normal">@field.Label</label>
+                                        <label class="upload-box-report">
+                                            @if (PreviewPresencePhotoUrls.ContainsKey(field.Field) && PreviewPresencePhotoUrls[field.Field] != null)
+                                            {
+                                                <img src="@PreviewPresencePhotoUrls[field.Field]" class="img-upload-preview" />
+                                            }
+                                            else
+                                            {
+                                                <span class="upload-box text-muted d-flex flex-column align-items-center justify-content-center" style="height:120px;">
+                                                    <i class="bi bi-image" style="font-size:2rem;"></i>
+                                                    <br />Upload Foto
+                                                </span>
+                                            }
+                                        </label>
+                                        @if ((field.Field == "FullBodyPhoto") && !string.IsNullOrWhiteSpace(PreviewPresenceReport))
+                                        {
+                                            <div class="mt-3 mb-1">Laporan Harian</div>
+                                            <textarea class="form-control" rows="4" readonly style="background:#f8f9fa;">@PreviewPresenceReport</textarea>
+                                            <div class="mt-3 mb-1">Location</div>
+                                            <div class="presence-modal-value">
+                                                <div id="detailPresenceMap" class="detail-presence-map"></div>
+                                                <div class="mt-2 text-muted" style="font-size:small;">
+                                                    * Klik Peta untuk preview pada Google Maps
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
+                    }
+                </div>
+
+                <button class="btn btn-primary w-100 " @onclick="CloseDetailModal">Close</button>
+            </Modal>
+        }
+    </div>
+</div>
+
+@code {
+    private string photoUrl = "/images/default_profile.jpg";
+    private bool IsLoading = true;
+
+    // Presence History
+    private int PresencePage = 1;
+	private int TotalPagesPresence => PresenceHistory?.totalPages ?? 1;
+    private PresenceHistoryResponse? PresenceHistory;
+
+    // Report History
+    private int ReportPage = 1;
+    private int TotalPagesReport => ReportHistory?.totalPages ?? 1;
+    private ReportHistoryResponse? ReportHistory;
+
+    bool ShowDetailModal = false;
+    PresenceItem? SelectedPresenceDetail = null;
+    private List<PresenceItem> Presences = new();
+    private int SelectedPresenceIndex = -1;
+    Dictionary<string, string?> PreviewPresencePhotoUrls = new();
+
+    private string PreviewPresenceReport = "";
+    private List<PresenceTypeItem> PresenceTypes = new();
+    int PreviewPresenceTypeId = 0;
+    string PreviewPresenceTypeName = "";
+    List<(string Label, string Field)> PreviewPresenceFields = new();
+
+    private bool ShowWarningModal = false;
+
+    private async Task LoadPresenceTypes()
+    {
+        var types = await Http.GetFromJsonAsync<List<PresenceTypeItem>>(APIUrl.Endpoint("data/presence-types"));
+        PresenceTypes = types ?? new();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (ShowDetailModal && SelectedPresenceDetail != null && (SelectedPresenceDetail.presence_type == "Hadir" || SelectedPresenceDetail.presence_type == "WFH"))
+        {
+            if (double.TryParse(SelectedPresenceDetail.lat, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var lat) &&
+                double.TryParse(SelectedPresenceDetail.longitude, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var lng))
+            {
+                await JS.InvokeVoidAsync("renderPresenceMapWithMarker", "detailPresenceMap", lat, lng, null);
+            }
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        if (!authState.User.Identity.IsAuthenticated)
+        {
+            Navigation.NavigateTo("/login", true);
+            return;
+        }
+
+        var studentId = HistoryState.StudentId;
+        if (string.IsNullOrWhiteSpace(studentId.ToString()))
+        {
+            ShowWarningModal = true;
+            return;
+        }
+
+        var token = await JS.InvokeAsync<string>("localStorage.getItem", "authToken");
+        if (!string.IsNullOrEmpty(token))
+            Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        // Ambil foto profile
+        var photoRequest = new HttpRequestMessage(HttpMethod.Get, PKLPresenceWeb.Model.APIUrl.Endpoint("me/photo"));
+        photoRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+        var photoResponse = await Http.SendAsync(photoRequest);
+        if (photoResponse.IsSuccessStatusCode)
+        {
+            var bytes = await photoResponse.Content.ReadAsByteArrayAsync();
+            var contentType = photoResponse.Content.Headers.ContentType?.MediaType ?? "image/jpeg";
+            var base64 = Convert.ToBase64String(bytes);
+            photoUrl = $"data:{contentType};base64,{base64}";
+        }
+
+        await LoadPresenceTypes();
+        await LoadPresenceHistory();
+        await LoadReportHistory();
+        IsLoading = false;
+    }
+
+    private void CloseWarningModal()
+    {
+        ShowWarningModal = false;
+        Navigation.NavigateTo("/participant", true);
+    }
+
+    private async Task LoadPresenceHistory()
+    {
+        IsLoading = true;
+        StateHasChanged();
+        var studentId = HistoryState.StudentId;
+        var url = PKLPresenceWeb.Model.APIUrl.Endpoint($"presence/history?studentId={studentId}&page={PresencePage}");
+        PresenceHistory = await Http.GetFromJsonAsync<PresenceHistoryResponse>(url);
+        Presences = PresenceHistory?.data?
+        .Select(MapToPresenceItem)
+        .Where(p => !string.IsNullOrWhiteSpace(p.presence_type) && p.presence_type != "-")
+        .ToList() ?? new List<PresenceItem>();
+
+        IsLoading = false;
+        StateHasChanged();
+    }
+
+    private async Task LoadReportHistory()
+    {
+        IsLoading = true;
+        StateHasChanged();
+        var studentId = HistoryState.StudentId;
+        var url = PKLPresenceWeb.Model.APIUrl.Endpoint($"repots/history-reports?studentId={studentId}&page={ReportPage}");
+        ReportHistory = await Http.GetFromJsonAsync<ReportHistoryResponse>(url);
+        IsLoading = false;
+        StateHasChanged();
+    }
+
+    private async void ChangePresencePage(int page)
+    {
+        if (page >= 1 && page <= TotalPagesPresence && page != PresencePage)
+        {
+            PresencePage = page;
+            await LoadPresenceHistory();
+        }
+    }
+
+    private async void ChangeReportPage(int page)
+    {
+        if (page >= 1 && page <= TotalPagesReport && page != ReportPage)
+        {
+            ReportPage = page;
+            await LoadReportHistory();
+        }
+    }
+
+    private void GoBack() => Navigation.NavigateTo("/participant");
+    private void GoToProfile() => Navigation.NavigateTo("/home/profile");
+
+    private async void ShowReportDetail(ReportHistoryItem item, string type)
+    {
+        string? id = null;
+        if (type == "photo")
+            id = item.reportPhotoId;
+        else if (type == "file")
+            id = item.reportFileId;
+
+        if (!string.IsNullOrWhiteSpace(id))
+        {
+            var url = PKLPresenceWeb.Model.APIUrl.Endpoint($"repots/preview/{id}");
+            await JS.InvokeVoidAsync("window.open", url, "_blank");
+        }
+        else
+        {
+            await JS.InvokeVoidAsync("alert", "ID tidak tersedia.");
+        }
+    }
+
+    void ShowPrevPresence()
+    {
+        var list = Presences.Where(p => !string.IsNullOrWhiteSpace(p.presence_type) && p.presence_type != "-").ToList();
+        if (SelectedPresenceIndex > 0)
+        {
+            SelectedPresenceIndex--;
+            SelectedPresenceDetail = list[SelectedPresenceIndex];
+            _ = LoadPresencePhotosAndReport(SelectedPresenceDetail);
+        }
+    }
+
+    void ShowNextPresence()
+    {
+        var list = Presences.Where(p => !string.IsNullOrWhiteSpace(p.presence_type) && p.presence_type != "-").ToList();
+        if (SelectedPresenceIndex < list.Count - 1)
+        {
+            SelectedPresenceIndex++;
+            SelectedPresenceDetail = list[SelectedPresenceIndex];
+            _ = LoadPresencePhotosAndReport(SelectedPresenceDetail);
+        }
+    }
+
+    readonly Dictionary<int, List<(string Label, string Field)>> PresenceTypeFields = new()
+    {
+        { 1, new() { ("Foto Full Body", "FullBodyPhoto"), ("Location", "Location") } }, // Hadir
+        { 2, new() { ("Saat Berobat", "Treatment") } }, // Sakit
+        { 3, new() { ("Izin ke Perusahaan", "PermitToCompany"), ("Izin ke Pembimbing Sekolah", "PermitToMentor"), ("Izin ke Walas", "PermitToWalas") } }, // Izin
+        { 4, new() { ("Info Libur dari Perusahaan", "HolidayFromCompany") } }, // Libur
+        { 5, new() { ("Foto Full Body", "FullBodyPhoto"), ("Info WFH dari Perusahaan", "WFHFromCompany"), ("Location", "Location") } }, // WFH
+    };
+
+    private string MapPhotoTypeToField(string type)
+    {
+        return type switch
+        {
+            "photoBody" => "FullBodyPhoto",
+            "medicalCertificate" => "MedicalCertificate",
+            "activity" => "Activity",
+            "treatment" => "Treatment",
+            "sickToCompany" => "SickToCompany",
+            "sickToMentor" => "SickToMentor",
+            "sickToWalas" => "SickToWalas",
+            "permitToCompany" => "PermitToCompany",
+            "permitToMentor" => "PermitToMentor",
+            "permitToWalas" => "PermitToWalas",
+            "holidayFromCompany" => "HolidayFromCompany",
+            "wfhFromCompany" => "WFHFromCompany",
+            _ => type
+        };
+    }
+
+    private async Task<string?> GetPhotoBase64Async(string photoUrl)
+    {
+        try
+        {
+            var token = await JS.InvokeAsync<string>("localStorage.getItem", "authToken");
+            var request = new HttpRequestMessage(HttpMethod.Get, photoUrl);
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            var response = await Http.SendAsync(request);
+            if (!response.IsSuccessStatusCode) return null;
+            var bytes = await response.Content.ReadAsByteArrayAsync();
+            var ext = System.IO.Path.GetExtension(photoUrl).ToLower();
+            var mime = ext == ".png" ? "image/png" : "image/jpeg";
+            return $"data:{mime};base64,{Convert.ToBase64String(bytes)}";
+        }
+        catch { return null; }
+    }
+
+    private async Task LoadPresencePhotosAndReport(PresenceItem item)
+    {
+        PreviewPresencePhotoUrls.Clear();
+        PreviewPresenceReport = item.report ?? "";
+
+        var type = PresenceTypes.FirstOrDefault(x =>
+            x.name.Trim().Equals(item.presence_type.Trim(), StringComparison.OrdinalIgnoreCase));
+        if (type == null)
+        {
+            await JS.InvokeVoidAsync("alert", $"PresenceType master: {string.Join(", ", PresenceTypes.Select(x => x.name))}\nDari item: {item.presence_type}");
+            return;
+        }
+
+        PreviewPresenceTypeId = type.id;
+        PreviewPresenceTypeName = type.name;
+        if (PreviewPresenceTypeId == 2) // Sakit
+        {
+            PreviewPresenceFields = new()
+            {
+                ("Saat Berobat", "Treatment"),
+                ("Surat MC", "MedicalCertificate"),
+                ("Info Sakit ke Perusahaan", "SickToCompany"),
+                ("Info Sakit ke Pembimbing Sekolah", "SickToMentor"),
+                ("Info Sakit ke Walas", "SickToWalas")
+            };
+        }
+        else if (PreviewPresenceTypeId == 3) // Izin
+        {
+            PreviewPresenceFields = new()
+            {
+                ("Izin ke Perusahaan", "PermitToCompany"),
+                ("Izin ke Pembimbing Sekolah", "PermitToMentor"),
+                ("Izin ke Walas", "PermitToWalas"),
+                ("Kegiatan yang Dilakukan", "Activity")
+            };
+        }
+        else if (PreviewPresenceTypeId == 4) // Libur
+        {
+            PreviewPresenceFields = new()
+            {
+                ("Info Libur dari Perusahaan", "HolidayFromCompany")
+            };
+        }
+        else if (PreviewPresenceTypeId == 1) // Hadir
+        {
+            PreviewPresenceFields = new()
+            {
+                ("Foto Full Body", "FullBodyPhoto")
+            };
+        }
+        else if (PreviewPresenceTypeId == 5) // Hadir
+        {
+            PreviewPresenceFields = new()
+            {
+                ("Foto Full Body", "FullBodyPhoto"),
+                ("Info WFH dari Perusahaan", "WFHFromCompany")
+            };
+        }
+        else PreviewPresenceFields = PresenceTypeFields.GetValueOrDefault(PreviewPresenceTypeId, new());
+
+        try
+        {
+            var photos = await Http.GetFromJsonAsync<List<PresencePhotoResponse>>(APIUrl.Endpoint($"presence/{item.id_presence}/photos"));
+            if (photos != null)
+            {
+                foreach (var field in PreviewPresenceFields)
+                {
+                    var photo = photos.FirstOrDefault(p => MapPhotoTypeToField(p.type) == field.Field);
+                    var apiBase = "http://localhost:5027";
+                    if (photo != null)
+                    {
+                        var base64 = await GetPhotoBase64Async($"{apiBase}{photo.url}");
+                        PreviewPresencePhotoUrls[field.Field] = base64;
+                    }
+                    else PreviewPresencePhotoUrls[field.Field] = null;
+                }
+            }
+        }
+        catch { await JS.InvokeVoidAsync("alert", "Gagal mengambil foto presensi."); }
+        StateHasChanged();
+    }
+
+    void CloseDetailModal()
+    {
+        ShowDetailModal = false;
+        SelectedPresenceDetail = null;
+        SelectedPresenceIndex = -1;
+    }
+
+    async void ShowDetail(PresenceItem item)
+    {
+        var list = Presences.Where(p => !string.IsNullOrWhiteSpace(p.presence_type) && p.presence_type != "-").ToList();
+        SelectedPresenceIndex = list.FindIndex(p => p.id_presence == item.id_presence);
+        SelectedPresenceDetail = item;
+        ShowDetailModal = true;
+        await LoadPresencePhotosAndReport(item);
+    }
+
+    private PresenceItem MapToPresenceItem(PresenceHistoryItem history)
+    {
+        return new PresenceItem
+        {
+            id_presence = history.id_presence, // sesuaikan jika nama property berbeda
+            nis = history.nis,
+            name = history.name,
+            date = history.date,
+            time = history.time,
+            presence_type = history.presence_type,
+            report = history.report,
+            // tambahkan property lain jika diperlukan, atau set default/null
+            classId = 0,
+            classroom_name = "",
+            isPresence = "",
+            lat = history.lat,
+            longitude = history.longitude,
+            isComplete = ""
+        };
+    }
+}

@@ -15,6 +15,7 @@ namespace PKL_API.Models
 
         [Column(TypeName = "decimal(10,7)")]
         public decimal? lat { get; set; }
+
         [Column("long", TypeName = "decimal(10,7)")]
         public decimal? longitude { get; set; }
 
@@ -81,6 +82,11 @@ namespace PKL_API.Models
         public PresencePhoto? HolidayFromCompanyPhoto { get; set; }
 
 
+        [ForeignKey(nameof(WFHFromCompanyPhoto))]
+        [Column("wfh_from_company")]
+        public Guid? WFHFromCompanyPhotoid { get; set; }
+        public PresencePhoto? WFHFromCompanyPhoto { get; set; }
 
+        public DateOnly? update_at { get; set; }
     }
 }

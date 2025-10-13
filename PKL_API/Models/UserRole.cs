@@ -12,7 +12,7 @@ namespace PKL_API.Models
         [Column("id_role")]
         public int RoleId { get; set; }
 
-        public required User User { get; set; }
-        public required Role Role { get; set; }
+        public User User { get; set; }
+        public Role Role { get; set; }
     }
 }

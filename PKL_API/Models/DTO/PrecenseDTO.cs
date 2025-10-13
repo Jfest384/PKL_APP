@@ -7,8 +7,9 @@ namespace PKL_API.Models.DTO
         [Column("id_precense")]
         public int PresenceTypeid { get; set; }
 
-        [Column("lat", TypeName = "decimal(10,7)")]
+        [Column(TypeName = "decimal(10,7)")]
         public decimal? Lat { get; set; }
+
         [Column("long", TypeName = "decimal(10,7)")]
         public decimal? Long { get; set; }
 
@@ -18,5 +19,6 @@ namespace PKL_API.Models.DTO
         public IFormFile? PermitToMentor { get; set; }
         public IFormFile? PermitToWalas { get; set; }
         public IFormFile? HolidayFromCompany { get; set; }
+        public IFormFile? WFHFromCompany { get; set; }
     }
 }

@@ -16,6 +16,8 @@ builder.Services.AddScoped<AuthenticationStateProvider, SimpleAuthStateProvider>
 // Registrasi HttpClient
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
 
+builder.Services.AddSingleton<HistoryState>();
+
 // Set default culture
 CultureInfo.DefaultThreadCurrentCulture = new CultureInfo("id-ID");
 CultureInfo.DefaultThreadCurrentUICulture = new CultureInfo("id-ID");
