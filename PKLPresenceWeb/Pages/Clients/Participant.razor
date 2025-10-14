@@ -299,7 +299,6 @@
                                                             </label>
                                                         </div>
                                                     </div> *@
-
                                                     <div class="d-flex justify-content-center align-items-center gap-3" style="min-width:120px;">
                                                         <div class="d-flex flex-column gap-2 justify-content-center align-items-center">
                                                             <button class="btn btn-sm @(string.IsNullOrWhiteSpace(item[5]) || item[5] == "-" ? "btn-warning" : "btn-success")"
@@ -328,28 +327,6 @@
                                                         </button>
                                                     </div>
                                                 }
-
-                                                @* <div class="d-flex flex-column gap-2 align-items-center">
-                                                    @if (UserRole == "Admin" || UserRole == "Kepala Jurusan")
-                                                    {
-                                                        @if (string.IsNullOrWhiteSpace(item[5]) || item[5] == "-")
-                                                        {
-                                                            <button class="btn btn-sm btn-warning" @onclick="() => OnPilihTempatPKL(item)">
-                                                                <i class="bi bi-geo-alt me-1"></i> Lokasi PKL
-                                                            </button>
-                                                        }
-                                                        else
-                                                        {
-                                                            <button class="btn btn-sm btn-success" @onclick="() => OnPilihTempatPKL(item)">
-                                                                <i class="bi bi-geo-alt me-1"></i> Lokasi PKL
-                                                            </button>
-                                                        }
-                                                    }
-
-                                                    <button class="btn btn-sm btn-primary" style="padding-left: 1.2rem; padding-right: 1.2rem;" @onclick="() => GoToHistory(item)">
-                                                        <i class="bi bi-clock-history me-1"></i> History
-                                                    </button>
-                                                </div> *@
                                             </td>
                                         }
                                     }
