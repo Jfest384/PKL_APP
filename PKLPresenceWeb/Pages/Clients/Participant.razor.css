@@ -257,7 +257,7 @@ body {
 }
 
 .table.pkl-admin th:nth-child(2), .table.pkl-admin td:nth-child(2) {
-    width: 7%;
+    width: 5%;
 }
 
 .table.pkl-admin th:nth-child(3), .table.pkl-admin td:nth-child(3) {
@@ -281,7 +281,7 @@ body {
 }
 
 .table.pkl-admin th:nth-child(8), .table.pkl-admin td:nth-child(8) {
-    width: 11%;
+    width: 13%;
 }
 
 /* Untuk Admin, Kajur */
@@ -545,6 +545,10 @@ body {
     .d-sm-none {
         display: block !important;
     }
+
+    .locklocation-toolbar {
+        flex: 0 0 auto;
+    }
 }
 
 @media (min-width: 577px) {
@@ -555,4 +559,188 @@ body {
     .d-sm-inline {
         display: inline !important;
     }
+
+    .locklocation-toolbar {
+        margin-left: auto;
+    }
 }
+
+/*.switch {
+    position: relative;
+    display: inline-block;
+    width: 49px;
+    height: 25px;
+}
+
+    .switch input {
+        display: none;
+    }
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 25px;
+}
+
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 17px;
+        width: 17px;
+        left: 5px;
+        bottom: 4px;
+        background-color: white;
+        transition: .4s;
+        border-radius: 50%;
+    }
+
+input:checked + .slider {
+    background-color: #28a745;
+}
+
+    input:checked + .slider:before {
+        transform: translateX(22px);
+    }
+
+    .vertical-switch {
+    position: relative;
+    display: inline-block;
+    width: 48px;
+    height: 80px;
+}
+
+.vertical-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.vertical-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 48px;
+    height: 80px;
+    background-color: #ccc;
+    border-radius: 24px;
+    transition: background 0.3s;
+}
+
+.vertical-slider:before {
+    position: absolute;
+    content: "";
+    left: 8px;
+    width: 32px;
+    height: 32px;
+    background-color: white;
+    border-radius: 50%;
+    bottom: 8px;
+    transition: bottom 0.3s;
+}
+
+.vertical-switch input:checked + .vertical-slider {
+    background-color: #14BD2D;
+}
+
+.vertical-switch input:checked + .vertical-slider:before {
+    bottom: 40px;
+}*/
+
+.vertical-switch {
+    position: relative;
+    display: inline-block;
+    width: 36px;
+    height: 68px;
+}
+
+    .vertical-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+.vertical-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    width: 36px;
+    height: 68px;
+    background-color: #ccc;
+    border-radius: 6px; /* kotak, bukan bulat */
+    transition: background 0.3s;
+}
+
+    .vertical-slider:before {
+        position: absolute;
+        content: "";
+        left: 5.5px;
+        width: 25px;
+        height: 22px;
+        background-color: white;
+        border-radius: 4px; /* kotak, bukan bulat */
+        bottom: 4px;
+        transition: bottom 0.3s;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+
+.vertical-switch input:checked + .vertical-slider {
+    background-color: darkorange;
+}
+
+    .vertical-switch input:checked + .vertical-slider:before {
+        bottom: 41px;
+    }
+
+.horizontal-switch {
+    position: relative;
+    display: inline-block;
+    width: 105px;
+    height: 33px;
+}
+
+    .horizontal-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+.horizontal-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 4px;
+}
+
+    .horizontal-slider:before {
+        position: absolute;
+        content: "";
+        height: 23px;
+        width: 28px;
+        left: 7px;
+        bottom: 5px;
+        background-color: white;
+        transition: .4s;
+        border-radius: 4px;
+    }
+
+.horizontal-switch input:checked + .horizontal-slider {
+    background-color: orangered;
+}
+
+    .horizontal-switch input:checked + .horizontal-slider:before {
+        transform: translateX(62px);
+    }

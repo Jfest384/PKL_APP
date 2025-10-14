@@ -38,6 +38,34 @@
     }
 
     <div class="content-section">
+        @if (StudentDetail != null)
+        {
+            <div class="student-detail-card mb-4">
+                <div class="student-detail-header">Student Detail</div>
+                <div class="student-detail-body">
+                    <div class="student-detail-col student-detail-col-left">
+                        <div class="student-detail-row">
+                            <label class="student-detail-label">Nama</label>
+                            <input class="student-detail-input" value="@StudentDetail.fullname" readonly />
+                        </div>
+                        <div class="student-detail-row">
+                            <label class="student-detail-label">Kelas</label>
+                            <input class="student-detail-input" value="@StudentDetail.class_name" readonly />
+                        </div>
+                    </div>
+                    <div class="student-detail-col student-detail-col-right">
+                        <div class="student-detail-row">
+                            <label class="student-detail-label">Mentor</label>
+                            <input class="student-detail-input" value="@StudentDetail.mentor_name" readonly />
+                        </div>
+                        <div class="student-detail-row">
+                            <label class="student-detail-label">Perusahaan</label>
+                            <input class="student-detail-input" value="@StudentDetail.company_name" readonly />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
         <div class="section-title mb-3">Presence History</div>
         <div class="scrollable-x mb-4">
             <table class="table table-bordered presence-table">
@@ -68,7 +96,7 @@
                                     <button class="btn btn-sm btn-info"
                                             @onclick="() => ShowDetail(MapToPresenceItem(item))"
                                             disabled="@(string.IsNullOrWhiteSpace(item.presence_type) || item.presence_type == "-")">
-                                        Preview
+                                        <i class="bi bi-eye me-1"></i> Preview
                                     </button>
                                 </td>
                             </tr>
@@ -200,11 +228,11 @@
                                     <div class="d-flex flex-column gap-2 align-items-center">
                                         <button class="btn btn-sm btn-success" style="padding-left: 0.9rem; padding-right: 0.9rem;"
                                                 @onclick='() => ShowReportDetail(item, "photo")'>
-                                            Photo
+                                            <i class="bi bi-image me-1"></i> Photo
                                         </button>
                                         <button class="btn btn-sm btn-warning"
                                                 @onclick='() => ShowReportDetail(item, "file")'>
-                                            Laporan
+                                            <i class="bi bi-file-earmark-text me-1"></i> Laporan
                                         </button>
                                     </div>
                                 </td>
@@ -438,6 +466,7 @@
     List<(string Label, string Field)> PreviewPresenceFields = new();
 
     private bool ShowWarningModal = false;
+    private StudentDetail? StudentDetail;
 
     private async Task LoadPresenceTypes()
     {
@@ -476,6 +505,8 @@
         var token = await JS.InvokeAsync<string>("localStorage.getItem", "authToken");
         if (!string.IsNullOrEmpty(token))
             Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        StudentDetail = await Http.GetFromJsonAsync<StudentDetail>(PKLPresenceWeb.Model.APIUrl.Endpoint($"students/{studentId}"));
 
         // Ambil foto profile
         var photoRequest = new HttpRequestMessage(HttpMethod.Get, PKLPresenceWeb.Model.APIUrl.Endpoint("me/photo"));
@@ -704,7 +735,7 @@
                 foreach (var field in PreviewPresenceFields)
                 {
                     var photo = photos.FirstOrDefault(p => MapPhotoTypeToField(p.type) == field.Field);
-                    var apiBase = "https://presensi.smksabdev.my.id";
+                    var apiBase = "http://localhost:5027";
                     if (photo != null)
                     {
                         var base64 = await GetPhotoBase64Async($"{apiBase}{photo.url}");

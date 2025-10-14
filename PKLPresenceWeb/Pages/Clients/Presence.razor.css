@@ -288,11 +288,11 @@ input[type="radio"].presence-radio-input {
 
 /* Untuk Selain Student */
 .table.mentor-table th:nth-child(1), .table.mentor-table td:nth-child(1) {
-    width: 5%;
+    width: 4%;
 }
 
 .table.mentor-table th:nth-child(2), .table.mentor-table td:nth-child(2) {
-    width: 7%;
+    width: 6%;
 }
 
 .table.mentor-table th:nth-child(3), .table.mentor-table td:nth-child(3) {
@@ -300,7 +300,7 @@ input[type="radio"].presence-radio-input {
 }
 
 .table.mentor-table th:nth-child(4), .table.mentor-table td:nth-child(4) {
-    width: 10%;
+    width: 9%;
 }
 
 .table.mentor-table th:nth-child(5), .table.mentor-table td:nth-child(5) {
@@ -312,11 +312,11 @@ input[type="radio"].presence-radio-input {
 }
 
 .table.mentor-table th:nth-child(7), .table.mentor-table td:nth-child(7) {
-    width: 7%;
+    width: 6%;
 }
 
 .table.mentor-table th:nth-child(8), .table.mentor-table td:nth-child(8) {
-    width: 7%;
+    width: 5%;
 }
 
 .table.mentor-table th:nth-child(9), .table.mentor-table td:nth-child(9) {
@@ -324,11 +324,11 @@ input[type="radio"].presence-radio-input {
 }
 
 .table.mentor-table th:nth-child(10), .table.mentor-table td:nth-child(10) {
-    width: 10%;
+    width: 9%;
 }
 
 .table.mentor-table th:nth-child(11), .table.mentor-table td:nth-child(11) {
-    width: 9%;
+    width: 16%;
 }
 
 /* Untuk Student */
@@ -380,7 +380,7 @@ input[type="radio"].presence-radio-input {
     }
 
     .scrollable-x > .table.mentor-table {
-        min-width: 1150px;
+        min-width: 1450px;
         max-width: 1900px; /* atau sesuai kebutuhan */
         width: 100%;
         table-layout: fixed;
@@ -617,6 +617,30 @@ input[type="radio"].presence-radio-input {
     .locklocation-text {
         display: none;
     }
+
+    .btn-text-sm-hide {
+        display: none !important;
+    }
+
+    .action-grid {
+        display: flex !important;
+        flex-direction: row !important;
+        gap: 4px;
+        flex-wrap: nowrap;
+        justify-content: center;
+        align-items: center;
+    }
+
+        .action-grid .btn {
+            min-width: 36px;
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
+            font-size: 1rem;
+        }
+
+    .btn-text-sm-hide {
+        display: none !important;
+    }
 }
 
 @media (min-width: 577px) {
@@ -697,4 +721,21 @@ input:checked + .slider {
 
     input:checked + .slider:before {
         transform: translateX(22px);
+    }
+
+.action-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto;
+    gap: 7px;
+    width: fit-content;
+}
+
+    .action-grid .btn {
+        width: 100%;
+        min-width: 0;
+        white-space: nowrap;
+        text-align: center;
+        padding: 0.4rem 0.5rem;
+        font-size: 0.95rem;
     }

@@ -10,4 +10,10 @@
         //    [Column("id_student")]
         //    public int Studentid { get; set; }
     }
+
+    public class EditStudentLockDTO
+    {
+        public int studentId { get; set; }
+        public int status { get; set; } // 0 = unlock, 1 = lock
+    }
 }

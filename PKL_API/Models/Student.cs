@@ -46,6 +46,9 @@ namespace PKL_API.Models
         [ForeignKey(nameof(Userid))]
         public User? User { get; set; }
 
+        public bool isLock { get; set; }
+        public DateTime? update_at { get; set; }
+
 
         public ICollection<Presence>? Presences { get; set; }
         public ICollection<Report>? Reports { get; set; }

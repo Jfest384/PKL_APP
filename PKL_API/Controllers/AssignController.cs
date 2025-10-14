@@ -298,5 +298,41 @@ namespace PKL_API.Controllers
 
             return Ok(new { message, status = statusEntity.status ? 1 : 0, updateAt = statusEntity.updateAt });
         }
+
+        [Authorize]
+        [HttpPut("student-lock")]
+        public async Task<IActionResult> EditStudentLock([FromBody] EditStudentLockDTO dto)
+        {
+            var user = await AuthHelper.GetCurrentUser(HttpContext, _db);
+            if (user == null)
+                return Unauthorized("User not found.");
+
+            var userRole = await _db.UserRoles.FirstOrDefaultAsync(ur => ur.Userid == user.id);
+            if (userRole == null)
+                return StatusCode(403, "User role not found.");
+
+            var roleId = userRole.RoleId;
+            if (roleId != 1 && roleId != 4)
+                return StatusCode(403, "You do not have permission to edit this data.");
+
+            if (dto.status != 0 && dto.status != 1)
+                return BadRequest("Status value must be 0 or 1.");
+
+            var student = await _db.Students.FirstOrDefaultAsync(s => s.id == dto.studentId);
+            if (student == null)
+                return NotFound("Student not found.");
+
+            student.isLock = dto.status == 1;
+            student.update_at = DateTime.Now;
+
+            _db.Students.Update(student);
+            await _db.SaveChangesAsync();
+
+            var message = student.isLock == true
+                ? "Lock Location berhasil diaktifkan."
+                : "Lock Location berhasil dinonaktifkan.";
+
+            return Ok(new { message, isLock = student.isLock ? 1 : 0, update_at = student.update_at });
+        }
     }
 }

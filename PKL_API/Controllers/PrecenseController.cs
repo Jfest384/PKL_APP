@@ -248,6 +248,80 @@ namespace PKL_API.Controllers
         }
 
         [Authorize]
+        [HttpDelete("delete/{presenceId}")]
+        public async Task<IActionResult> DeletePresence(int presenceId)
+        {
+            int userId, roleId;
+            try
+            {
+                (userId, roleId) = await _userAccessHelper.GetUserIdAndRoleAsync();
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(ex.Message);
+            }
+
+            // Hanya roleId 1 (Admin) dan 4 (Kepala Jurusan) yang boleh
+            if (roleId != 1 && roleId != 4)
+                return StatusCode(403, "You are not allowed to delete presence.");
+
+            var presence = await _db.Presences
+                .Include(p => p.Detail)
+                .Include(p => p.PresenceFeedback)
+                .FirstOrDefaultAsync(p => p.id == presenceId);
+
+            if (presence == null) return NotFound("Presence not found.");
+
+            // Hapus PresencePhotos yang terkait dengan PresenceDetail
+            if (presence.Detail != null)
+            {
+                var photoIds = new List<Guid?>()
+                {
+                    presence.Detail.FullBodyPhotoid,
+                    presence.Detail.TreatmentPhotoid,
+                    presence.Detail.PermitToCompanyPhotoid,
+                    presence.Detail.PermitToMentorPhotoid,
+                    presence.Detail.PermitToWalasPhotoid,
+                    presence.Detail.HolidayFromCompanyPhotoid,
+                    presence.Detail.WFHFromCompanyPhotoid,
+                    presence.Detail.MedicalCertificatePhotoid,
+                    presence.Detail.SickToCompanyPhotoid,
+                    presence.Detail.SickToMentorPhotoid,
+                    presence.Detail.SickToWalasPhotoid,
+                    presence.Detail.ActivityPhotoid
+                };
+
+                var photoEntities = await _db.PresencePhotos
+                    .Where(ph => photoIds.Contains(ph.id))
+                    .ToListAsync();
+                _db.PresencePhotos.RemoveRange(photoEntities);
+            }
+
+            // Hapus PresenceFeedback jika ada
+            if (presence.PresenceFeedbackid.HasValue)
+            {
+                var feedback = await _db.PresenceFeedbacks
+                    .FirstOrDefaultAsync(f => f.id == presence.PresenceFeedbackid.Value);
+                if (feedback != null)
+                    _db.PresenceFeedbacks.Remove(feedback);
+            }
+
+            // Hapus PresenceDetail jika ada
+            if (presence.PresenceDetailid != 0)
+            {
+                var detail = await _db.PresenceDetails
+                    .FirstOrDefaultAsync(d => d.id == presence.PresenceDetailid);
+                if (detail != null)
+                    _db.PresenceDetails.Remove(detail);
+            }
+
+            // Hapus Presence utama
+            _db.Presences.Remove(presence);
+            await _db.SaveChangesAsync();
+            return Ok(new { message = "Presence deleted successfully" });
+        }
+
+        [Authorize]
         [HttpPut("{presenceId}/edit")]
         [RequestSizeLimit(50_000_000)]
         public async Task<IActionResult> EditPresence(int presenceId, [FromForm] Presence_ReportDTO dto)

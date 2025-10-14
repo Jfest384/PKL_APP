@@ -305,10 +305,10 @@
             {
                 <Modal IsVisible="true" Title="@ReportPresenceTypeName">
                     <div class="mb-2" style="max-height:400px;overflow-y:auto;">
-                        @if (ReportPresenceTypeId == 1)
+                        @if (ReportPresenceTypeId == 1 || ReportPresenceTypeId == 5)
                         {
                             <div class="mb-1 mx-1">
-                                <label class="mb-2">Ringkasan Pekerjaan di Industri</label>
+                                <label class="mb-2">Ringkasan Pekerjaan</label>
                                 <textarea class="form-control"
                                           placeholder="Masukkan report..." 
                                           @bind="ReportTextInput" 
@@ -693,28 +693,36 @@
                                         </td>
                                         <td>@item.updateAt</td>
                                         <td>
-                                            <div class="d-flex flex-column gap-2 align-items-center">
-                                                <button class="btn btn-sm btn-success"
-                                                        @onclick="() => ShowDetail(item)"
-                                                        style="padding-left: 1.2rem; padding-right: 1.2rem;"
-                                                        disabled="@(string.IsNullOrWhiteSpace(item.presence_type) || item.presence_type == "-")">
-                                                    Detail
-                                                </button>
-                                                @if (UserRole != "Student" && UserRole != "Teacher")
-                                                {
-                                                    <button class="btn btn-sm btn-warning"
-                                                            @onclick="() => ShowFeedback(item)"
-                                                            disabled="@((item.presence_type == "-"))">
-                                                        Feedback
-                                                    </button>
-
-                                                    <button class="btn btn-sm btn-danger"
-                                                            style="padding-left: 1.4rem; padding-right: 1.4rem;"
-                                                            disabled="@(string.IsNullOrWhiteSpace(item.presence_type) || item.presence_type == "-")">
-                                                        Print
-                                                    </button>
-                                                }
-                                            </div>
+                                            @if (UserRole != "Teacher")
+                                            {
+                                                <div class="d-flex flex-wrap gap-2 align-items-center justify-content-center presence-action-group" style="min-width:120px;">
+                                                    <div class="action-grid">
+                                                        <button class="btn btn-sm btn-success"
+                                                                @onclick="() => ShowDetail(item)"
+                                                                disabled="@(string.IsNullOrWhiteSpace(item.presence_type) || item.presence_type == "-")">
+                                                            <i class="bi bi-info-circle"></i>
+                                                            <span class="btn-text-sm-hide ms-1">Detail</span>
+                                                        </button>
+                                                        <button class="btn btn-sm btn-warning"
+                                                                @onclick="() => ShowFeedback(item)"
+                                                                disabled="@((item.presence_type == "-"))">
+                                                            <i class="bi bi-chat-dots"></i>
+                                                            <span class="btn-text-sm-hide ms-1">Feedback</span>
+                                                        </button>
+                                                        <button class="btn btn-sm btn-primary"
+                                                                disabled="@(string.IsNullOrWhiteSpace(item.presence_type) || item.presence_type == "-")">
+                                                            <i class="bi bi-printer"></i>
+                                                            <span class="btn-text-sm-hide ms-1">Print</span>
+                                                        </button>
+                                                        <button class="btn btn-sm btn-danger"
+                                                                @onclick="() => ShowDeletePresenceConfirmation(item)"
+                                                                disabled="@(string.IsNullOrWhiteSpace(item.presence_type) || item.presence_type == "-")">
+                                                            <i class="bi bi-trash"></i>
+                                                            <span class="btn-text-sm-hide ms-1">Delete</span>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            }
                                         </td>
                                     </tr>
                                 }
@@ -821,8 +829,8 @@
                         <span class="checkmark-presence-animate">
                             <i class="bi bi-check-circle-fill" style="font-size:3rem; color:limegreen;"></i>
                         </span>
-                        <p class="mt-2 fw-bold" style="font-size:20px">Success</p>
-                        <p class="mt-1">Feedback berhasil ditambahkan!</p>
+                        <p class="mt-2 fw-bold" style="font-size:20px">Success!</p>
+                        <p class="mt-1">Feedback berhasil ditambahkan.</p>
                     </div>
                 </Modal>
             }
@@ -1030,6 +1038,36 @@
                     </span>
                     <p class="mt-2 fw-bold" style="font-size:20px">Success!</p>
                     <p class="mt-1">@LockLocationSuccessMessage</p>
+                </div>
+            </Modal>
+        }
+
+        @if (ShowDeletePresenceModal)
+        {
+            <Modal IsVisible="true">
+                <div class="text-center">
+                    <i class="bi bi-trash fs-1 text-danger"></i>
+                    <p class="fw-bold">Delete Presence</p>
+                    <p>
+                        Apakah Anda yakin ingin menghapus data presensi milik siswa <b>@DeletePresenceName</b> di tanggal <b>@DeletePresenceDate</b>?
+                    </p>
+                    <div class="d-flex justify-content-center gap-3 mt-4">
+                        <button class="btn btn-danger px-4" @onclick="CancelDeletePresence">No</button>
+                        <button class="btn btn-success px-4" @onclick="ConfirmDeletePresenceAsync">Yes</button>
+                    </div>
+                </div>
+            </Modal>
+        }
+
+        @if (ShowDeletePresenceSuccessModal)
+        {
+            <Modal IsVisible="true">
+                <div class="text-center">
+                    <span class="checkmark-presence-animate">
+                        <i class="bi bi-check-circle-fill" style="font-size:3rem; color:limegreen;"></i>
+                    </span>
+                    <p class="mt-2 fw-bold" style="font-size:20px">Success!</p>
+                    <p class="mt-1">Data presensi siswa berhasil dihapus.</p>
                 </div>
             </Modal>
         }
@@ -1704,7 +1742,7 @@
             CloseDetailModal();
             ShowFeedbackSuccess = true;
             StateHasChanged();
-            await Task.Delay(2000);
+            await Task.Delay(2500);
             ShowFeedbackSuccess = false;
             await LoadPresence();
         }
@@ -2030,7 +2068,7 @@
                 foreach (var field in PreviewPresenceFields)
                 {
                     var photo = photos.FirstOrDefault(p => MapPhotoTypeToField(p.type) == field.Field);
-                    var apiBase = "https://presensi.smksabdev.my.id";
+                    var apiBase = "http://localhost:5027";
                     if (photo != null)
                     {
                         var base64 = await GetPhotoBase64Async($"{apiBase}{photo.url}");
@@ -2075,5 +2113,59 @@
         {
             await JS.InvokeVoidAsync("alert", "Gagal mengubah status Lock Location.");
         }
+    }
+
+    // State untuk delete Presensi
+    private bool ShowDeletePresenceModal = false;
+    private bool ShowDeletePresenceSuccessModal = false;
+    private string? DeletePresenceId = null;
+    private string DeletePresenceName = "";
+    private string DeletePresenceDate = "";
+
+    private void ShowDeletePresenceConfirmation(PresenceItem item)
+    {
+        DeletePresenceId = item.id_presence;
+        DeletePresenceName = item.name;
+        DeletePresenceDate = FormatTanggalIndo(item.date);
+        ShowDeletePresenceModal = true;
+    }
+
+    private string FormatTanggalIndo(string tanggal)
+    {
+        if (DateTime.TryParse(tanggal, out var dt))
+        {
+            var bulan = dt.ToString("MMMM", new System.Globalization.CultureInfo("id-ID"));
+            return $"{dt.Day} {bulan} {dt.Year}";
+        }
+        return tanggal;
+    }
+
+    private async Task ConfirmDeletePresenceAsync()
+    {
+        if (DeletePresenceId == null) return;
+        var response = await Http.DeleteAsync(APIUrl.Endpoint($"presence/delete/{DeletePresenceId}"));
+        ShowDeletePresenceModal = false;
+        DeletePresenceId = null;
+        DeletePresenceName = "";
+        DeletePresenceDate = "";
+
+        if (response.IsSuccessStatusCode)
+        {
+            ShowDeletePresenceSuccessModal = true;
+            await LoadPresence(selectedDate);
+            StateHasChanged();
+            await Task.Delay(2500);
+            ShowDeletePresenceSuccessModal = false;
+            StateHasChanged();
+        }
+        else await JS.InvokeVoidAsync("alert", "Gagal menghapus presensi.");
+    }
+
+    private void CancelDeletePresence()
+    {
+        ShowDeletePresenceModal = false;
+        DeletePresenceId = null;
+        DeletePresenceName = "";
+        DeletePresenceDate = "";
     }
 }

@@ -86,24 +86,6 @@ select.form-select {
     padding: 6px 12px;
 }
 
-@media (max-width: 768px) {
-    .nav-tabs {
-        flex-direction: column;
-        align-items: center;
-    }
-
-    .table th, .table td {
-        font-size: 0.85rem;
-        padding: 8px;
-    }
-
-    input.form-control,
-    select.form-select {
-        font-size: 0.85rem;
-    }
-}
-
-
 body {
     background: linear-gradient(to bottom, #d3d3d3, #fefefe);
 }
@@ -189,11 +171,11 @@ body {
 }
 
 .table.presence-table th:nth-child(5), .table.presence-table td:nth-child(5) {
-    width: 40%;
+    width: 38%;
 }
 
 .table.presence-table th:nth-child(6), .table.presence-table td:nth-child(6) {
-    width: 12%;
+    width: 14%;
 }
 
 
@@ -297,7 +279,6 @@ body {
     cursor: pointer;
     width: fit-content;
     height: fit-content;
-    padding: 0;
     text-align: center;
     position: relative;
 }
@@ -353,3 +334,100 @@ body {
         border-bottom-left-radius: 2px;
         border-bottom-right-radius: 2px;
     }
+
+.student-detail-card {
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e3e6ea;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    padding: 0;
+    margin-bottom: 1.5rem;
+}
+
+.student-detail-header {
+    font-weight: bold;
+    font-size: 1.15rem;
+    background: #f1f3f6;
+    border-bottom: 1px solid #e3e6ea;
+    padding: 0.75rem 1rem;
+    border-radius: 8px 8px 0 0;
+}
+
+.student-detail-body {
+    display: flex;
+    flex-direction: row;
+    gap: 2rem;
+    padding: 1rem;
+}
+
+.student-detail-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.student-detail-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.student-detail-label {
+    font-weight: 500;
+    min-width: 90px;
+    width: 90px;
+}
+
+.student-detail-input {
+    flex: 1;
+    background: #e9ecef;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    padding: 0.5rem 0.75rem;
+    font-size: 1rem;
+    color: #333;
+}
+
+@media (max-width: 576px) {
+    .nav-tabs {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .table th, .table td {
+        font-size: 0.85rem;
+        padding: 8px;
+    }
+
+    input.form-control,
+    select.form-select {
+        font-size: 0.85rem;
+    }
+
+    .student-detail-body {
+        flex-direction: column;
+        gap: 0.5rem;
+        padding: 0.75rem;
+    }
+
+    .student-detail-col {
+        gap: 0.5rem;
+    }
+
+    .student-detail-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.25rem;
+    }
+
+    .student-detail-label {
+        width: auto;
+        min-width: 0;
+        margin-bottom: 0.25rem;
+    }
+
+    .student-detail-input {
+        width: 100%;
+    }
+}

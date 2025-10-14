@@ -134,7 +134,8 @@ namespace PKL_API.Controllers
                     q.User.gender,
                     q.Classroomid,
                     class_name = q.Classroom != null ? q.Classroom.name : null,
-                    q.isPKL
+                    q.isPKL,
+                    q.isLock
                 })
                 .ToList();
 
@@ -166,7 +167,8 @@ namespace PKL_API.Controllers
                     class_name = q.Classroom != null ? q.Classroom.name : null,
                     mentor_name = q.Mentor != null ? q.Mentor.User.fullname : null,
                     company_name = q.Company != null ? q.Company.name : null,
-                    isPKL = q.isPKL == true ? "Yes" : "No"
+                    isPKL = q.isPKL == true ? "Yes" : "No",
+                    isLock = q.isLock == true ? "Yes" : "No"
                 })
                 .FirstOrDefault();
             if (student == null)
@@ -306,7 +308,8 @@ namespace PKL_API.Controllers
                     q.Classroomid,
                     class_name = q.Classroom != null ? q.Classroom.name : "-",
                     mentor_name = q.Mentor != null ? q.Mentor.User.fullname : "-",
-                    company_name = q.Company != null ? q.Company.name : "-"
+                    company_name = q.Company != null ? q.Company.name : "-",
+                    isLock = q.isLock == true ? "Yes" : "No"
                 })
                 .ToListAsync();
 

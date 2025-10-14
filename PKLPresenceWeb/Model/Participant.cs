@@ -22,6 +22,7 @@ namespace PKLPresenceWeb.Model
         public int classroomid { get; set; }
         public string class_name { get; set; }
         public bool isPKL { get; set; }
+        public bool isLock { get; set; }
     }
 
     public class StudentDetail
@@ -76,6 +77,7 @@ namespace PKLPresenceWeb.Model
         public string class_name { get; set; }
         public string mentor_name { get; set; }
         public string company_name { get; set; }
+        public string isLock { get; set; }
     }
 
     public class ClassListResponse
