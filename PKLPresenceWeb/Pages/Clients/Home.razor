@@ -82,70 +82,65 @@
             Navigation.NavigateTo("/login", true);
         }
 
-        try
+        var token = await JS.InvokeAsync<string>("localStorage.getItem", "authToken");
+        if (string.IsNullOrWhiteSpace(token)) return;
+
+        var authHeader = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        // ===== Ambil data user =====
+        var request = new HttpRequestMessage(HttpMethod.Get, APIUrl.Endpoint("me"));
+        request.Headers.Authorization = authHeader;
+        var response = await Http.SendAsync(request);
+
+        if (!response.IsSuccessStatusCode) return;
+
+        var json = await response.Content.ReadAsStringAsync();
+        var doc = JsonDocument.Parse(json);
+        var root = doc.RootElement;
+
+        fullName = root.GetProperty("fullname").GetString() ?? "";
+        string role = "";
+        if (root.TryGetProperty("role", out var roleProp))
+            role = roleProp.GetString() ?? "";
+
+        else if (root.TryGetProperty("roles", out var rolesProp) && rolesProp.ValueKind == JsonValueKind.String)
+            role = rolesProp.GetString() ?? "";
+
+        // Jika student, tampilkan nama kelas
+        if (role.Trim().ToLower() == "student" && root.TryGetProperty("data", out var dataProp) && dataProp.ValueKind == JsonValueKind.Object)
         {
-            var token = await JS.InvokeAsync<string>("localStorage.getItem", "authToken");
-            if (string.IsNullOrWhiteSpace(token)) return;
-
-            var authHeader = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-
-            // ===== Ambil data user =====
-            var request = new HttpRequestMessage(HttpMethod.Get, APIUrl.Endpoint("me"));
-            request.Headers.Authorization = authHeader;
-            var response = await Http.SendAsync(request);
-
-            if (!response.IsSuccessStatusCode) return;
-
-            var json = await response.Content.ReadAsStringAsync();
-            var doc = JsonDocument.Parse(json);
-            var root = doc.RootElement;
-
-            fullName = root.GetProperty("fullname").GetString() ?? "";
-            bool isStudent = false;
-            if (root.TryGetProperty("roles", out var rolesProp) && rolesProp.ValueKind == JsonValueKind.String)
-            {
-                var rolesText = rolesProp.GetString() ?? "-";
-                isStudent = rolesText.ToLower().Contains("student");
-                secondLine = rolesText;
-            }
-            else if (root.TryGetProperty("role", out var roleProp))
-            {
-                var role = roleProp.GetString() ?? "";
-                isStudent = role.Trim().ToLower() == "student";
-                secondLine = role;
-            }
-
-            // Jika student, tampilkan nama kelas
-            if (isStudent && root.TryGetProperty("data", out var dataProp) && dataProp.ValueKind == JsonValueKind.Array)
-            {
-                if (dataProp.GetArrayLength() > 0)
-                {
-                    var first = dataProp[0];
-                    if (first.TryGetProperty("classroom", out var classroomProp))
-                        secondLine = classroomProp.GetString() ?? "";
-                }
-            }
-
-            // ===== Ambil foto profile =====
-            if (root.TryGetProperty("profile", out var profileProp) &&
-                profileProp.ValueKind != JsonValueKind.Null)
-            {
-                var photoRequest = new HttpRequestMessage(HttpMethod.Get, APIUrl.Endpoint("me/photo"));
-                photoRequest.Headers.Authorization = authHeader;
-                var photoResponse = await Http.SendAsync(photoRequest);
-
-                if (photoResponse.IsSuccessStatusCode)
-                {
-                    var bytes = await photoResponse.Content.ReadAsByteArrayAsync();
-                    var contentType = photoResponse.Content.Headers.ContentType?.MediaType ?? "image/jpeg";
-                    var base64 = Convert.ToBase64String(bytes);
-                    photoUrl = $"data:{contentType};base64,{base64}";
-                }
-            }
+            if (dataProp.TryGetProperty("classroom", out var classroomProp))
+                secondLine = classroomProp.GetString() ?? "";
+            else secondLine = "Student";
         }
-        catch (Exception ex)
+        else if (role.Trim().ToLower() == "student" && root.TryGetProperty("data", out var dataArrProp) && dataArrProp.ValueKind == JsonValueKind.Array)
         {
-            Console.WriteLine("Gagal memuat data user atau foto: " + ex.Message);
+            if (dataArrProp.GetArrayLength() > 0)
+            {
+                var first = dataArrProp[0];
+                if (first.TryGetProperty("classroom", out var classroomProp))
+                    secondLine = classroomProp.GetString() ?? "";
+                else secondLine = "Student";
+            }
+            else secondLine = "Student";
+        }
+        else secondLine = string.IsNullOrWhiteSpace(role) ? "-" : role;
+
+        // ===== Ambil foto profile =====
+        if (root.TryGetProperty("profile", out var profileProp) &&
+            profileProp.ValueKind != JsonValueKind.Null)
+        {
+            var photoRequest = new HttpRequestMessage(HttpMethod.Get, APIUrl.Endpoint("me/photo"));
+            photoRequest.Headers.Authorization = authHeader;
+            var photoResponse = await Http.SendAsync(photoRequest);
+
+            if (photoResponse.IsSuccessStatusCode)
+            {
+                var bytes = await photoResponse.Content.ReadAsByteArrayAsync();
+                var contentType = photoResponse.Content.Headers.ContentType?.MediaType ?? "image/jpeg";
+                var base64 = Convert.ToBase64String(bytes);
+                photoUrl = $"data:{contentType};base64,{base64}";
+            }
         }
     }
 
