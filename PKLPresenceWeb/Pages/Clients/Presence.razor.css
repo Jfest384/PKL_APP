@@ -618,10 +618,6 @@ input[type="radio"].presence-radio-input {
         display: none;
     }
 
-    .btn-text-sm-hide {
-        display: none !important;
-    }
-
     .action-grid {
         display: flex !important;
         flex-direction: row !important;

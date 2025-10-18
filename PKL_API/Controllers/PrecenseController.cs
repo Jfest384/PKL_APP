@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using PKL_API.Helpers;
 using PKL_API.Models;
 using PKL_API.Models.DTO;
 using QuestPDF.Fluent;
@@ -16,7 +17,7 @@ namespace PKL_API.Controllers
         private readonly UserAccessHelper _userAccessHelper;
         private readonly ILogger<PrecenseController> _logger;
 
-        private static string ToIndonesianLongDate(DateOnly date)
+        public static string ToIndonesianLongDate(DateOnly date)
         {
             var culture = new System.Globalization.CultureInfo("id-ID");
             // "dddd, dd MMMM yyyy" → Sabtu, 12 Juli 2025
@@ -514,6 +515,7 @@ namespace PKL_API.Controllers
                     .Select(p => new
                     {
                         id_presence = p.id.ToString(),
+                        studentId = p.Studentid,
                         date = ToIndonesianLongDate(p.date),
                         time = p.time.ToString("HH:mm:ss"),
                         nis = p.Student != null ? p.Student.nis ?? "-" : "-",
@@ -597,6 +599,7 @@ namespace PKL_API.Controllers
                     return new
                     {
                         id_presence = presence?.id.ToString() ?? "-",
+                        studentId = presence?.Studentid ?? s.id,
                         nis = s.nis ?? "-",
                         name = s.User.fullname ?? "-",
                         classroom_name = s.Classroom?.name ?? "-",
@@ -699,6 +702,7 @@ namespace PKL_API.Controllers
                     return new
                     {
                         id_presence = presence?.id.ToString() ?? "-",
+                        studentId = presence?.Studentid ?? s.id,
                         nis = s.nis ?? "-",
                         name = s.User.fullname ?? "-",
                         classroom_name = s.Classroom?.name ?? "-",
@@ -802,6 +806,7 @@ namespace PKL_API.Controllers
                     return new
                     {
                         id_presence = presence?.id.ToString() ?? "-",
+                        studentId = presence?.Studentid ?? s.id,
                         nis = s.nis ?? "-",
                         name = s.User.fullname ?? "-",
                         classroom_name = s.Classroom?.name ?? "-",
@@ -896,6 +901,7 @@ namespace PKL_API.Controllers
                     return new
                     {
                         id_presence = presence?.id.ToString() ?? "-",
+                        studentId = presence?.Studentid ?? s.id,
                         nis = s.nis ?? "-",
                         name = s.User?.fullname ?? "-",
                         classId = s.Classroomid,
@@ -1084,242 +1090,20 @@ namespace PKL_API.Controllers
         }
 
         [Authorize]
-        [HttpGet("byStudent/{studentId}/print")]
-        public async Task<IActionResult> PrintPresenceByStudent(int studentId,
-            [FromQuery] DateOnly? startDate,
-            [FromQuery] DateOnly? endDate)
-        {
-            int userId, roleId;
-            try
-            {
-                (userId, roleId) = await _userAccessHelper.GetUserIdAndRoleAsync();
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Unauthorized(ex.Message);
-            }
-
-            // Validasi student dan ambil data lengkap
-            var student = await _db.Students
-                .Include(s => s.User)
-                .Include(s => s.Classroom)
-                .Include(s => s.Company)
-                .Include(s => s.Mentor)
-                    .ThenInclude(m => m.User)
-                .FirstOrDefaultAsync(s => s.id == studentId);
-
-            if (student == null)
-                return NotFound("Student not found.");
-
-            if (roleId == 3)
-            {
-                var mentor = await _db.Mentors.FirstOrDefaultAsync(m => m.Userid == userId);
-                if (mentor == null)
-                    return StatusCode(403, "Mentor data not found.");
-                if (student.Mentorid != mentor.id)
-                    return StatusCode(403, "You can only print presences for your own mentees.");
-            }
-
-            // Jika wali kelas, hanya boleh print siswa perwaliannya
-            if (roleId == 5)
-            {
-                var waliKelas = await _db.WaliKelas
-                    .FirstOrDefaultAsync(wk => wk.Userid == userId);
-                if (waliKelas == null)
-                    return StatusCode(403, "You are not assigned as a homeroom teacher for any class.");
-                var classroom = await _db.Classrooms.FirstOrDefaultAsync(c => c.WaliKelasid == waliKelas.Userid);
-                if (classroom == null)
-                    return StatusCode(403, "No classroom assigned to your homeroom teacher role.");
-                if (student.Classroomid != classroom.id)
-                    return StatusCode(403, "You can only print presences for students in your homeroom class.");
-            }
-
-            var query = _db.Presences
-                .Include(r => r.Classroom)
-                .Include(r => r.Student)
-                    .ThenInclude(s => s.Company)
-                .Include(r => r.PresenceType)
-                .Where(r => r.Studentid == studentId);
-
-            if (startDate.HasValue)
-                query = query.Where(r => r.date >= startDate.Value);
-            if (endDate.HasValue)
-                query = query.Where(r => r.date <= endDate.Value);
-
-            var presences = await query
-                .OrderBy(r => r.date)
-                .ThenBy(r => r.time)
-                .ToListAsync();
-
-            var pdfBytes = GenerateStudentPresencePdf(student, presences, startDate, endDate);
-            var fileName = $"StudentPresence_{student.nis}_{DateTime.Now:yyyyMMddHHmmss}.pdf";
-
-            return File(pdfBytes, "application/pdf", fileName);
-        }
-
-        [Obsolete]
-        private static byte[] GenerateStudentPresencePdf(
-            Student student,
-            List<Presence> presences,
-            DateOnly? startDate,
-            DateOnly? endDate
-        )
-        {
-            return Document.Create(container =>
-            {
-                container.Page(page =>
-                {
-                    page.Size(PageSizes.A4);
-                    page.Margin(40);
-                    page.DefaultTextStyle(x => x.FontSize(12));
-                    page.PageColor(Colors.White);
-
-                    page.Header()
-                        .Text("Student Presence")
-                        .FontSize(20)
-                        .Bold()
-                        .AlignCenter();
-
-                    page.Content().PaddingTop(15).Column(col =>
-                    {
-                        string rangeText = (startDate.HasValue && endDate.HasValue)
-                            ? $"From: {startDate:yyyy-MM-dd}  To: {endDate:yyyy-MM-dd}"
-                            : (startDate.HasValue ? $"From: {startDate:yyyy-MM-dd}" :
-                                (endDate.HasValue ? $"Until: {endDate:yyyy-MM-dd}" : "All Dates"));
-
-                        col.Item().Element(x => x.Text(rangeText).FontSize(13).Bold().AlignCenter());
-
-                        var mentorName = student.Mentor?.User?.fullname ?? "-";
-                        var className = student.Classroom?.name ?? "-";
-
-                        col.Item().PaddingTop(20).AlignLeft().Row(row =>
-                        {
-                            // Sisi kiri: NIS & Name
-                            row.RelativeColumn().Table(table =>
-                            {
-                                table.ColumnsDefinition(columns =>
-                                {
-                                    columns.ConstantColumn(45); // Label
-                                    columns.ConstantColumn(15); // Separator
-                                    columns.RelativeColumn();   // Value
-                                });
-
-                                table.Cell().Element(CellStyle).Text("NIS");
-                                table.Cell().Element(CellStyle).Text(":");
-                                table.Cell().Element(CellStyle).Text(student.nis ?? "-").WrapAnywhere();
-
-                                table.Cell().Element(CellStyle).Text("Name");
-                                table.Cell().Element(CellStyle).Text(":");
-                                table.Cell().Element(CellStyle).Text(student.User?.fullname ?? "-").WrapAnywhere();
-                            });
-
-                            // Sisi kanan: Class & Mentor
-                            row.RelativeColumn().PaddingLeft(85).Table(table =>
-                            {
-                                table.ColumnsDefinition(columns =>
-                                {
-                                    columns.ConstantColumn(45); // Label
-                                    columns.ConstantColumn(15); // Separator
-                                    columns.RelativeColumn();   // Value
-                                });
-
-                                table.Cell().Element(CellStyle).Text("Class");
-                                table.Cell().Element(CellStyle).Text(":");
-                                table.Cell().Element(CellStyle).Text(className).WrapAnywhere();
-
-                                table.Cell().Element(CellStyle).Text("Mentor");
-                                table.Cell().Element(CellStyle).Text(":");
-                                table.Cell().Element(CellStyle).Text(mentorName).WrapAnywhere();
-                            });
-
-                            IContainer CellStyle(IContainer container) =>
-                                container.PaddingVertical(2);
-                        });
-
-                        // Table laporan
-                        col.Item().PaddingTop(20).Table(table =>
-                        {
-                            table.ColumnsDefinition(columns =>
-                            {
-                                columns.ConstantColumn(85); // Date
-                                columns.RelativeColumn(2);  // Company
-                                columns.RelativeColumn(1);  // Type
-                                columns.RelativeColumn(2);  // Feedback
-                            });
-
-                            table.Header(header =>
-                            {
-                                header.Cell().Element(CellStyle).Text("Date").Bold();
-                                header.Cell().Element(CellStyle).Text("Company").Bold();
-                                header.Cell().Element(CellStyle).Text("Type").Bold();
-                                header.Cell().Element(CellStyle).Text("Feedback").Bold();
-                            });
-
-                            foreach (var r in presences)
-                            {
-                                table.Cell().Element(CellStyle).Text(r.date.ToString("yyyy-MM-dd"));
-                                table.Cell().Element(CellStyle).Text(r.Student?.Company?.name ?? "-");
-                                table.Cell().Element(CellStyle).Text(r.PresenceType?.name ?? "-");
-                                //table.Cell().Element(CellStyle).Text(r.feedback ?? "-");
-                            }
-
-                            IContainer CellStyle(IContainer container) =>
-                                container
-                                    .BorderBottom(1)
-                                    .BorderColor(Colors.Grey.Lighten2)
-                                    .PaddingVertical(6)
-                                    .PaddingHorizontal(6);
-                        });
-                    });
-                });
-            }).GeneratePdf();
-        }
-
-        [Authorize]
-        [HttpGet("class/{classId?}/print")]
-        public async Task<IActionResult> PrintReportByClass(int? classId,
+        [HttpGet("class/{classId}/print")]
+        public async Task<IActionResult> PrintPresenceByClass(
+            int classId,
             [FromQuery] DateOnly? startDate,
             [FromQuery] DateOnly? endDate
         )
         {
-            int userId, roleId;
-            try
-            {
-                (userId, roleId) = await _userAccessHelper.GetUserIdAndRoleAsync();
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Unauthorized(ex.Message);
-            }
+            // Validasi classroom
+            var classroom = await _db.Classrooms
+                .Include(c => c.Students)
+                .FirstOrDefaultAsync(c => c.id == classId);
 
-            Classroom? classroom = null;
-
-            if (roleId == 5)
-            {
-                var waliKelas = await _db.WaliKelas
-                    .Include(wk => wk.User)
-                    .FirstOrDefaultAsync(wk => wk.User.id == userId);
-
-                if (waliKelas == null)
-                    return NotFound("You are not assigned as a homeroom teacher for any class.");
-
-                classroom = await _db.Classrooms
-                    .FirstOrDefaultAsync(c => c.WaliKelasid == waliKelas.id);
-                if (classroom == null)
-                    return NotFound("Classroom not found for your homeroom assignment.");
-                classId = classroom.id;
-            }
-            else
-            {
-                if (!classId.HasValue)
-                    return BadRequest("ClassId is required.");
-                classroom = await _db.Classrooms
-                    .Include(c => c.Students)
-                    .FirstOrDefaultAsync(c => c.id == classId.Value);
-
-                if (classroom == null)
-                    return NotFound("Classroom not found.");
-            }
+            if (classroom == null)
+                return NotFound("Classroom tidak ditemukan.");
 
             // Ambil semua student PKL di kelas ini
             var students = await _db.Students
@@ -1349,7 +1133,7 @@ namespace PKL_API.Controllers
                     dates.Add(d);
             }
 
-            // Batasi 10 tanggal per halaman
+            // Batasi 15 tanggal per halaman
             var dateChunks = dates
                 .Select((date, idx) => new { date, idx })
                 .GroupBy(x => x.idx / 15)
@@ -1360,105 +1144,216 @@ namespace PKL_API.Controllers
             var studentIds = students.Select(s => s.id).ToList();
             var allPresences = await _db.Presences
                 .Include(p => p.PresenceType)
+                .Include(p => p.Detail)
+                .Include(p => p.PresenceFeedback)
                 .Where(p => studentIds.Contains(p.Studentid) && p.date >= minDate && p.date <= maxDate)
                 .ToListAsync();
-
-            foreach (var p in allPresences)
-            {
-                if (p.PresenceType == null)
-                {
-                    // Log id presence yang bermasalah
-                    Console.WriteLine($"Presence id {p.id} type null, PresenceTypeid: {p.PresenceTypeid}");
-                }
-                _logger.LogInformation("PresenceId: {id}, PresenceTypeId: {pid}, Name: [{name}]",
-                    p.id, p.PresenceTypeid, p.PresenceType?.name ?? "<NULL>");
-
-            }
 
             var presenceDict = allPresences
                 .GroupBy(p => (p.Studentid, p.date))
                 .ToDictionary(g => g.Key, g => g.First());
 
-            var pdfBytes = GenerateClassPresenceMatrixPdf(classroom, students, dateChunks, presenceDict);
-            var fileName = $"ClassPresenceMatrix_{classroom.name}_{DateTime.Now:yyyyMMddHHmmss}.pdf";
+            var pdfBytes = PrintHelper.GenerateClassPresenceMatrixPdf(classroom, students, dateChunks, presenceDict);
+            var fileName = $"ClassPresence_{classroom.name}_{DateTime.Now:yyyyMMdd}.pdf";
 
+            Response.Headers.Append("Access-Control-Expose-Headers", "Content-Disposition");
             return File(pdfBytes, "application/pdf", fileName);
         }
 
-        private static byte[] GenerateClassPresenceMatrixPdf(
-            Classroom classroom,
-            List<Student> students,
-            List<List<DateOnly>> dateChunks,
-            Dictionary<(int studentId, DateOnly date), Presence> presenceDict
+        [Authorize]
+        [HttpGet("mentor/{mentorId}/print")]
+        public async Task<IActionResult> PrintPresenceByMentor(
+            int mentorId,
+            [FromQuery] DateOnly? startDate,
+            [FromQuery] DateOnly? endDate
         )
         {
-            return Document.Create(container =>
+            // Validasi mentor
+            var mentor = await _db.Mentors
+                .Include(m => m.User)
+                .FirstOrDefaultAsync(m => m.id == mentorId);
+
+            if (mentor == null)
+                return NotFound("Mentor tidak ditemukan.");
+
+            // Ambil semua siswa PKL yang dibimbing mentor ini
+            var students = await _db.Students
+                .Include(s => s.User)
+                .Include(s => s.Classroom)
+                .Where(s => s.Mentorid == mentorId && (s.isPKL ?? false))
+                .OrderBy(s => s.User.fullname)
+                .ToListAsync();
+
+            if (students.Count == 0)
+                return NotFound("Tidak ada siswa PKL di bawah mentor ini.");
+
+            // Tentukan rentang tanggal
+            var minDate = startDate ?? await _db.Presences
+                .Where(p => p.Mentorid == mentorId)
+                .OrderBy(p => p.date)
+                .Select(p => (DateOnly?)p.date)
+                .FirstOrDefaultAsync() ?? DateOnly.FromDateTime(DateTime.Now);
+            var maxDate = endDate ?? await _db.Presences
+                .Where(p => p.Mentorid == mentorId)
+                .OrderByDescending(p => p.date)
+                .Select(p => (DateOnly?)p.date)
+                .FirstOrDefaultAsync() ?? DateOnly.FromDateTime(DateTime.Now);
+
+            // Buat list tanggal (tanpa hari minggu)
+            var dates = new List<DateOnly>();
+            for (var d = minDate; d <= maxDate; d = d.AddDays(1))
             {
-                foreach (var chunk in dateChunks)
-                {
-                    container.Page(page =>
-                    {
-                        page.Size(PageSizes.A4.Landscape());
-                        page.Margin(30);
-                        page.DefaultTextStyle(x => x.FontSize(12));
-                        page.PageColor(Colors.White);
+                var dt = d.ToDateTime(TimeOnly.MinValue);
+                if (dt.DayOfWeek != DayOfWeek.Sunday)
+                    dates.Add(d);
+            }
 
-                        page.Header()
-                            .Text($"Presensi PKL - {classroom.name}")
-                            .FontSize(18)
-                            .Bold()
-                            .AlignCenter();
+            // Batasi 15 tanggal per halaman
+            var dateChunks = dates
+                .Select((date, idx) => new { date, idx })
+                .GroupBy(x => x.idx / 15)
+                .Select(g => g.Select(x => x.date).ToList())
+                .ToList();
 
-                        page.Content().PaddingTop(10).Column(col =>
-                        {
-                            // Header tanggal
-                            col.Item().PaddingBottom(10).Table(table =>
-                            {
-                                table.ColumnsDefinition(columns =>
-                                {
-                                    columns.ConstantColumn(60); // NIS
-                                    columns.RelativeColumn(2); // Name
-                                    foreach (var _ in chunk)
-                                        columns.RelativeColumn(1);
-                                });
+            // Ambil presensi untuk semua student dan tanggal dalam rentang
+            var studentIds = students.Select(s => s.id).ToList();
+            var allPresences = await _db.Presences
+                .Include(p => p.PresenceType)
+                .Include(p => p.Detail)
+                .Include(p => p.PresenceFeedback)
+                .Where(p => studentIds.Contains(p.Studentid) && p.date >= minDate && p.date <= maxDate)
+                .ToListAsync();
 
-                                table.Header(header =>
-                                {
-                                    header.Cell().Element(CellStyle).Text("NIS").Bold();
-                                    header.Cell().Element(CellStyle).Text("Name").Bold();
-                                    foreach (var d in chunk)
-                                        header.Cell().Element(CellStyle).Text($"{d:MM-dd}");
-                                });
+            var presenceDict = allPresences
+                .GroupBy(p => (p.Studentid, p.date))
+                .ToDictionary(g => g.Key, g => g.First());
 
-                                // Data rows
-                                foreach (var s in students)
-                                {
-                                    table.Cell().Element(CellStyle).Text(s.nis);
-                                    table.Cell().Element(CellStyle).Text(s.User.fullname);
-                                    foreach (var d in chunk)
-                                    {
-                                        if (presenceDict.TryGetValue((s.id, d), out var p))
-                                        {
-                                            table.Cell().Element(CellStyle).Text(p.PresenceType?.name ?? "-");
-                                        }
-                                        else
-                                        {
-                                            table.Cell().Element(CellStyle).Text("-");
-                                        }
-                                    }
-                                }
+            var pdfBytes = PrintHelper.GenerateMentorPresenceMatrixPdf(mentor, students, dateChunks, presenceDict);
+            var fileName = $"MentorPresence_{mentor.User?.fullname ?? mentor.id.ToString()}_{DateTime.Now:yyyyMMdd}.pdf";
 
-                                IContainer CellStyle(IContainer container) =>
-                                    container
-                                        .BorderBottom(1)
-                                        .BorderColor(Colors.Grey.Lighten2)
-                                        .PaddingVertical(4)
-                                        .PaddingHorizontal(4);
-                            });
-                        });
-                    });
-                }
-            }).GeneratePdf();
+            Response.Headers.Append("Access-Control-Expose-Headers", "Content-Disposition");
+            return File(pdfBytes, "application/pdf", fileName);
+        }
+
+        [Authorize]
+        [HttpGet("combined/{userId}/print")]
+        public async Task<IActionResult> PrintPresenceByMentorAndWaliKelas(
+            int userId,
+            [FromQuery] DateOnly? startDate,
+            [FromQuery] DateOnly? endDate
+        )
+        {
+            // Cek role user
+            var userRoles = await _db.UserRoles
+                .Where(ur => ur.Userid == userId)
+                .Select(ur => ur.RoleId)
+                .ToListAsync();
+
+            if (!(userRoles.Contains(3) && userRoles.Contains(5)))
+                return BadRequest("User ini tidak memiliki role Mentor & Wali Kelas sekaligus.");
+
+            // Ambil mentor dan wali kelas
+            var mentor = await _db.Mentors
+                .Include(m => m.User)
+                .FirstOrDefaultAsync(m => m.Userid == userId);
+
+            var waliKelas = await _db.WaliKelas
+                .Include(wk => wk.User)
+                .FirstOrDefaultAsync(wk => wk.Userid == userId);
+
+            if (mentor == null && waliKelas == null)
+                return NotFound("Mentor atau Wali Kelas tidak ditemukan.");
+
+            // Ambil kelas yang diampu wali kelas
+            Classroom? classroom = null;
+            if (waliKelas != null)
+            {
+                classroom = await _db.Classrooms
+                    .Include(c => c.Students)
+                    .FirstOrDefaultAsync(c => c.WaliKelasid == waliKelas.id);
+            }
+
+            // Ambil siswa yang dimentori
+            var mentorStudents = mentor != null
+                ? await _db.Students
+                    .Include(s => s.User)
+                    .Include(s => s.Classroom)
+                    .Where(s => s.Mentorid == mentor.id && (s.isPKL ?? false))
+                    .ToListAsync()
+                : new List<Student>();
+
+            // Ambil siswa dari kelas wali kelas
+            var waliKelasStudents = classroom != null
+                ? await _db.Students
+                    .Include(s => s.User)
+                    .Include(s => s.Classroom)
+                    .Where(s => s.Classroomid == classroom.id && (s.isPKL ?? false))
+                    .ToListAsync()
+                : new List<Student>();
+
+            // Gabungkan dan hilangkan duplikat
+            var allStudents = mentorStudents
+                .Concat(waliKelasStudents)
+                .GroupBy(s => s.id)
+                .Select(g => g.First())
+                .OrderBy(s => s.User.fullname)
+                .ToList();
+
+            if (allStudents.Count == 0)
+                return NotFound("Tidak ada siswa PKL di bawah user ini.");
+
+            // Tentukan rentang tanggal
+            var minDate = startDate ?? await _db.Presences
+                .Where(p => allStudents.Select(s => s.id).Contains(p.Studentid))
+                .OrderBy(p => p.date)
+                .Select(p => (DateOnly?)p.date)
+                .FirstOrDefaultAsync() ?? DateOnly.FromDateTime(DateTime.Now);
+
+            var maxDate = endDate ?? await _db.Presences
+                .Where(p => allStudents.Select(s => s.id).Contains(p.Studentid))
+                .OrderByDescending(p => p.date)
+                .Select(p => (DateOnly?)p.date)
+                .FirstOrDefaultAsync() ?? DateOnly.FromDateTime(DateTime.Now);
+
+            // Buat list tanggal (tanpa hari minggu)
+            var dates = new List<DateOnly>();
+            for (var d = minDate; d <= maxDate; d = d.AddDays(1))
+            {
+                var dt = d.ToDateTime(TimeOnly.MinValue);
+                if (dt.DayOfWeek != DayOfWeek.Sunday)
+                    dates.Add(d);
+            }
+
+            // Batasi 15 tanggal per halaman
+            var dateChunks = dates
+                .Select((date, idx) => new { date, idx })
+                .GroupBy(x => x.idx / 15)
+                .Select(g => g.Select(x => x.date).ToList())
+                .ToList();
+
+            // Ambil presensi untuk semua student dan tanggal dalam rentang
+            var studentIds = allStudents.Select(s => s.id).ToList();
+            var allPresences = await _db.Presences
+                .Include(p => p.PresenceType)
+                .Include(p => p.Detail)
+                .Include(p => p.PresenceFeedback)
+                .Where(p => studentIds.Contains(p.Studentid) && p.date >= minDate && p.date <= maxDate)
+                .ToListAsync();
+
+            var presenceDict = allPresences
+                .GroupBy(p => (p.Studentid, p.date))
+                .ToDictionary(g => g.Key, g => g.First());
+
+            // PDF generator bisa pakai yang sudah ada, misal GenerateClassPresenceMatrixPdf
+            var pdfBytes = PrintHelper.GenerateMentorWaliKelasPresencePdf(
+                allStudents,
+                dateChunks,
+                presenceDict
+            );
+            var fileName = $"RekapPresensi_{mentor?.User?.fullname}_{DateTime.Now:yyyyMMdd}.pdf";
+
+            Response.Headers.Append("Access-Control-Expose-Headers", "Content-Disposition");
+            return File(pdfBytes, "application/pdf", fileName);
         }
 
         // Haversine formula for distance in meters
@@ -1609,6 +1504,185 @@ namespace PKL_API.Controllers
                 totalDays,
                 data = result
             });
+        }
+
+        [Authorize]
+        [HttpGet("byStudent/{studentId}/print")]
+        public async Task<IActionResult> PrintPresenceByStudent(
+            int studentId,
+            [FromQuery] DateOnly date,
+            [FromServices] IConfiguration config)
+        {
+            // Ambil key LocationIQ dari appsettings.json
+            var locationIqKey = config["LocationIQ:ApiKey"];
+            if (string.IsNullOrWhiteSpace(locationIqKey))
+                return BadRequest("LocationIQ key tidak ditemukan di konfigurasi.");
+
+            // Ambil data student dan presensi pada tanggal
+            var student = await _db.Students
+                .Include(s => s.User)
+                .Include(s => s.Classroom)
+                .Include(s => s.Company)
+                .Include(s => s.Mentor).ThenInclude(m => m.User)
+                .FirstOrDefaultAsync(s => s.id == studentId);
+
+            if (student == null)
+                return NotFound("Student not found.");
+
+            var presence = await _db.Presences
+                .Include(p => p.PresenceType)
+                .Include(p => p.Detail)
+                .Include(p => p.PresenceFeedback)
+                .FirstOrDefaultAsync(p => p.Studentid == studentId && p.date == date);
+
+            if (presence == null)
+                return NotFound("Presensi pada tanggal tersebut tidak ditemukan.");
+
+            // Ambil semua gambar sesuai presenceTypeId
+            var detail = presence.Detail;
+            var images = new List<(string Label, byte[]? Image)>();
+            var typeId = presence.PresenceTypeid;
+
+            async Task<byte[]?> GetPhoto(Guid? id)
+            {
+                if (id == null) return null;
+                var photo = await _db.PresencePhotos.FindAsync(id.Value);
+                return photo?.photo;
+            }
+
+            // Mapping field sesuai typeId
+            if (typeId == 1) // Hadir
+            {
+                images.Add(("Foto Full Body", await GetPhoto(detail?.FullBodyPhotoid)));
+                if (detail?.lat != null && detail?.longitude != null)
+                {
+                    var mapUrl = $"https://maps.locationiq.com/v3/staticmap?key={locationIqKey}&center={detail.lat},{detail.longitude}&zoom=16&size=600x500&markers={detail.lat},{detail.longitude}|icon:large-red-cutout";
+                    var mapBytes = await new HttpClient().GetByteArrayAsync(mapUrl);
+                    images.Add(("Location", mapBytes));
+                }
+            }
+            else if (typeId == 2) // Sakit
+            {
+                images.Add(("Saat Berobat", await GetPhoto(detail?.TreatmentPhotoid)));
+                images.Add(("MC", await GetPhoto(detail?.MedicalCertificatePhotoid)));
+                images.Add(("Info Sakit ke Perusahaan", await GetPhoto(detail?.SickToCompanyPhotoid)));
+                images.Add(("Info Sakit ke Pembimbing Sekolah", await GetPhoto(detail?.SickToMentorPhotoid)));
+                images.Add(("Info Sakit ke Walas", await GetPhoto(detail?.SickToWalasPhotoid)));
+            }
+            else if (typeId == 3) // Izin
+            {
+                images.Add(("Izin ke Perusahaan", await GetPhoto(detail?.PermitToCompanyPhotoid)));
+                images.Add(("Izin ke Pembimbing Sekolah", await GetPhoto(detail?.PermitToMentorPhotoid)));
+                images.Add(("Izin ke Walas", await GetPhoto(detail?.PermitToWalasPhotoid)));
+                images.Add(("Kegiatan", await GetPhoto(detail?.ActivityPhotoid)));
+            }
+            else if (typeId == 4) // Libur
+            {
+                images.Add(("Info Libur", await GetPhoto(detail?.HolidayFromCompanyPhotoid)));
+            }
+            else if (typeId == 5) // WFH
+            {
+                images.Add(("Foto Full Body", await GetPhoto(detail?.FullBodyPhotoid)));
+                images.Add(("Info WFH dari Perusahaan", await GetPhoto(detail?.WFHFromCompanyPhotoid)));
+                if (detail?.lat != null && detail?.longitude != null)
+                {
+                    var mapUrl = $"https://maps.locationiq.com/v3/staticmap?key={locationIqKey}&center={detail.lat},{detail.longitude}&zoom=16&size=600x400&markers={detail.lat},{detail.longitude}|icon:large-red-cutout";
+                    var mapBytes = await new HttpClient().GetByteArrayAsync(mapUrl);
+                    images.Add(("Location", mapBytes));
+                }
+            }
+
+            // Generate PDF
+            var pdfBytes = Document.Create(container =>
+            {
+                container.Page(page =>
+                {
+                    page.Size(PageSizes.A4);
+                    page.Margin(50);
+                    page.DefaultTextStyle(x => x.FontSize(12));
+                    page.PageColor(Colors.White);
+
+                    page.Content().Column(col =>
+                    {
+                        col.Item().PaddingBottom(15).Text($"Presensi PKL - {student.nis}")
+                            .FontSize(16).Bold().AlignCenter().LineHeight(2);
+                        col.Item().Table(table =>
+                        {
+                            table.ColumnsDefinition(c =>
+                            {
+                                c.ConstantColumn(100);
+                                c.ConstantColumn(75);
+                                c.RelativeColumn();
+                            });
+
+                            table.Cell().ColumnSpan(2).Element(CellStyle).Text("Nama Siswa").Bold();
+                            table.Cell().Element(CellStyle).Text(student.User?.fullname ?? "-");
+
+                            table.Cell().ColumnSpan(2).Element(CellStyle).Text("Kelas").Bold();
+                            table.Cell().Element(CellStyle).Text(student.Classroom?.name ?? "-");
+
+                            table.Cell().ColumnSpan(2).Element(CellStyle).Text("Nama Mentor").Bold();
+                            table.Cell().Element(CellStyle).Text(student.Mentor?.User?.fullname ?? "-");
+
+                            table.Cell().ColumnSpan(2).Element(CellStyle).Text("Tempat PKL").Bold();
+                            table.Cell().Element(CellStyle).Text(student.Company?.name ?? "-");
+
+                            table.Cell().ColumnSpan(2).Element(CellStyle).Text("Tanggal").Bold();
+                            table.Cell().Element(CellStyle).Text(ToIndonesianLongDate(date));
+
+                            table.Cell().ColumnSpan(2).Element(CellStyle).Text("Status").Bold();
+                            table.Cell().Element(CellStyle).Text(presence.PresenceType?.name ?? "-");
+
+                            table.Cell().ColumnSpan(2).Element(CellStyle).Text("Laporan Harian").Bold();
+                            table.Cell().Element(CellStyle).Text(detail?.daily_report ?? "-");
+
+                            table.Cell().RowSpan(3).Element(CellStyle).Text("Feedback").Bold();
+                            table.Cell().Element(CellStyle).Text("Mentor").Bold();
+                            table.Cell().Element(CellStyle).Text(presence.PresenceFeedback?.mentor ?? "-");
+                            table.Cell().Element(CellStyle).Text("Wali Kelas").Bold();
+                            table.Cell().Element(CellStyle).Text(presence.PresenceFeedback?.walas ?? "-");
+                            table.Cell().Element(CellStyle).Text("Kepala Jurusan").Bold();
+                            table.Cell().Element(CellStyle).Text(presence.PresenceFeedback?.kajur ?? "-");
+                        });
+
+                        // Tampilkan gambar detail presensi
+                        foreach (var img in images)
+                        {
+                            col.Item().PaddingTop(20).PaddingBottom(7)
+                                .Element(e => e
+                                    .Column(c =>
+                                    {
+                                        c.Item().PaddingBottom(10).Text(img.Label).Bold().AlignCenter();
+                                        c.Item().Element(border =>
+                                            border
+                                                .Border(1)
+                                                .BorderColor(Colors.Grey.Medium)
+                                                .Height(300)
+                                                .AlignCenter()
+                                                .AlignMiddle()
+                                                .Background(Colors.White)
+                                                .Element(inner =>
+                                                {
+                                                    if (img.Image != null)
+                                                        inner.AlignCenter().AlignMiddle().MaxHeight(260).Image(img.Image, ImageScaling.FitArea);
+                                                    else
+                                                        inner.AlignCenter().AlignMiddle().Text("Tidak ada gambar").Italic();
+                                                })
+                                        );
+                                    })
+                                );
+                        }
+
+                    });
+
+                    IContainer CellStyle(IContainer container) =>
+                        container.Border(1).BorderColor(Colors.Grey.Medium).PaddingVertical(4).PaddingHorizontal(4).AlignMiddle();
+                });
+            }).GeneratePdf();
+
+            var fileName = $"PresensiPKL_{student.nis}_{date:yyyyMMdd}.pdf";
+            Response.Headers.Append("Access-Control-Expose-Headers", "Content-Disposition");
+            return File(pdfBytes, "application/pdf", fileName);
         }
     }
 }

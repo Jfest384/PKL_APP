@@ -1,22 +1,20 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using PKL_API.Helpers;
 using PKL_API.Models;
 using PKL_API.Models.DTO;
-using QuestPDF.Fluent;
-using QuestPDF.Helpers;
-using QuestPDF.Infrastructure;
 
 namespace PKL_API.Controllers
 {
-    [Route("api/repots")]
+    [Route("api/reports")]
     [ApiController]
     public class ReportController : ControllerBase
     {
         private readonly PklContext _db;
         private readonly UserAccessHelper _userAccessHelper;
 
-        private static string ToIndonesianLongDate(DateOnly date)
+        public static string ToIndonesianLongDate(DateOnly date)
         {
             var culture = new System.Globalization.CultureInfo("id-ID");
             return date.ToString("dddd, dd MMMM yyyy", culture);
@@ -327,9 +325,9 @@ namespace PKL_API.Controllers
                         id = report?.id.ToString() ?? "-",
                         studentId = report?.Studentid.ToString() ?? "-",
                         nis = s.nis ?? "-",
-                        name = s.User.fullname ?? "-",
-                        classroom_name = s.Classroom?.name ?? "-",
-                        company_name = s.Company?.name ?? "-",
+                        name = s?.User?.fullname ?? "-",
+                        classroom_name = s?.Classroom?.name ?? "-",
+                        company_name = s?.Company?.name ?? "-",
                         date = ToIndonesianLongDate(filterDate),
                         time = report != null ? report.time.ToString("HH:mm:ss") : "-",
                         description = report?.description ?? "-",
@@ -431,9 +429,9 @@ namespace PKL_API.Controllers
                         id = report?.id.ToString() ?? "-",
                         studentId = report?.Studentid.ToString() ?? "-",
                         nis = s.nis ?? "-",
-                        name = s.User.fullname ?? "-",
-                        classroom_name = s.Classroom?.name ?? "-",
-                        company_name = s.Company?.name ?? "-",
+                        name = s?.User?.fullname ?? "-",
+                        classroom_name = s?.Classroom?.name ?? "-",
+                        company_name = s?.Company?.name ?? "-",
                         date = ToIndonesianLongDate(filterDate),
                         time = report != null ? report.time.ToString("HH:mm:ss") : "-",
                         description = report?.description ?? "-",
@@ -536,9 +534,9 @@ namespace PKL_API.Controllers
                         id = report?.id.ToString() ?? "-",
                         studentId = report?.Studentid.ToString() ?? "-",
                         nis = s.nis ?? "-",
-                        name = s.User.fullname ?? "-",
-                        classroom_name = s.Classroom?.name ?? "-",
-                        company_name = s.Company?.name ?? "-",
+                        name = s?.User?.fullname ?? "-",
+                        classroom_name = s?.Classroom?.name ?? "-",
+                        company_name = s?.Company?.name ?? "-",
                         date = ToIndonesianLongDate(filterDate),
                         time = report != null ? report.time.ToString("HH:mm:ss") : "-",
                         description = report?.description ?? "-",
@@ -633,9 +631,9 @@ namespace PKL_API.Controllers
                         id = report?.id.ToString() ?? "-",
                         studentId = report?.Studentid.ToString() ?? "-",
                         nis = s.nis ?? "-",
-                        name = s.User.fullname ?? "-",
-                        classroom_name = s.Classroom?.name ?? "-",
-                        company_name = s.Company?.name ?? "-",
+                        name = s?.User?.fullname ?? "-",
+                        classroom_name = s?.Classroom?.name ?? "-",
+                        company_name = s?.Company?.name ?? "-",
                         date = ToIndonesianLongDate(filterDate),
                         time = report != null ? report.time.ToString("HH:mm:ss") : "-",
                         description = report?.description ?? "-",
@@ -799,11 +797,9 @@ namespace PKL_API.Controllers
 
         [Authorize]
         [HttpGet("student/{studentId}/print")]
-        [Obsolete]
         public async Task<IActionResult> PrintReportByStudent(
             int studentId,
-            [FromQuery] DateOnly? startDate,
-            [FromQuery] DateOnly? endDate)
+            [FromQuery] DateOnly date)
         {
             int userId, roleId;
             try
@@ -819,179 +815,25 @@ namespace PKL_API.Controllers
             var student = await _db.Students
                 .Include(s => s.Classroom)
                 .Include(s => s.Company)
-                .Include(s => s.Mentor).ThenInclude(s => s.User)
+                .Include(s => s.Mentor).ThenInclude(m => m.User)
                 .Include(s => s.User)
                 .FirstOrDefaultAsync(s => s.id == studentId);
 
             if (student == null)
                 return NotFound("Student not found.");
 
-            //// Jika mentor, hanya boleh print siswa bimbingannya
-            //if (roleId == 3)
-            //{
-            //    var mentor = await _db.Mentors.FirstOrDefaultAsync(m => m.Userid == userId);
-            //    if (mentor == null)
-            //        return StatusCode(403, "Mentor data not found.");
-            //    if (student.Mentorid != mentor.id)
-            //        return StatusCode(403, "You can only print reports for your own mentees.");
-            //}
+            // Ambil report pada tanggal tersebut
+            var report = await _db.Reports
+                .Include(r => r.ReportPhoto)
+                .Include(r => r.ReportFeedback)
+                .FirstOrDefaultAsync(r => r.Studentid == studentId && r.date == date);
 
-            //// Jika wali kelas, hanya boleh print siswa perwaliannya
-            //if (roleId == 5)
-            //{
-            //    var waliKelas = await _db.WaliKelas
-            //        .FirstOrDefaultAsync(wk => wk.Userid == userId);
-            //    if (waliKelas == null)
-            //        return StatusCode(403, "You are not assigned as a homeroom teacher for any class.");
+            var pdfBytes = PrintHelper.GenerateStudentReportPdf(student, report, date);
+            var fileName = $"Bimbingan Laporan_{student.nis}_{date:yyyyMMdd}.pdf";
 
-            //    var classroom = await _db.Classrooms.FirstOrDefaultAsync(c => c.WaliKelasid == waliKelas.id);
-            //    if (classroom == null)
-            //        return StatusCode(403, "You are not assigned as a homeroom teacher for any class.");
-            //    if (student.Classroomid != classroom.id)
-            //        return StatusCode(403, "You can only print reports for students in your homeroom class.");
-            //}
-
-            // Ambil semua report siswa tersebut
-            var query = _db.Reports
-                .Include(r => r.Classroom)
-                .Include(r => r.Student)
-                    .ThenInclude(s => s.Company)
-                .Where(r => r.Studentid == student.id);
-
-            if (startDate.HasValue)
-                query = query.Where(r => r.date >= startDate.Value);
-            if (endDate.HasValue)
-                query = query.Where(r => r.date <= endDate.Value);
-
-            var reports = await query
-                .OrderBy(r => r.date)
-                .ThenBy(r => r.time)
-                .ToListAsync();
-
-            var pdfBytes = GenerateStudentReportPdf(student, reports, startDate, endDate);
-            var fileName = $"StudentReport_{student.nis}_{DateTime.Now:yyyyMMddHHmmss}.pdf";
-
+            Response.Headers.Append("Access-Control-Expose-Headers", "Content-Disposition");
             return File(pdfBytes, "application/pdf", fileName);
         }
-
-        [Obsolete]
-        private static byte[] GenerateStudentReportPdf(
-            Student student,
-            List<Report> reports,
-            DateOnly? startDate,
-            DateOnly? endDate
-        )
-        {
-            return Document.Create(container =>
-            {
-                container.Page(page =>
-                {
-                    page.Size(PageSizes.A4);
-                    page.Margin(40);
-                    page.DefaultTextStyle(x => x.FontSize(12));
-                    page.PageColor(Colors.White);
-
-                    page.Header()
-                        .Text("Student Report")
-                        .FontSize(20)
-                        .Bold()
-                        .AlignCenter();
-
-                    page.Content().PaddingTop(15).Column(col =>
-                    {
-                        string rangeText = (startDate.HasValue && endDate.HasValue)
-                            ? $"From: {startDate:yyyy-MM-dd}  To: {endDate:yyyy-MM-dd}"
-                            : (startDate.HasValue ? $"From: {startDate:yyyy-MM-dd}" :
-                                (endDate.HasValue ? $"Until: {endDate:yyyy-MM-dd}" : "All Dates"));
-
-                        col.Item().Element(x => x.Text(rangeText).FontSize(13).Bold().AlignCenter());
-
-                        var mentorName = student.Mentor?.User?.fullname ?? "-";
-                        var className = student.Classroom?.name ?? "-";
-
-                        col.Item().PaddingTop(20).AlignLeft().Row(row =>
-                        {
-                            // Sisi kiri: NIS & Name
-                            row.RelativeColumn().Table(table =>
-                            {
-                                table.ColumnsDefinition(columns =>
-                                {
-                                    columns.ConstantColumn(45); // Label
-                                    columns.ConstantColumn(15); // Separator
-                                    columns.RelativeColumn();   // Value
-                                });
-
-                                table.Cell().Element(CellStyle).Text("NIS");
-                                table.Cell().Element(CellStyle).Text(":");
-                                table.Cell().Element(CellStyle).Text(student.nis ?? "-").WrapAnywhere();
-
-                                table.Cell().Element(CellStyle).Text("Name");
-                                table.Cell().Element(CellStyle).Text(":");
-                                table.Cell().Element(CellStyle).Text(student.User?.fullname ?? "-").WrapAnywhere();
-                            });
-
-                            // Sisi kanan: Class & Mentor
-                            row.RelativeColumn().PaddingLeft(85).Table(table =>
-                            {
-                                table.ColumnsDefinition(columns =>
-                                {
-                                    columns.ConstantColumn(45); // Label
-                                    columns.ConstantColumn(15); // Separator
-                                    columns.RelativeColumn();   // Value
-                                });
-
-                                table.Cell().Element(CellStyle).Text("Class");
-                                table.Cell().Element(CellStyle).Text(":");
-                                table.Cell().Element(CellStyle).Text(className).WrapAnywhere();
-
-                                table.Cell().Element(CellStyle).Text("Mentor");
-                                table.Cell().Element(CellStyle).Text(":");
-                                table.Cell().Element(CellStyle).Text(mentorName).WrapAnywhere();
-                            });
-
-                            IContainer CellStyle(IContainer container) =>
-                                container.PaddingVertical(2);
-                        });
-
-                        // Table laporan
-                        col.Item().PaddingTop(20).Table(table =>
-                        {
-                            table.ColumnsDefinition(columns =>
-                            {
-                                columns.ConstantColumn(80); // Date
-                                columns.RelativeColumn(1);  // Company
-                                columns.RelativeColumn(2);  // Content
-                                columns.RelativeColumn(2);  // Feedback
-                            });
-
-                            table.Header(header =>
-                            {
-                                header.Cell().Element(CellStyle).Text("Date").Bold();
-                                header.Cell().Element(CellStyle).Text("Company").Bold();
-                                header.Cell().Element(CellStyle).Text("Content").Bold();
-                                header.Cell().Element(CellStyle).Text("Feedback").Bold();
-                            });
-
-                            foreach (var r in reports)
-                            {
-                                table.Cell().Element(CellStyle).Text(r.date.ToString("yyyy-MM-dd"));
-                                table.Cell().Element(CellStyle).Text(r.Student?.Company?.name ?? "-");
-                                table.Cell().Element(CellStyle).Text(r.description ?? "-");
-                                //table.Cell().Element(CellStyle).Text(r.feedback ?? "-");
-                            }
-
-                            IContainer CellStyle(IContainer container) =>
-                                container
-                                    .BorderBottom(1)
-                                    .BorderColor(Colors.Grey.Lighten2)
-                                    .PaddingVertical(6)
-                                    .PaddingHorizontal(6);
-                        });
-                    });
-                });
-            }).GeneratePdf();
-        }
-
 
         [Authorize]
         [HttpGet("class/{classId?}/print")]
@@ -1010,164 +852,77 @@ namespace PKL_API.Controllers
                 return Unauthorized(ex.Message);
             }
 
-            Classroom? classroom = null;
-
-            //if (roleId == 5)
-            //{
-            //    // Wali Kelas: ambil kelas yang diwalikan user ini
-            //    var waliKelas = await _db.WaliKelas
-            //        .FirstOrDefaultAsync(wk => wk.User.id == userId);
-
-            //    if (waliKelas == null)
-            //        return NotFound("You are not assigned as a homeroom teacher for any class.");
-
-            //    classroom = await _db.Classrooms
-            //        .FirstOrDefaultAsync(c => c.WaliKelasid == waliKelas.id);
-
-            //    if (classroom == null)
-            //        return NotFound("Classroom not found for your homeroom assignment.");
-            //    classId = classroom.id;
-            //}
-            //else
-            //{
-            //    // Role lain: gunakan classId dari parameter
-            //    if (!classId.HasValue)
-            //        return BadRequest("ClassId is required.");
-            //    classroom = await _db.Classrooms
-            //        .Include(c => c.Students)
-            //            .ThenInclude(s => s.Company)
-            //        .Include(c => c.Students)
-            //            .ThenInclude(s => s.Mentor)
-            //        .FirstOrDefaultAsync(c => c.id == classId.Value);
-
-            //    if (classroom == null)
-            //        return NotFound("Classroom not found.");
-            //}
-
-            // Role lain: gunakan classId dari parameter
             if (!classId.HasValue)
                 return BadRequest("ClassId is required.");
-            classroom = await _db.Classrooms
+
+            var classroom = await _db.Classrooms
                 .Include(c => c.Students)
-                    .ThenInclude(s => s.Company)
-                .Include(c => c.Students)
-                    .ThenInclude(s => s.Mentor)
+                    .ThenInclude(s => s.User)
                 .FirstOrDefaultAsync(c => c.id == classId.Value);
 
             if (classroom == null)
                 return NotFound("Classroom not found.");
 
-            // Ambil semua report siswa di kelas tersebut
-            var query = _db.Reports
-                .Include(r => r.Student)
-                    .ThenInclude(s => s.Mentor)
-                .Include(r => r.Mentor)
-                    .ThenInclude(m => m.User)
-                .Include(r => r.Classroom)
-                .Include(r => r.Student)
-                    .ThenInclude(s => s.Company)
-                .Include(r => r.Student)
-                    .ThenInclude(s => s.User)
-                .Where(r => r.Classroomid == classroom.id);
+            DateTime GetMonday(DateOnly date)
+            {
+                var dt = date.ToDateTime(TimeOnly.MinValue);
+                int diff = (7 + (dt.DayOfWeek - DayOfWeek.Monday)) % 7;
+                return dt.AddDays(-diff).Date;
+            }
 
-            if (startDate.HasValue)
-                query = query.Where(r => r.date >= startDate.Value);
-            if (endDate.HasValue)
-                query = query.Where(r => r.date <= endDate.Value);
+            if (!startDate.HasValue || !endDate.HasValue)
+                return BadRequest("startDate dan endDate wajib diisi.");
 
-            var reports = await query
-                .OrderBy(r => r.date)
-                .ThenBy(r => r.time)
+            var mondayStart = GetMonday(startDate.Value);
+            var mondayEnd = GetMonday(endDate.Value);
+
+            // Ambil semua report dalam rentang minggu yang terlibat
+            var allReports = await _db.Reports
+                .Include(r => r.Student).ThenInclude(s => s.User)
+                .Include(r => r.Student).ThenInclude(s => s.Company)
+                .Include(r => r.Student).ThenInclude(s => s.Mentor)
+                .Include(r => r.ReportFeedback)
+                .Where(r => r.Classroomid == classroom.id && r.date >= DateOnly.FromDateTime(mondayStart) && r.date <= DateOnly.FromDateTime(mondayEnd.AddDays(6)))
                 .ToListAsync();
 
-            var pdfBytes = GenerateClassReportPdf(classroom, reports, startDate, endDate);
-            var fileName = $"ClassReport_{classroom.name}_{DateTime.Now:yyyyMMddHHmmss}.pdf";
+            // Kumpulkan data per minggu
+            var weeklyData = new List<(DateOnly weekStart, DateOnly weekEnd, List<(Student student, List<Report> reports)>)>();
+            for (var week = mondayStart; week <= mondayEnd; week = week.AddDays(7))
+            {
+                var weekStart = DateOnly.FromDateTime(week);
+                var weekEnd = DateOnly.FromDateTime(week.AddDays(6));
 
+                // Ambil report di minggu ini
+                var reportsInWeek = allReports
+                    .Where(r => r.date >= weekStart && r.date <= weekEnd)
+                    .ToList();
+
+                // Untuk setiap siswa, ambil semua report di minggu ini (bisa kosong)
+                var studentRows = classroom.Students
+                    .OrderBy(s => s?.User?.fullname)
+                    .Select(s => (
+                        student: s,
+                        reports: reportsInWeek
+                            .Where(r => r.Studentid == s.id)
+                            .OrderBy(r => r.date)
+                            .ThenBy(r => r.time)
+                            .ToList()
+                    )).ToList();
+
+                weeklyData.Add((weekStart, weekEnd, studentRows));
+            }
+
+            var pdfBytes = PrintHelper.GenerateClassReportPdf(classroom, weeklyData);
+            var fileName = $"ClassReport_{classroom.name}_{DateTime.Now:yyyyMMdd}.pdf";
+
+            Response.Headers.Append("Access-Control-Expose-Headers", "Content-Disposition");
             return File(pdfBytes, "application/pdf", fileName);
         }
 
-        private static byte[] GenerateClassReportPdf(
-            Classroom classroom,
-            List<Report> reports,
-            DateOnly? startDate,
-            DateOnly? endDate
-        )
-        {
-            return Document.Create(container =>
-            {
-                container.Page(page =>
-                {
-                    page.Size(PageSizes.A4.Landscape());
-                    page.Margin(30);
-                    page.DefaultTextStyle(x => x.FontSize(12));
-                    page.PageColor(Colors.White);
-
-                    page.Header()
-                        .Text($"Class Report - {classroom.name}")
-                        .FontSize(20)
-                        .Bold()
-                        .AlignCenter();
-
-                    page.Content().PaddingTop(15).Column(col =>
-                    {
-                        string rangeText = (startDate.HasValue && endDate.HasValue)
-                            ? $"From: {startDate:yyyy-MM-dd}  To: {endDate:yyyy-MM-dd}"
-                            : (startDate.HasValue ? $"From: {startDate:yyyy-MM-dd}" :
-                                (endDate.HasValue ? $"Until: {endDate:yyyy-MM-dd}" : "All Dates"));
-
-                        col.Item().Element(x => x.Text(rangeText).FontSize(13).Bold().AlignCenter());
-
-                        col.Item().PaddingTop(15).Table(table =>
-                        {
-                            table.ColumnsDefinition(columns =>
-                            {
-                                columns.ConstantColumn(60);
-                                columns.RelativeColumn(2);  // Student
-                                columns.ConstantColumn(80); // Date
-                                columns.RelativeColumn(1);
-                                columns.RelativeColumn(1);  // Company
-                                columns.RelativeColumn(2);  // Content
-                                columns.RelativeColumn(2);  // Feedback
-                            });
-
-                            table.Header(header =>
-                            {
-                                header.Cell().Element(CellStyle).Text("NIS").Bold();
-                                header.Cell().Element(CellStyle).Text("Name").Bold();
-                                header.Cell().Element(CellStyle).Text("Date").Bold();
-                                header.Cell().Element(CellStyle).Text("Mentor").Bold();
-                                header.Cell().Element(CellStyle).Text("Company").Bold();
-                                header.Cell().Element(CellStyle).Text("Content").Bold();
-                                header.Cell().Element(CellStyle).Text("Feedback").Bold();
-                            });
-
-                            foreach (var r in reports)
-                            {
-                                table.Cell().Element(CellStyle).Text(r.Student?.nis);
-                                table.Cell().Element(CellStyle).Text(r.Student?.User?.fullname ?? "-");
-                                table.Cell().Element(CellStyle).Text(r.date.ToString("yyyy-MM-dd"));
-                                table.Cell().Element(CellStyle).Text(r.Mentor?.User?.fullname ?? "-");
-                                table.Cell().Element(CellStyle).Text(r.Student?.Company?.name ?? "-");
-                                table.Cell().Element(CellStyle).Text(r.description ?? "-");
-                                //table.Cell().Element(CellStyle).Text(r.feedback ?? "-");
-                            }
-
-                            IContainer CellStyle(IContainer container) =>
-                                container
-                                    .BorderBottom(1)
-                                    .BorderColor(Colors.Grey.Lighten2)
-                                    .PaddingVertical(5)
-                                    .PaddingHorizontal(5);
-                        });
-                    });
-                });
-            }).GeneratePdf();
-        }
-
         [Authorize]
-        [HttpGet("mentor/{mentorId}/print")]
+        [HttpGet("mentor/{mentorId?}/print")]
         public async Task<IActionResult> PrintReportByMentor(
-            int mentorId,
+            int? mentorId,
             [FromQuery] DateOnly? startDate,
             [FromQuery] DateOnly? endDate)
         {
@@ -1181,132 +936,162 @@ namespace PKL_API.Controllers
                 return Unauthorized(ex.Message);
             }
 
-            // Validasi mentor dan ambil data lengkap
+            if (!mentorId.HasValue)
+                return BadRequest("MentorId is required");
+
             var mentor = await _db.Mentors
-                .Include(m => m.Students)
-                    .ThenInclude(s => s.Classroom)
-                .Include(m => m.Students)
-                    .ThenInclude(s => s.Company)
+                .Include(m => m.User)
                 .Include(m => m.Students)
                     .ThenInclude(s => s.User)
-                .FirstOrDefaultAsync(m => m.id == mentorId);
+                .FirstOrDefaultAsync(m => m.id == mentorId.Value);
 
             if (mentor == null)
                 return NotFound("Mentor not found.");
 
-            //// Jika role 3 (mentor), hanya boleh print siswa bimbingannya sendiri
-            //if (roleId == 3)
-            //{
-            //    var currentMentor = await _db.Mentors.FirstOrDefaultAsync(m => m.Userid == userId);
-            //    if (currentMentor == null)
-            //        return StatusCode(403, "Mentor data not found.");
-            //    if (mentor.id != currentMentor.id)
-            //        return StatusCode(403, "You can only print reports for your own mentees.");
-            //}
+            DateTime GetMonday(DateOnly date)
+            {
+                var dt = date.ToDateTime(TimeOnly.MinValue);
+                int diff = (7 + (dt.DayOfWeek - DayOfWeek.Monday)) % 7;
+                return dt.AddDays(-diff).Date;
+            }
 
-            var query = _db.Reports
-                .Include(r => r.Student)
-                    .ThenInclude(s => s.Classroom)
-                .Include(r => r.Student)
-                    .ThenInclude(s => s.Company)
-                .Include(r => r.Student)
-                    .ThenInclude(s => s.User)
-                .Include(r => r.Mentor).ThenInclude(m => m.User)
-                .Include(r => r.Classroom)
-                .Where(r => r.Mentorid == mentorId);
+            if (!startDate.HasValue || !endDate.HasValue)
+                return BadRequest("startDate dan endDate wajib diisi.");
 
-            if (startDate.HasValue)
-                query = query.Where(r => r.date >= startDate.Value);
-            if (endDate.HasValue)
-                query = query.Where(r => r.date <= endDate.Value);
+            var mondayStart = GetMonday(startDate.Value);
+            var mondayEnd = GetMonday(endDate.Value);
 
-            var reports = await query
-                .OrderBy(r => r.date)
-                .ThenBy(r => r.time)
+            // Ambil semua report dalam rentang minggu yang terlibat
+            var allReports = await _db.Reports
+                .Include(r => r.Student).ThenInclude(s => s.User)
+                .Include(r => r.ReportFeedback)
+                .Where(r => r.Mentorid == mentor.id && r.date >= DateOnly.FromDateTime(mondayStart) && r.date <= DateOnly.FromDateTime(mondayEnd.AddDays(6)))
                 .ToListAsync();
 
-            var pdfBytes = GenerateMentorReportPdf(mentor, reports, startDate, endDate);
-            var fileName = $"MentorReport_{mentor.User?.fullname}_{DateTime.Now:yyyyMMddHHmmss}.pdf";
+            var weeklyData = new List<(DateOnly weekStart, DateOnly weekEnd, List<(Student student, List<Report> reports)>)>();
+            for (var week = mondayStart; week <= mondayEnd; week = week.AddDays(7))
+            {
+                var weekStart = DateOnly.FromDateTime(week);
+                var weekEnd = DateOnly.FromDateTime(week.AddDays(6));
 
+                // Ambil report di minggu ini
+                var reportsInWeek = allReports
+                    .Where(r => r.date >= weekStart && r.date <= weekEnd)
+                    .ToList();
+
+                // Untuk setiap siswa, ambil semua report di minggu ini (bisa kosong)
+                var studentRows = mentor.Students
+                    .OrderBy(s => s?.User?.fullname)
+                    .Select(s => (
+                        student: s,
+                        reports: reportsInWeek
+                            .Where(r => r.Studentid == s.id)
+                            .OrderBy(r => r.date)
+                            .ThenBy(r => r.time)
+                            .ToList()
+                    )).ToList();
+
+                weeklyData.Add((weekStart, weekEnd, studentRows));
+            }
+
+            var pdfBytes = PrintHelper.GenerateMentorReportPdf(mentor, weeklyData);
+            var fileName = $"MentorReport_{mentor.User?.fullname ?? mentor.id.ToString()}_{DateTime.Now:yyyyMMdd}.pdf";
+
+            Response.Headers.Append("Access-Control-Expose-Headers", "Content-Disposition");
             return File(pdfBytes, "application/pdf", fileName);
         }
 
-        private static byte[] GenerateMentorReportPdf(
-            Mentor mentor,
-            List<Report> reports,
-            DateOnly? startDate,
-            DateOnly? endDate
-        )
+        [Authorize]
+        [HttpGet("combined/{userId}/print")]
+        public async Task<IActionResult> PrintReportByMentorAndWaliKelas(
+            int userId,
+            [FromQuery] DateOnly? startDate,
+            [FromQuery] DateOnly? endDate)
         {
-            return Document.Create(container =>
+            var userRoles = await _db.UserRoles.Where(ur => ur.Userid == userId).Select(ur => ur.RoleId).ToListAsync();
+            if (!(userRoles.Contains(3) && userRoles.Contains(5)))
+                return StatusCode(403, "Hanya user dengan role Mentor & Wali Kelas yang dapat mengakses.");
+
+            if (!startDate.HasValue || !endDate.HasValue)
+                return BadRequest("startDate dan endDate wajib diisi.");
+
+            // Ambil mentor dan wali kelas
+            var mentor = await _db.Mentors.Include(m => m.User).FirstOrDefaultAsync(m => m.Userid == userId);
+            var waliKelas = await _db.WaliKelas.Include(wk => wk.User).FirstOrDefaultAsync(wk => wk.Userid == userId);
+
+            // Ambil kelas yang diampu wali kelas
+            var classroom = waliKelas != null
+                ? await _db.Classrooms.Include(c => c.Students).ThenInclude(s => s.User)
+                    .FirstOrDefaultAsync(c => c.WaliKelasid == waliKelas.id)
+                : null;
+
+            // Ambil semua siswa yang dimentori
+            var mentorStudents = mentor != null
+                ? await _db.Students.Include(s => s.User)
+                    .Where(s => s.Mentorid == mentor.id)
+                    .ToListAsync()
+                : new List<Student>();
+
+            // Gabungkan semua siswa (kelas wali + mentor), hilangkan duplikat
+            var allStudents = new List<Student>();
+            if (classroom != null)
+                allStudents.AddRange(classroom.Students);
+            allStudents.AddRange(mentorStudents);
+            allStudents = allStudents
+                .GroupBy(s => s.id)
+                .Select(g => g.First())
+                .OrderBy(s => s?.User?.fullname)
+                .ToList();
+
+            // Ambil semua report siswa dalam rentang minggu
+            DateTime GetMonday(DateOnly date)
             {
-                container.Page(page =>
-                {
-                    page.Size(PageSizes.A4.Landscape());
-                    page.Margin(30);
-                    page.DefaultTextStyle(x => x.FontSize(12));
-                    page.PageColor(Colors.White);
+                var dt = date.ToDateTime(TimeOnly.MinValue);
+                int diff = (7 + (dt.DayOfWeek - DayOfWeek.Monday)) % 7;
+                return dt.AddDays(-diff).Date;
+            }
+            var mondayStart = GetMonday(startDate.Value);
+            var mondayEnd = GetMonday(endDate.Value);
 
-                    page.Header()
-                        .Text($"Mentor Report - {mentor.User?.fullname}")
-                        .FontSize(20)
-                        .Bold()
-                        .AlignCenter();
+            var allStudentIds = allStudents.Select(s => s.id).ToList();
+            var allReports = await _db.Reports
+                .Include(r => r.Student).ThenInclude(s => s.User)
+                .Include(r => r.ReportFeedback)
+                .Where(r => allStudentIds.Contains(r.Studentid) && r.date >= DateOnly.FromDateTime(mondayStart) && r.date <= DateOnly.FromDateTime(mondayEnd.AddDays(6)))
+                .ToListAsync();
 
-                    page.Content().PaddingTop(15).Column(col =>
-                    {
-                        string rangeText = (startDate.HasValue && endDate.HasValue)
-                            ? $"From: {startDate:yyyy-MM-dd}  To: {endDate:yyyy-MM-dd}"
-                            : (startDate.HasValue ? $"From: {startDate:yyyy-MM-dd}" :
-                                (endDate.HasValue ? $"Until: {endDate:yyyy-MM-dd}" : "All Dates"));
+            // Kumpulkan data per minggu
+            var weeklyData = new List<(DateOnly weekStart, DateOnly weekEnd, List<(Student student, List<Report> reports)>)>();
+            for (var week = mondayStart; week <= mondayEnd; week = week.AddDays(7))
+            {
+                var weekStart = DateOnly.FromDateTime(week);
+                var weekEnd = DateOnly.FromDateTime(week.AddDays(6));
 
-                        col.Item().Element(x => x.Text(rangeText).FontSize(13).Bold().AlignCenter());
+                var reportsInWeek = allReports
+                    .Where(r => r.date >= weekStart && r.date <= weekEnd)
+                    .ToList();
 
-                        col.Item().PaddingTop(15).Table(table =>
-                        {
-                            table.ColumnsDefinition(columns =>
-                            {
-                                columns.ConstantColumn(60); // NIS
-                                columns.RelativeColumn(2);  // Name
-                                columns.RelativeColumn(1);  // Class
-                                columns.ConstantColumn(80); // Date
-                                columns.RelativeColumn(1);  // Company
-                                columns.RelativeColumn(2);  // Content
-                                columns.RelativeColumn(2);  // Feedback
-                            });
+                var studentRows = allStudents
+                    .OrderBy(s => s?.User?.fullname)
+                    .Select(s => (
+                        student: s,
+                        reports: reportsInWeek
+                            .Where(r => r.Studentid == s.id)
+                            .OrderBy(r => r.date)
+                            .ThenBy(r => r.time)
+                            .ToList()
+                    )).ToList();
 
-                            table.Header(header =>
-                            {
-                                header.Cell().Element(CellStyle).Text("NIS").Bold();
-                                header.Cell().Element(CellStyle).Text("Name").Bold();
-                                header.Cell().Element(CellStyle).Text("Class").Bold();
-                                header.Cell().Element(CellStyle).Text("Date").Bold();
-                                header.Cell().Element(CellStyle).Text("Company").Bold();
-                                header.Cell().Element(CellStyle).Text("Content").Bold();
-                                header.Cell().Element(CellStyle).Text("Feedback").Bold();
-                            });
+                weeklyData.Add((weekStart, weekEnd, studentRows));
+            }
 
-                            foreach (var r in reports)
-                            {
-                                table.Cell().Element(CellStyle).Text(r.Student?.nis);
-                                table.Cell().Element(CellStyle).Text(r.Student?.User?.fullname ?? "-");
-                                table.Cell().Element(CellStyle).Text(r.Student?.Classroom?.name ?? "-");
-                                table.Cell().Element(CellStyle).Text(r.date.ToString("yyyy-MM-dd"));
-                                table.Cell().Element(CellStyle).Text(r.Student?.Company?.name ?? "-");
-                                table.Cell().Element(CellStyle).Text(r.description ?? "-");
-                                //table.Cell().Element(CellStyle).Text(r.feedback ?? "-");
-                            }
+            // Nama mentor untuk file
+            var mentorName = mentor?.User?.fullname ?? "MentorWaliKelas";
+            var fileName = $"RekapBimbinganLaporan_{mentorName}_{DateTime.Now:yyyyMMdd}.pdf";
 
-                            IContainer CellStyle(IContainer container) =>
-                                container
-                                    .BorderBottom(1)
-                                    .BorderColor(Colors.Grey.Lighten2)
-                                    .PaddingVertical(5)
-                                    .PaddingHorizontal(5);
-                        });
-                    });
-                });
-            }).GeneratePdf();
+            var pdfBytes = PrintHelper.GenerateMentorWaliKelasReportPdf(mentorName, weeklyData);
+            Response.Headers.Append("Access-Control-Expose-Headers", "Content-Disposition");
+            return File(pdfBytes, "application/pdf", fileName);
         }
 
         [Authorize]

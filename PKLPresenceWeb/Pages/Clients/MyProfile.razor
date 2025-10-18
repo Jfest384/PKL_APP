@@ -82,12 +82,14 @@
                 <button type="button"
                         class="btn @(gender == true ? "btn-primary" : "btn-light gender-unselected") w-50"
                         @onclick="() => SetGender(true)">
-                    Male
+                    <i class="bi bi-gender-male"></i>
+                    <span class="btn-text-sm-hide ms-1">Male</span>
                 </button>
                 <button type="button"
                         class="btn @(gender == false ? "btn-primary" : "btn-light gender-unselected") w-50"
                         @onclick="() => SetGender(false)">
-                    Female
+                    <i class="bi bi-gender-female"></i>
+                    <span class="btn-text-sm-hide ms-1">Female</span>
                 </button>
             </div>
 
@@ -95,7 +97,8 @@
                     style="max-width:450px;"
                     @onclick="SaveProfile"
                     disabled="@(!IsFormValid)">
-                Save
+                <i class="bi bi-save"></i>
+                <span class="btn-text-sm-hide ms-1">Save</span>
             </button>
         </div>
     </div>
@@ -133,9 +136,7 @@
     {
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
         if (!authState.User.Identity.IsAuthenticated)
-        {
             Navigation.NavigateTo("/login", true);
-        }
 
         try
         {
@@ -143,62 +144,41 @@
             if (string.IsNullOrWhiteSpace(token)) return;
             var authHeader = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
-            // Get user data
-            var request = new HttpRequestMessage(HttpMethod.Get, APIUrl.Endpoint("me"));
-            request.Headers.Authorization = authHeader;
-            var response = await Http.SendAsync(request);
+            // Ambil data user dengan model terbaru
+            var userResponse = await Http.GetFromJsonAsync<UserResponse>(APIUrl.Endpoint("me"));
+            if (userResponse == null) return;
 
-            if (!response.IsSuccessStatusCode) return;
+            role = userResponse.role ?? "";
+            email = userResponse.email ?? "";
+            gender = userResponse.gender;
 
-            var json = await response.Content.ReadAsStringAsync();
-            var root = JsonDocument.Parse(json).RootElement;
-
-            role = root.GetProperty("role").GetString() ?? "";
-
-            // Email & Gender
-            email = root.GetProperty("email").GetString() ?? "";
-            gender = root.TryGetProperty("gender", out var genderProp) ? genderProp.GetBoolean() : (bool?)null;
-
-            // Data parsing
+            var userData = userResponse.data;
             if (role == "Student")
             {
-                var dataArray = root.GetProperty("data");
-                if (dataArray.GetArrayLength() > 0)
-                {
-                    var data = dataArray[0];
-                    nis = data.TryGetProperty("nis", out var nisProp) ? nisProp.GetString() : null;
-                    fullname = data.TryGetProperty("fullname", out var fnProp) ? fnProp.GetString() ?? "" : "";
+                nis = userData.nis;
+                fullname = userData.fullname;
+                selectedClassId = userData.classId;
+                nisnipFullname = $"{nis} - {fullname}";
 
-                    // Untuk dropdown, cari id kelas & company berdasarkan nama
-                    var classroomName = data.TryGetProperty("classroom", out var classProp) ? classProp.GetString() : null;
-                    var companyName = data.TryGetProperty("company", out var compProp) ? compProp.GetString() : null;
+                await LoadClasses();
+                var companyResp = await Http.GetFromJsonAsync<List<CompanyItem>>(APIUrl.Endpoint("data/companies"));
+                companyList = companyResp ?? new();
 
-                    // Load class & company list dulu
-                    await LoadClasses();
-                    var companyResp = await Http.GetFromJsonAsync<List<CompanyItem>>(APIUrl.Endpoint("data/companies"));
-                    companyList = companyResp ?? new();
-
-                    selectedClassId = classList.FirstOrDefault(c => c.name == classroomName)?.id;
-                    selectedCompanyId = companyList.FirstOrDefault(c => c.name == companyName)?.id;
-
-                    nisnipFullname = $"{nis} - {fullname}";
-                }
+                selectedClassId = classList.FirstOrDefault(c => c.name == userData.classroom)?.id;
+                selectedCompanyId = companyList.FirstOrDefault(c => c.name == userData.company)?.id;
             }
             else
             {
-                var data = root.GetProperty("data");
-                nip = data.TryGetProperty("nip", out var nipProp) ? nipProp.GetString() : null;
-                fullname = data.TryGetProperty("fullname", out var fnProp) ? fnProp.GetString() ?? "" : "";
-
+                nip = userData.nip;
+                fullname = userData.fullname;
                 nisnipFullname = $"{nip} - {fullname}";
 
-                // Load class & company list
                 await LoadClasses();
                 var companyResp = await Http.GetFromJsonAsync<List<CompanyItem>>(APIUrl.Endpoint("data/companies"));
                 companyList = companyResp ?? new();
             }
 
-            // Profile photo
+            // Ambil foto profil seperti sebelumnya
             var photoReq = new HttpRequestMessage(HttpMethod.Get, APIUrl.Endpoint("me/photo"));
             photoReq.Headers.Authorization = authHeader;
             var photoResp = await Http.SendAsync(photoReq);
@@ -212,14 +192,12 @@
         }
         catch (Exception ex)
         {
-            Console.WriteLine("Gagal memuat data profil: " + ex.Message);
         }
     }
 
     private void TriggerPhotoInput()
     {
         JS.InvokeVoidAsync("document.getElementById", "profilePhotoInput").AsTask();
-        // Fallback for Blazor: use JS interop to trigger click
         JS.InvokeVoidAsync("eval", "document.getElementById('profilePhotoInput').click()");
     }
 

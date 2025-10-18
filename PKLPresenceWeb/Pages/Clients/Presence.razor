@@ -117,12 +117,12 @@
                                         <div class="d-flex flex-column gap-2 align-items-center justify-content-center presence-action-group">
                                             <button class="btn btn-sm btn-success" @onclick="() => ShowDetail(item)"
                                                     style="padding-left: 0.65rem; padding-right: 0.65rem;">
-                                                Detail
+                                                <i class="bi bi-info-circle me-1"></i> Detail
                                             </button>
                                             <button class="btn btn-sm btn-warning"
                                                     @onclick="() => ShowReportModal(item)"
                                                     disabled="@(item.presence_type == "-" || GetPresenceTypeId(item) == 4 || item.isComplete != "❌")">
-                                                Report
+                                                <i class="bi bi-pencil me-1"></i> Report
                                             </button>
                                         </div>
                                     </td>
@@ -533,26 +533,25 @@
             </div>
 
             <div class="d-flex align-items-center mb-3 presence-toolbar">
-                <div class="d-flex gap-2 btn-group-toolbar">
-                    <button class="btn btn-warning flex-grow-1 flex-md-grow-0" style="min-width:120px;" @onclick="PrintPerMentor">
-                        <span class="d-flex align-items-center justify-content-center gap-2">
-                            <i class="bi bi-printer"></i>
-                            <span class="d-none d-sm-inline">Per Mentor</span>
-                            <span class="d-inline d-sm-none">Mentor</span>
-                        </span>
-                    </button>
-
-                    <button class="btn btn-primary flex-grow-1 flex-md-grow-0" style="min-width:120px;" @onclick="PrintPerClass">
-                        <span class="d-flex align-items-center justify-content-center gap-2">
-                            <i class="bi bi-printer"></i>
-                            <span class="d-none d-sm-inline">Per Class</span>
-                            <span class="d-inline d-sm-none">Class</span>
-                        </span>
-                    </button>
-                </div>
-
                 @if (UserRole == "Admin" || UserRole == "Kepala Jurusan")
                 {
+                    <div class="d-flex gap-2 btn-group-toolbar">
+                        <button class="btn btn-warning flex-grow-1 flex-md-grow-0" style="min-width:120px;" @onclick="PrintPerMentor">
+                            <span class="d-flex align-items-center justify-content-center gap-2">
+                                <i class="bi bi-printer"></i>
+                                <span class="d-none d-sm-inline">Per Mentor</span>
+                                <span class="d-inline d-sm-none">Mentor</span>
+                            </span>
+                        </button>
+
+                        <button class="btn btn-primary flex-grow-1 flex-md-grow-0" style="min-width:120px;" @onclick="PrintPerClass">
+                            <span class="d-flex align-items-center justify-content-center gap-2">
+                                <i class="bi bi-printer"></i>
+                                <span class="d-none d-sm-inline">Per Class</span>
+                                <span class="d-inline d-sm-none">Class</span>
+                            </span>
+                        </button>
+                    </div>
                     <div class="d-flex align-items-center ms-auto locklocation-toolbar">
                         <span class="me-2 locklocation-text">Lock Location</span>
                         <label class="switch mt-1">
@@ -560,6 +559,14 @@
                             <span class="slider round" style="background:@SliderColor"></span>
                         </label>
                     </div>
+                }
+                else
+                {
+                    <button class="btn btn-warning flex-grow-1 flex-md-grow-0" style="min-width:120px;" @onclick="Print">
+                        <span class="d-flex align-items-center justify-content-center gap-2">
+                            <i class="bi bi-printer"></i> Print
+                        </span>
+                    </button>
                 }
             </div>
 
@@ -710,6 +717,7 @@
                                                             <span class="btn-text-sm-hide ms-1">Feedback</span>
                                                         </button>
                                                         <button class="btn btn-sm btn-primary"
+                                                                @onclick="() => PrintStudentPresence(item)"
                                                                 disabled="@(string.IsNullOrWhiteSpace(item.presence_type) || item.presence_type == "-")">
                                                             <i class="bi bi-printer"></i>
                                                             <span class="btn-text-sm-hide ms-1">Print</span>
@@ -1071,6 +1079,151 @@
                 </div>
             </Modal>
         }
+
+        @if (ShowDownloadSuccessModal)
+        {
+            <Modal IsVisible="true">
+                <div class="text-center">
+                    <span class="checkmark-presence-animate">
+                        <i class="bi bi-check-circle-fill" style="font-size:3rem; color:limegreen;"></i>
+                    </span>
+                    <p class="mt-2 fw-bold" style="font-size:20px">Success!</p>
+                    <p class="mt-1">Rekap data Presensi berhasil diunduh.</p>
+                </div>
+            </Modal>
+        }
+
+        @if (ShowPrintMentorModal)
+        {
+            <Modal IsVisible="true" Title="Per Mentor">
+                <div class="text-center mb-3">
+                    <i class="bi bi-printer" style="font-size:2.5rem;color:#ffc107;"></i>
+                </div>
+                <div class="mb-3">
+                    <label class="fw-bold mb-1">Mentor</label>
+                    <select class="form-select" @onchange="OnMentorSelected">
+                        <option value="">Pilih Mentor</option>
+                        @foreach (var mentor in MentorList)
+                        {
+                            <option value="@mentor.id" selected="@(mentor.id == SelectedMentorId)">
+                                @mentor.fullname
+                            </option>
+                        }
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="fw-bold mb-1">Tanggal Awal</label>
+                    <input type="date"
+                           class="form-control"
+                           value="@PrintStartDate"
+                           min="@MinDate"
+                           max="@MaxDate"
+                           @onchange="OnPrintMentorStartDateChanged" />
+                </div>
+                <div class="mb-3">
+                    <label class="fw-bold mb-1">Tanggal Akhir</label>
+                    <input type="date"
+                           class="form-control"
+                           value="@PrintEndDate"
+                           min="@PrintStartDate"
+                           max="@MaxDate"
+                           @onchange="OnPrintMentorEndDateChanged"
+                           disabled="@string.IsNullOrWhiteSpace(PrintStartDate)" />
+                </div>
+                <div class="d-flex justify-content-center gap-3 mt-4">
+                    <button class="btn btn-danger px-4" @onclick="CancelPrintMentorModal">Cancel</button>
+                    <button class="btn btn-warning px-4"
+                            @onclick="PrintMentor"
+                            disabled="@(!CanPrint)">
+                        Print
+                    </button>
+                </div>
+            </Modal>
+        }
+
+        @if (ShowPrintClassModal)
+        {
+            <Modal IsVisible="true" Title="Per Kelas">
+                <div class="text-center mb-3">
+                    <i class="bi bi-printer" style="font-size:2.5rem;color:#0d6efd;"></i>
+                </div>
+                <div class="mb-3">
+                    <label class="fw-bold mb-1">Kelas</label>
+                    <select class="form-select" @onchange="OnClassPrintSelected">
+                        <option value="">Pilih Kelas</option>
+                        @foreach (var cls in ClassList)
+                        {
+                            <option value="@cls.id" selected="@(cls.id == SelectedClassPrintId)">
+                                @cls.name
+                            </option>
+                        }
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="fw-bold mb-1">Tanggal Awal</label>
+                    <input type="date"
+                           class="form-control"
+                           value="@PrintStartDate"
+                           min="@MinDate"
+                           max="@MaxDate"
+                           @onchange="OnPrintClassStartDateChanged" />
+                </div>
+                <div class="mb-3">
+                    <label class="fw-bold mb-1">Tanggal Akhir</label>
+                    <input type="date"
+                           class="form-control"
+                           value="@PrintEndDate"
+                           min="@PrintStartDate"
+                           max="@MaxDate"
+                           @onchange="OnPrintClassEndDateChanged"
+                           disabled="@string.IsNullOrWhiteSpace(PrintStartDate)" />
+                </div>
+                <div class="d-flex justify-content-center gap-3 mt-4">
+                    <button class="btn btn-danger px-4" @onclick="CancelPrintClassModal">Cancel</button>
+                    <button class="btn btn-primary px-4"
+                            @onclick="PrintClass"
+                            disabled="@(!CanPrint)">
+                        Print
+                    </button>
+                </div>
+            </Modal>
+        }
+
+        @if (ShowPrintCombinedModal)
+        {
+            <Modal IsVisible="true" Title="Print Rekap Gabungan">
+                <div class="text-center mb-3">
+                    <i class="bi bi-printer" style="font-size:2.5rem;color:#ffc107;"></i>
+                </div>
+                <div class="mb-3">
+                    <label class="fw-bold mb-1">Tanggal Awal</label>
+                    <input type="date"
+                           class="form-control"
+                           value="@PrintStartDate"
+                           min="@MinDate"
+                           max="@MaxDate"
+                           @onchange="OnPrintCombinedStartDateChanged" />
+                </div>
+                <div class="mb-3">
+                    <label class="fw-bold mb-1">Tanggal Akhir</label>
+                    <input type="date"
+                           class="form-control"
+                           value="@PrintEndDate"
+                           min="@PrintStartDate"
+                           max="@MaxDate"
+                           @onchange="OnPrintCombinedEndDateChanged"
+                           disabled="@string.IsNullOrWhiteSpace(PrintStartDate)" />
+                </div>
+                <div class="d-flex justify-content-center gap-3 mt-4">
+                    <button class="btn btn-danger px-4" @onclick="CancelPrintCombinedModal">No</button>
+                    <button class="btn btn-warning px-4"
+                            @onclick="ConfirmPrintCombinedAsync"
+                            disabled="@(!CanPrint)">
+                        Yes
+                    </button>
+                </div>
+            </Modal>
+        }
     </div>
 </div>
 
@@ -1080,6 +1233,9 @@
     private int SelectedPresenceIndex = -1;
 
     private string UserRole = "";
+    private int CurrentUserId = 0;
+    private int CurrentClassId = 0;
+    private int CurrentMentorId = 0;
     private List<PresenceItem> Presences = new();
     private List<ClassItem> ClassList = new();
     private string searchName = "";
@@ -1136,7 +1292,7 @@
     private DotNetObjectReference<Presence>? dotNetRef;
     private bool ShowPresenceSuccess = false;
     private bool ShowFeedbackSuccess = false;
-    
+
     private bool IsLockLocationOn = false;
     private string SliderColor => IsLockLocationOn ? "#14BD2D" : "#ccc";
     private bool ShowLockLocationSuccess = false;
@@ -1180,7 +1336,6 @@
     }
 
     private bool IsReportWebRTC = false;
-
     private void OnPhotoBoxClick(string field, bool isReport = false)
     {
         WebRTCField = field;
@@ -1203,9 +1358,7 @@
     private async void CloseWebRTCModal()
     {
         if (WebRTCField != null)
-        {
             await JS.InvokeVoidAsync("webrtcPhoto.stop", $"webrtc_{WebRTCField}");
-        }
         ShowWebRTCModal = false;
         WebRTCField = null;
         StateHasChanged();
@@ -1214,9 +1367,7 @@
     private async void CaptureWebRTCPhoto()
     {
         if (WebRTCField != null)
-        {
             await JS.InvokeVoidAsync("webrtcPhoto.capture", $"webrtc_{WebRTCField}");
-        }
     }
 
     private Dictionary<string, InputFile> inputFileRefs = new();
@@ -1313,29 +1464,31 @@
     {
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
         if (!authState.User.Identity.IsAuthenticated)
-        {
             Navigation.NavigateTo("/login", true);
-        }
 
         var token = await JS.InvokeAsync<string>("localStorage.getItem", "authToken");
         if (!string.IsNullOrEmpty(token))
-        {
             Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-        }
 
         var user = await Http.GetFromJsonAsync<UserResponse>(APIUrl.Endpoint("me"));
         UserRole = user?.role ?? "";
+        CurrentUserId = user?.id ?? 0;
 
-        if (UserRole == "Admin" || UserRole == "Kepala Jurusan")
+        // Ambil mentorId dan classId dari data response
+        if (user?.data != null)
         {
-            try
+            var dataJson = JsonSerializer.Serialize(user.data);
+            using var doc = JsonDocument.Parse(dataJson);
+
+            if (UserRole.Contains("Mentor"))
             {
-                var status = await Http.GetFromJsonAsync<bool>(APIUrl.Endpoint("assign/status-lock-location"));
-                IsLockLocationOn = status;
+                if (doc.RootElement.TryGetProperty("mentorId", out var mentorIdProp))
+                    CurrentMentorId = mentorIdProp.GetInt32();
             }
-            catch
+            else if (UserRole.Contains("Wali Kelas"))
             {
-                IsLockLocationOn = false;
+                if (doc.RootElement.TryGetProperty("classId", out var classIdProp))
+                    CurrentClassId = classIdProp.GetInt32();
             }
         }
 
@@ -1369,6 +1522,7 @@
             await LoadClasses();
             await LoadPresenceTypes();
             await LoadPresence();
+            await LoadMentors();
         }
     }
 
@@ -1448,7 +1602,6 @@
         {
             AllPresences = response.data ?? new();
             TotalPages = (int)Math.Ceiling((double)AllPresences.Count / PageSize);
-            // Data yang ditampilkan di halaman aktif
             Presences = GetSortedPresences()
                 .Skip((CurrentPage - 1) * PageSize)
                 .Take(PageSize)
@@ -1521,10 +1674,7 @@
         if (page >= 1 && page <= TotalPages && page != CurrentPage)
         {
             CurrentPage = page;
-            if (UserRole == "Student")
-            {
-                await LoadStudentPresences();
-            }
+            if (UserRole == "Student") await LoadStudentPresences();
             else
             {
                 Presences = GetSortedPresences()
@@ -1541,21 +1691,6 @@
         var dateValue = e.Value?.ToString();
         if (string.IsNullOrWhiteSpace(dateValue))
             return;
-
-        // Validasi: hari Minggu tidak bisa dipilih
-        if (DateTime.TryParse(dateValue, out var dt))
-        {
-            if (dt > DateTime.Today)
-            {
-                await JS.InvokeVoidAsync("alert", "Tanggal lebih dari hari ini tidak bisa dipilih.");
-                return;
-            }
-            if (dt.DayOfWeek == DayOfWeek.Sunday)
-            {
-                await JS.InvokeVoidAsync("alert", "Hari Minggu tidak bisa dipilih.");
-                return;
-            }
-        }
 
         showDatePicker = false;
         selectedDate = dateValue;
@@ -1582,12 +1717,10 @@
         }
         else PresencePhotoPreviews[field] = null;
         ReportModalError = "";
-        
+
         // Reset input file agar bisa pilih file yang sama dua kali
         if (inputFileRefs.TryGetValue(field, out var inputRef) && inputRef != null)
-        {
             await JS.InvokeVoidAsync("resetInputFile", $"fileInput_{field}");
-        }
         StateHasChanged();
     }
 
@@ -1680,27 +1813,20 @@
                 if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
                 {
                     if (errorText.Contains("Ukuran file terlalu besar", StringComparison.OrdinalIgnoreCase))
-                    {
                         PresenceErrorMessage = "Ukuran file terlalu besar. Maksimal ukuran file hanya 5 MB.";
-                    }
+
                     else if (errorText.Contains("terlalu jauh", StringComparison.OrdinalIgnoreCase))
-                    {
                         PresenceErrorMessage = "Anda berada terlalu jauh dari tempat PKL!";
-                    }
-                    else
-                    {
-                        PresenceErrorMessage = "Gagal submit presensi.";
-                    }
+
+                    else PresenceErrorMessage = "Gagal submit presensi.";
+                    
                     ShowPresenceError = true;
                     StateHasChanged();
                     await Task.Delay(3000);
                     ShowPresenceError = false;
                     StateHasChanged();
                 }
-                else
-                {
-                    ReportModalError = "Gagal submit presensi.";
-                }
+                else ReportModalError = "Gagal submit presensi.";
             }
         }
         catch
@@ -1814,9 +1940,8 @@
             ReportModalError = "";
             var content = new MultipartFormDataContent();
             if (ReportPresenceTypeId == 1 || ReportPresenceTypeId == 5)
-            {
                 content.Add(new StringContent(ReportTextInput ?? ""), "daily_report");
-            }
+
             else if (ReportPresenceTypeId == 2)
             {
                 foreach (var field in new[] { "MedicalCertificate", "SickToCompany", "SickToMentor", "SickToWalas" })
@@ -1850,7 +1975,7 @@
                 CancelReportModal();
                 ShowPresenceSuccess = true;
                 StateHasChanged();
-                await Task.Delay(2000);
+                await Task.Delay(2500);
                 ShowPresenceSuccess = false;
                 Navigation.NavigateTo(Navigation.Uri, forceLoad: true);
             }
@@ -2068,7 +2193,7 @@
                 foreach (var field in PreviewPresenceFields)
                 {
                     var photo = photos.FirstOrDefault(p => MapPhotoTypeToField(p.type) == field.Field);
-                    var apiBase = "https://presensi.smksabdev.my.id";
+                    var apiBase = "http://localhost:5027";
                     if (photo != null)
                     {
                         var base64 = await GetPhotoBase64Async($"{apiBase}{photo.url}");
@@ -2080,16 +2205,6 @@
         }
         catch { await JS.InvokeVoidAsync("alert", "Gagal mengambil foto presensi."); }
         StateHasChanged();
-    }
-
-    private void PrintPerMentor()
-    {
-        // Implementasi cetak rekap per mentor
-    }
-
-    private void PrintPerClass()
-    {
-        // Implementasi cetak rekap per kelas
     }
 
     private async Task OnLockLocationSwitchChanged(ChangeEventArgs e)
@@ -2109,10 +2224,7 @@
             ShowLockLocationSuccess = false;
             StateHasChanged();
         }
-        else
-        {
-            await JS.InvokeVoidAsync("alert", "Gagal mengubah status Lock Location.");
-        }
+        else await JS.InvokeVoidAsync("alert", "Gagal mengubah status Lock Location.");
     }
 
     // State untuk delete Presensi
@@ -2167,5 +2279,245 @@
         DeletePresenceId = null;
         DeletePresenceName = "";
         DeletePresenceDate = "";
+    }
+
+    // --- Modal Print Per Mentor ---
+    private bool ShowPrintMentorModal = false;
+    private List<MentorItem> MentorList = new();
+    private int? SelectedMentorId = null;
+    private string PrintStartDate = "";
+    private string PrintEndDate = "";
+    private bool CanPrint =>
+        (SelectedMentorId.HasValue || SelectedClassPrintId.HasValue || CurrentUserId != 0) &&
+        !string.IsNullOrWhiteSpace(PrintStartDate) &&
+        !string.IsNullOrWhiteSpace(PrintEndDate) &&
+        DateTime.TryParse(PrintStartDate, out var start) &&
+        DateTime.TryParse(PrintEndDate, out var end) &&
+        end >= start &&
+        end <= DateTime.Today;
+
+    private void PrintPerMentor()
+    {
+        ShowPrintMentorModal = true;
+        SelectedMentorId = null;
+        PrintStartDate = "";
+        PrintEndDate = "";
+    }
+
+    private async Task LoadMentors()
+    {
+        var mentors = await Http.GetFromJsonAsync<MentorListResponse>(APIUrl.Endpoint($"mentors?page={CurrentPage}"));
+        if (mentors != null) MentorList = mentors.data ?? new();
+    }
+
+    private void OnMentorSelected(ChangeEventArgs e)
+    {
+        SelectedMentorId = int.TryParse(e.Value?.ToString(), out var id) ? id : null;
+    }
+
+    private void OnPrintMentorStartDateChanged(ChangeEventArgs e)
+    {
+        var value = e.Value?.ToString() ?? "";
+        if (DateTime.TryParse(value, out var dt))
+        {
+            PrintStartDate = value;
+            if (!string.IsNullOrWhiteSpace(PrintEndDate) && DateTime.Parse(PrintEndDate) < dt)
+                PrintEndDate = "";
+        }
+    }
+
+    private void OnPrintMentorEndDateChanged(ChangeEventArgs e)
+    {
+        var value = e.Value?.ToString() ?? "";
+        if (DateTime.TryParse(value, out var dt))
+            PrintEndDate = value;
+    }
+
+    private void CancelPrintMentorModal()
+    {
+        ShowPrintMentorModal = false;
+        SelectedMentorId = null;
+        PrintStartDate = "";
+        PrintEndDate = "";
+    }
+
+    private async void PrintMentor()
+    {
+        if (!CanPrint || !SelectedMentorId.HasValue) return;
+        var url = APIUrl.Endpoint($"presence/mentor/{SelectedMentorId}/print?startDate={PrintStartDate}&endDate={PrintEndDate}");
+        var response = await Http.GetAsync(url);
+
+        if (response.IsSuccessStatusCode)
+        {
+            var bytes = await response.Content.ReadAsByteArrayAsync();
+            var fileName = FileHelper.GetFileNameFromContentDisposition(response);
+            await JS.InvokeVoidAsync("downloadFileFromBytes", fileName, "application/pdf", bytes);
+
+            CancelPrintMentorModal();
+            ShowDownloadSuccessModal = true;
+            StateHasChanged();
+            await Task.Delay(2500);
+            ShowDownloadSuccessModal = false;
+            StateHasChanged();
+        }
+    }
+
+    // --- Modal Print Per Class ---
+    private bool ShowPrintClassModal = false;
+    private int? SelectedClassPrintId = null;
+    private bool ShowPrintCombinedModal = false;
+    private bool ShowDownloadSuccessModal = false;
+
+    private void PrintPerClass()
+    {
+        ShowPrintClassModal = true;
+        SelectedClassPrintId = null;
+        PrintStartDate = "";
+        PrintEndDate = "";
+    }
+
+    private void OnClassPrintSelected(ChangeEventArgs e)
+    {
+        SelectedClassPrintId = int.TryParse(e.Value?.ToString(), out var id) ? id : null;
+    }
+
+    private void OnPrintClassStartDateChanged(ChangeEventArgs e)
+    {
+        var value = e.Value?.ToString() ?? "";
+        if (DateTime.TryParse(value, out var dt))
+        {
+            PrintStartDate = value;
+            if (!string.IsNullOrWhiteSpace(PrintEndDate) && DateTime.Parse(PrintEndDate) < dt)
+                PrintEndDate = "";
+        }
+    }
+
+    private void OnPrintClassEndDateChanged(ChangeEventArgs e)
+    {
+        var value = e.Value?.ToString() ?? "";
+        if (DateTime.TryParse(value, out var dt))
+            PrintEndDate = value;
+    }
+
+    private void CancelPrintClassModal()
+    {
+        ShowPrintClassModal = false;
+        SelectedClassPrintId = null;
+        PrintStartDate = "";
+        PrintEndDate = "";
+    }
+
+    private async void PrintClass()
+    {
+        if (!CanPrint || !SelectedClassPrintId.HasValue) return;
+        var url = APIUrl.Endpoint($"presence/class/{SelectedClassPrintId}/print?startDate={PrintStartDate}&endDate={PrintEndDate}");
+        var response = await Http.GetAsync(url);
+
+        if (response.IsSuccessStatusCode)
+        {
+            var bytes = await response.Content.ReadAsByteArrayAsync();
+            var fileName = FileHelper.GetFileNameFromContentDisposition(response);
+            await JS.InvokeVoidAsync("downloadFileFromBytes", fileName, "application/pdf", bytes);
+
+            CancelPrintClassModal();
+            ShowDownloadSuccessModal = true;
+            StateHasChanged();
+            await Task.Delay(2500);
+            ShowDownloadSuccessModal = false;
+            StateHasChanged();
+        }
+    }
+
+    private void Print()
+    {
+        ShowPrintCombinedModal = true;
+        PrintStartDate = "";
+        PrintEndDate = "";
+    }
+
+    private void OnPrintCombinedStartDateChanged(ChangeEventArgs e)
+    {
+        var value = e.Value?.ToString() ?? "";
+        if (DateTime.TryParse(value, out var dt))
+        {
+            PrintStartDate = value;
+            if (!string.IsNullOrWhiteSpace(PrintEndDate) && DateTime.Parse(PrintEndDate) < dt)
+                PrintEndDate = "";
+        }
+    }
+
+    private void OnPrintCombinedEndDateChanged(ChangeEventArgs e)
+    {
+        var value = e.Value?.ToString() ?? "";
+        if (DateTime.TryParse(value, out var dt))
+            PrintEndDate = value;
+    }
+
+    private void CancelPrintCombinedModal()
+    {
+        ShowPrintCombinedModal = false;
+        PrintStartDate = "";
+        PrintEndDate = "";
+    }
+
+    private async void ConfirmPrintCombinedAsync()
+    {
+        if (!CanPrint || CurrentUserId == 0) return;
+        string url = "";
+
+        bool isMentor = UserRole.Contains("Mentor");
+        bool isWalas = UserRole.Contains("Wali Kelas");
+
+        if (isMentor && isWalas)
+            url = APIUrl.Endpoint($"presence/combined/{CurrentUserId}/print?startDate={PrintStartDate}&endDate={PrintEndDate}");
+        else if (isMentor)
+            url = APIUrl.Endpoint($"presence/mentor/{CurrentMentorId}/print?startDate={PrintStartDate}&endDate={PrintEndDate}");
+        else if (isWalas)
+            url = APIUrl.Endpoint($"presence/class/{CurrentClassId}/print?startDate={PrintStartDate}&endDate={PrintEndDate}");
+
+        var response = await Http.GetAsync(url);
+
+        if (response.IsSuccessStatusCode)
+        {
+            var bytes = await response.Content.ReadAsByteArrayAsync();
+            var fileName = FileHelper.GetFileNameFromContentDisposition(response);
+            await JS.InvokeVoidAsync("downloadFileFromBytes", fileName, "application/pdf", bytes);
+
+            CancelPrintCombinedModal();
+            ShowDownloadSuccessModal = true;
+            StateHasChanged();
+            await Task.Delay(2500);
+            ShowDownloadSuccessModal = false;
+            StateHasChanged();
+        }
+    }
+
+    private async void PrintStudentPresence(PresenceItem item)
+    {
+        var studentId = item.studentId;
+        var date = item.date;
+
+        if (DateTime.TryParse(date, out var dt))
+            date = dt.ToString("yyyy-MM-dd");
+
+        var url = APIUrl.Endpoint($"presence/byStudent/{studentId}/print?date={date}");
+        var response = await Http.GetAsync(url);
+
+        if (response.IsSuccessStatusCode)
+        {
+            var bytes = await response.Content.ReadAsByteArrayAsync();
+            var fileName = FileHelper.GetFileNameFromContentDisposition(response);
+            await JS.InvokeVoidAsync("downloadFileFromBytes", fileName, "application/pdf", bytes);
+
+            ShowDownloadSuccessModal = true;
+            StateHasChanged();
+            await Task.Delay(2500);
+            ShowDownloadSuccessModal = false;
+            StateHasChanged();
+        }
+        else
+        {
+            await JS.InvokeVoidAsync("alert", "Gagal mengunduh file presensi.");
+        }
     }
 }

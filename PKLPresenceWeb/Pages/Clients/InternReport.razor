@@ -31,7 +31,7 @@
                 <button class="btn btn-warning"
                         @onclick="ShowAddReport"
                         disabled="@HasReportToday">
-                    Add Report
+                    <i class="bi bi-plus-lg me-1"></i> Add Report
                 </button>
             </div>
 
@@ -61,7 +61,7 @@
                                     <td class="text-center">
                                         <button class="btn btn-sm btn-success" style="padding-left: 1.15rem; padding-right: 1.15rem;"
                                                 @onclick="() => ShowReportDetail(item)">
-                                            Detail
+                                            <i class="bi bi-info-circle me-1"></i> Detail
                                         </button>
                                     </td>
                                 </tr>
@@ -263,23 +263,33 @@
             </div>
 
             <div class="d-flex align-items-center mb-3 report-toolbar">
-                <div class="d-flex gap-2 btn-group-toolbar">
-                    <button class="btn btn-warning flex-grow-1 flex-md-grow-0" style="min-width:120px;" @onclick="PrintPerMentor">
+                @if (UserRole == "Admin" || UserRole == "Kepala Jurusan")
+                {
+                    <div class="d-flex gap-2 btn-group-toolbar">
+                        <button class="btn btn-warning flex-grow-1 flex-md-grow-0" style="min-width:120px;" @onclick="PrintPerMentor">
+                            <span class="d-flex align-items-center justify-content-center gap-2">
+                                <i class="bi bi-printer"></i>
+                                <span class="d-none d-sm-inline">Per Mentor</span>
+                                <span class="d-inline d-sm-none">Mentor</span>
+                            </span>
+                        </button>
+                        <button class="btn btn-primary flex-grow-1 flex-md-grow-0" style="min-width:120px;" @onclick="PrintPerClass">
+                            <span class="d-flex align-items-center justify-content-center gap-2">
+                                <i class="bi bi-printer"></i>
+                                <span class="d-none d-sm-inline">Per Class</span>
+                                <span class="d-inline d-sm-none">Class</span>
+                            </span>
+                        </button>
+                    </div>
+                }
+                else
+                {
+                    <button class="btn btn-warning flex-grow-1 flex-md-grow-0" style="min-width:120px;" @onclick="Print">
                         <span class="d-flex align-items-center justify-content-center gap-2">
-                            <i class="bi bi-printer"></i>
-                            <span class="d-none d-sm-inline">Per Mentor</span>
-                            <span class="d-inline d-sm-none">Mentor</span>
+                            <i class="bi bi-printer"></i> Print
                         </span>
                     </button>
-
-                    <button class="btn btn-primary flex-grow-1 flex-md-grow-0" style="min-width:120px;" @onclick="PrintPerClass">
-                        <span class="d-flex align-items-center justify-content-center gap-2">
-                            <i class="bi bi-printer"></i>
-                            <span class="d-none d-sm-inline">Per Class</span>
-                            <span class="d-inline d-sm-none">Class</span>
-                        </span>
-                    </button>
-                </div>
+                }
             </div>
 
             @if (isLoading)
@@ -403,12 +413,19 @@
                                                     <button class="btn btn-sm btn-success" style="padding-left: 1.2rem; padding-right: 1.2rem;"
                                                             @onclick="() => ShowReportDetail(item)"
                                                             disabled="@(item.id == "-")">
-                                                        Detail
+                                                        <i class="bi bi-info-circle"></i>
+                                                        <span class="btn-text-sm-hide ms-1">Detail</span>
                                                     </button>
-                                                    <button class="btn btn-sm btn-warning" @onclick="() => ShowFeedback(item)" disabled="@(item.id == "-")">Feedback</button>
-                                                    <button class="btn btn-sm btn-danger" style="padding-left: 1.4rem; padding-right: 1.4rem;"
+                                                    <button class="btn btn-sm btn-warning" @onclick="() => ShowFeedback(item)" disabled="@(item.id == "-")">
+                                                        <i class="bi bi-chat-dots"></i>
+                                                        <span class="btn-text-sm-hide ms-1">Feedback</span>
+                                                    </button>
+                                                    <button class="btn btn-sm btn-danger" 
+                                                            @onclick="() => PrintStudentReport(item)" 
+                                                            style="padding-left: 1.4rem; padding-right: 1.4rem;" 
                                                             disabled="@(item.id == "-")">
-                                                        Print
+                                                        <i class="bi bi-printer"></i>
+                                                        <span class="btn-text-sm-hide ms-1">Print</span>
                                                     </button>
                                                 </div>
                                             </td>
@@ -620,7 +637,7 @@
                         <div class="modal-preview-section mt-3 mb-2">
                             <h6 class="fw-bold mt-3">Description</h6>
                             <div class="my-2">Foto Saat Bimbingan</div>
-                            <img src="@APIUrl.Endpoint($"repots/preview/{SelectedReportDetail.reportPhotoId}")"
+                            <img src="@APIUrl.Endpoint($"reports/preview/{SelectedReportDetail.reportPhotoId}")"
                                  alt="Foto Saat Bimbingan" class="uploaded-photo-preview" />
                             <div class="mb-2 mt-3">Deskripsi Kegiatan</div>
                             <div class="mb-2 mx-2">
@@ -653,11 +670,159 @@
                 </div>
             </Modal>
         }
+
+        @if (ShowDownloadSuccessModal)
+        {
+            <Modal IsVisible="true">
+                <div class="text-center">
+                    <span class="checkmark-presence-animate">
+                        <i class="bi bi-check-circle-fill" style="font-size:3rem; color:limegreen;"></i>
+                    </span>
+                    <p class="mt-2 fw-bold" style="font-size:20px">Success!</p>
+                    <p class="mt-1">Rekap data Bimbingan Laporan berhasil diunduh.</p>
+                </div>
+            </Modal>
+        }
+
+        @if (ShowPrintMentorModal)
+        {
+            <Modal IsVisible="true" Title="Per Mentor">
+                <div class="text-center mb-3">
+                    <i class="bi bi-printer" style="font-size:2.5rem;color:#ffc107;"></i>
+                </div>
+                <div class="mb-3">
+                    <label class="fw-bold mb-1">Mentor</label>
+                    <select class="form-select" @onchange="OnMentorSelected">
+                        <option value="">Pilih Mentor</option>
+                        @foreach (var mentor in MentorList)
+                        {
+                            <option value="@mentor.id" selected="@(mentor.id == SelectedMentorId)">
+                                @mentor.fullname
+                            </option>
+                        }
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="fw-bold mb-1">Tanggal Awal</label>
+                    <input type="date"
+                           class="form-control"
+                           value="@PrintStartDate"
+                           min="@MinDate"
+                           max="@MaxDate"
+                           @onchange="OnPrintMentorStartDateChanged" />
+                </div>
+                <div class="mb-3">
+                    <label class="fw-bold mb-1">Tanggal Akhir</label>
+                    <input type="date"
+                           class="form-control"
+                           value="@PrintEndDate"
+                           min="@PrintStartDate"
+                           max="@MaxDate"
+                           @onchange="OnPrintMentorEndDateChanged"
+                           disabled="@string.IsNullOrWhiteSpace(PrintStartDate)" />
+                </div>
+                <div class="d-flex justify-content-center gap-3 mt-4">
+                    <button class="btn btn-danger px-4" @onclick="CancelPrintMentorModal">Cancel</button>
+                    <button class="btn btn-warning px-4"
+                            @onclick="PrintMentor"
+                            disabled="@(!CanPrint)">
+                        Print
+                    </button>
+                </div>
+            </Modal>
+        }
+
+        @if (ShowPrintClassModal)
+        {
+            <Modal IsVisible="true" Title="Per Kelas">
+                <div class="text-center mb-3">
+                    <i class="bi bi-printer" style="font-size:2.5rem;color:#0d6efd;"></i>
+                </div>
+                <div class="mb-3">
+                    <label class="fw-bold mb-1">Kelas</label>
+                    <select class="form-select" @onchange="OnClassPrintSelected">
+                        <option value="">Pilih Kelas</option>
+                        @foreach (var cls in ClassList)
+                        {
+                            <option value="@cls.id" selected="@(cls.id == SelectedClassPrintId)">
+                                @cls.name
+                            </option>
+                        }
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="fw-bold mb-1">Tanggal Awal</label>
+                    <input type="date"
+                           class="form-control"
+                           value="@PrintStartDate"
+                           min="@MinDate"
+                           max="@MaxDate"
+                           @onchange="OnPrintClassStartDateChanged" />
+                </div>
+                <div class="mb-3">
+                    <label class="fw-bold mb-1">Tanggal Akhir</label>
+                    <input type="date"
+                           class="form-control"
+                           value="@PrintEndDate"
+                           min="@PrintStartDate"
+                           max="@MaxDate"
+                           @onchange="OnPrintClassEndDateChanged"
+                           disabled="@string.IsNullOrWhiteSpace(PrintStartDate)" />
+                </div>
+                <div class="d-flex justify-content-center gap-3 mt-4">
+                    <button class="btn btn-danger px-4" @onclick="CancelPrintClassModal">Cancel</button>
+                    <button class="btn btn-primary px-4"
+                            @onclick="PrintClass"
+                            disabled="@(!CanPrint)">
+                        Print
+                    </button>
+                </div>
+            </Modal>
+        }
+
+        @if (ShowPrintCombinedModal)
+        {
+            <Modal IsVisible="true" Title="Print Rekap Gabungan">
+                <div class="text-center mb-3">
+                    <i class="bi bi-printer" style="font-size:2.5rem;color:#ffc107;"></i>
+                </div>
+                <div class="mb-3">
+                    <label class="fw-bold mb-1">Tanggal Awal</label>
+                    <input type="date"
+                           class="form-control"
+                           value="@PrintStartDate"
+                           min="@MinDate"
+                           max="@MaxDate"
+                           @onchange="OnPrintCombinedStartDateChanged" />
+                </div>
+                <div class="mb-3">
+                    <label class="fw-bold mb-1">Tanggal Akhir</label>
+                    <input type="date"
+                           class="form-control"
+                           value="@PrintEndDate"
+                           min="@PrintStartDate"
+                           max="@MaxDate"
+                           @onchange="OnPrintCombinedEndDateChanged"
+                           disabled="@string.IsNullOrWhiteSpace(PrintStartDate)" />
+                </div>
+                <div class="d-flex justify-content-center gap-3 mt-4">
+                    <button class="btn btn-danger px-4" @onclick="CancelPrintCombinedModal">No</button>
+                    <button class="btn btn-warning px-4"
+                            @onclick="ConfirmPrintCombinedAsync"
+                            disabled="@(!CanPrint)">
+                        Yes
+                    </button>
+                </div>
+            </Modal>
+        }
     </div>
 </div>
 
 @code {
     private string UserRole = "";
+    private int CurrentUserId = 0;
+    private int CurrentClassId = 0;
+    private int CurrentMentorId = 0;
     private List<ReportItem> Reports = new();
     private List<ReportItem> AllReports = new();
     private List<ClassItem> ClassList = new();
@@ -754,7 +919,11 @@
             await LoadClasses();
             await LoadReports();
         }
-        else await LoadStudentReports();
+        else
+        {
+            await LoadStudentReports();
+            await LoadMentors();
+        }
     }
 
     private void ShowAddReport()
@@ -878,7 +1047,7 @@
             formData.Add(fileContent, "reportFile", UploadedReportFile.Name);
         }
 
-        var response = await Http.PostAsync(APIUrl.Endpoint("repots"), formData);
+        var response = await Http.PostAsync(APIUrl.Endpoint("reports"), formData);
         IsSubmittingReport = false;
 
         if (response.IsSuccessStatusCode)
@@ -911,7 +1080,7 @@
             System.Text.Encoding.UTF8,
             "application/json"
         );
-        var response = await Http.PutAsync(APIUrl.Endpoint($"repots/feedback/{SelectedReportDetail.id}"), content);
+        var response = await Http.PutAsync(APIUrl.Endpoint($"reports/feedback/{SelectedReportDetail.id}"), content);
         IsSubmittingFeedback = false;
 
         if (response.IsSuccessStatusCode)
@@ -1020,7 +1189,7 @@
 
     void OpenFileInNewTab(string fileId)
     {
-        var url = APIUrl.Endpoint($"repots/preview/{fileId}");
+        var url = APIUrl.Endpoint($"reports/preview/{fileId}");
         JS.InvokeVoidAsync("window.open", url, "_blank");
     }
 
@@ -1120,7 +1289,7 @@
 
     private async Task LoadStudentReports()
     {
-        var url = APIUrl.Endpoint($"repots?page={CurrentPage}&pageSize={PageSize}");
+        var url = APIUrl.Endpoint($"reports?page={CurrentPage}&pageSize={PageSize}");
         var response = await Http.GetFromJsonAsync<ReportListResponse>(url);
         if (response != null)
         {
@@ -1135,7 +1304,7 @@
         isLoading = true;
         StateHasChanged();
 
-        string url = APIUrl.Endpoint("repots");
+        string url = APIUrl.Endpoint("reports");
         if (!string.IsNullOrWhiteSpace(searchName))
             url += $"?search={searchName}";
         if (selectedClassId.HasValue)
@@ -1151,7 +1320,6 @@
         {
             AllReports = response.data ?? new();
             TotalPages = (int)Math.Ceiling((double)AllReports.Count / PageSize);
-            // Data yang ditampilkan di halaman aktif
             Reports = GetSortedReports()
                 .Skip((CurrentPage - 1) * PageSize)
                 .Take(PageSize)
@@ -1166,20 +1334,6 @@
         var dateValue = e.Value?.ToString();
         if (string.IsNullOrWhiteSpace(dateValue))
             return;
-
-        if (DateTime.TryParse(dateValue, out var dt))
-        {
-            if (dt > DateTime.Today)
-            {
-                await JS.InvokeVoidAsync("alert", "Tanggal lebih dari hari ini tidak bisa dipilih.");
-                return;
-            }
-            if (dt.DayOfWeek == DayOfWeek.Sunday)
-            {
-                await JS.InvokeVoidAsync("alert", "Hari Minggu tidak bisa dipilih.");
-                return;
-            }
-        }
 
         showDatePicker = false;
         selectedDate = dateValue;
@@ -1250,13 +1404,242 @@
         if (nextIdx != -1) SelectedReportDetail = Reports[nextIdx];
     }
 
+    // --- Modal Print Per Mentor ---
+    private bool ShowPrintMentorModal = false;
+    private List<MentorItem> MentorList = new();
+    private int? SelectedMentorId = null;
+    private string PrintStartDate = "";
+    private string PrintEndDate = "";
+    private bool CanPrint =>
+        (SelectedMentorId.HasValue || SelectedClassPrintId.HasValue || CurrentUserId != 0) &&
+        !string.IsNullOrWhiteSpace(PrintStartDate) &&
+        !string.IsNullOrWhiteSpace(PrintEndDate) &&
+        DateTime.TryParse(PrintStartDate, out var start) &&
+        DateTime.TryParse(PrintEndDate, out var end) &&
+        end >= start &&
+        end <= DateTime.Today;
+
     private void PrintPerMentor()
     {
-        // Implementasi cetak rekap per mentor
+        ShowPrintMentorModal = true;
+        SelectedMentorId = null;
+        PrintStartDate = "";
+        PrintEndDate = "";
     }
+
+    private async Task LoadMentors()
+    {
+        var mentors = await Http.GetFromJsonAsync<MentorListResponse>(APIUrl.Endpoint($"mentors?page={CurrentPage}"));
+        if (mentors != null) MentorList = mentors.data ?? new();
+    }
+
+    private void OnMentorSelected(ChangeEventArgs e)
+    {
+        SelectedMentorId = int.TryParse(e.Value?.ToString(), out var id) ? id : null;
+    }
+
+    private void OnPrintMentorStartDateChanged(ChangeEventArgs e)
+    {
+        var value = e.Value?.ToString() ?? "";
+        if (DateTime.TryParse(value, out var dt))
+        {
+            PrintStartDate = value;
+            if (!string.IsNullOrWhiteSpace(PrintEndDate) && DateTime.Parse(PrintEndDate) < dt)
+                PrintEndDate = "";
+        }
+    }
+
+    private void OnPrintMentorEndDateChanged(ChangeEventArgs e)
+    {
+        var value = e.Value?.ToString() ?? "";
+        if (DateTime.TryParse(value, out var dt))
+            PrintEndDate = value;
+    }
+
+    private void CancelPrintMentorModal()
+    {
+        ShowPrintMentorModal = false;
+        SelectedMentorId = null;
+        PrintStartDate = "";
+        PrintEndDate = "";
+    }
+
+    private async void PrintMentor()
+    {
+        if (!CanPrint || !SelectedMentorId.HasValue) return;
+        var url = APIUrl.Endpoint($"reports/mentor/{SelectedMentorId}/print?startDate={PrintStartDate}&endDate={PrintEndDate}");
+        var response = await Http.GetAsync(url);
+
+        if (response.IsSuccessStatusCode)
+        {
+            var bytes = await response.Content.ReadAsByteArrayAsync();
+            var fileName = FileHelper.GetFileNameFromContentDisposition(response);
+            await JS.InvokeVoidAsync("downloadFileFromBytes", fileName, "application/pdf", bytes);
+
+            CancelPrintMentorModal();
+            ShowDownloadSuccessModal = true;
+            StateHasChanged();
+            await Task.Delay(2500);
+            ShowDownloadSuccessModal = false;
+            StateHasChanged();
+        }
+    }
+
+
+    // --- Modal Print Per Class ---
+    private bool ShowPrintClassModal = false;
+    private int? SelectedClassPrintId = null;
+    private bool ShowPrintCombinedModal = false;
+    private bool ShowDownloadSuccessModal = false;
 
     private void PrintPerClass()
     {
-        // Implementasi cetak rekap per kelas
+        ShowPrintClassModal = true;
+        SelectedClassPrintId = null;
+        PrintStartDate = "";
+        PrintEndDate = "";
+    }
+
+    private void OnClassPrintSelected(ChangeEventArgs e)
+    {
+        SelectedClassPrintId = int.TryParse(e.Value?.ToString(), out var id) ? id : null;
+    }
+
+    private void OnPrintClassStartDateChanged(ChangeEventArgs e)
+    {
+        var value = e.Value?.ToString() ?? "";
+        if (DateTime.TryParse(value, out var dt))
+        {
+            PrintStartDate = value;
+            if (!string.IsNullOrWhiteSpace(PrintEndDate) && DateTime.Parse(PrintEndDate) < dt)
+                PrintEndDate = "";
+        }
+    }
+
+    private void OnPrintClassEndDateChanged(ChangeEventArgs e)
+    {
+        var value = e.Value?.ToString() ?? "";
+        if (DateTime.TryParse(value, out var dt))
+            PrintEndDate = value;
+    }
+
+    private void CancelPrintClassModal()
+    {
+        ShowPrintClassModal = false;
+        SelectedClassPrintId = null;
+        PrintStartDate = "";
+        PrintEndDate = "";
+    }
+
+    private async void PrintClass()
+    {
+        if (!CanPrint || !SelectedClassPrintId.HasValue) return;
+        var url = APIUrl.Endpoint($"reports/class/{SelectedClassPrintId}/print?startDate={PrintStartDate}&endDate={PrintEndDate}");
+        var response = await Http.GetAsync(url);
+
+        if (response.IsSuccessStatusCode)
+        {
+            var bytes = await response.Content.ReadAsByteArrayAsync();
+            var fileName = FileHelper.GetFileNameFromContentDisposition(response);
+            await JS.InvokeVoidAsync("downloadFileFromBytes", fileName, "application/pdf", bytes);
+
+            CancelPrintClassModal();
+            ShowDownloadSuccessModal = true;
+            StateHasChanged();
+            await Task.Delay(2500);
+            ShowDownloadSuccessModal = false;
+            StateHasChanged();
+        }
+    }
+
+
+    private void Print()
+    {
+        ShowPrintCombinedModal = true;
+        PrintStartDate = "";
+        PrintEndDate = "";
+    }
+
+    private void OnPrintCombinedStartDateChanged(ChangeEventArgs e)
+    {
+        var value = e.Value?.ToString() ?? "";
+        if (DateTime.TryParse(value, out var dt))
+        {
+            PrintStartDate = value;
+            if (!string.IsNullOrWhiteSpace(PrintEndDate) && DateTime.Parse(PrintEndDate) < dt)
+                PrintEndDate = "";
+        }
+    }
+
+    private void OnPrintCombinedEndDateChanged(ChangeEventArgs e)
+    {
+        var value = e.Value?.ToString() ?? "";
+        if (DateTime.TryParse(value, out var dt))
+            PrintEndDate = value;
+    }
+
+    private void CancelPrintCombinedModal()
+    {
+        ShowPrintCombinedModal = false;
+        PrintStartDate = "";
+        PrintEndDate = "";
+    }
+
+    private async void ConfirmPrintCombinedAsync()
+    {
+        if (!CanPrint || CurrentUserId == 0) return;
+        string url = "";
+
+        bool isMentor = UserRole.Contains("Mentor");
+        bool isWalas = UserRole.Contains("Wali Kelas");
+
+        if (isMentor && isWalas)
+            url = APIUrl.Endpoint($"reports/combined/{CurrentUserId}/print?startDate={PrintStartDate}&endDate={PrintEndDate}");
+        else if (isMentor)
+            url = APIUrl.Endpoint($"reports/mentor/{CurrentMentorId}/print?startDate={PrintStartDate}&endDate={PrintEndDate}");
+        else if (isWalas)
+            url = APIUrl.Endpoint($"reports/class/{CurrentClassId}/print?startDate={PrintStartDate}&endDate={PrintEndDate}");
+
+        var response = await Http.GetAsync(url);
+
+        if (response.IsSuccessStatusCode)
+        {
+            var bytes = await response.Content.ReadAsByteArrayAsync();
+            var fileName = FileHelper.GetFileNameFromContentDisposition(response);
+            await JS.InvokeVoidAsync("downloadFileFromBytes", fileName, "application/pdf", bytes);
+
+            CancelPrintCombinedModal();
+            ShowDownloadSuccessModal = true;
+            StateHasChanged();
+            await Task.Delay(2500);
+            ShowDownloadSuccessModal = false;
+            StateHasChanged();
+        }
+    }
+
+    private async void PrintStudentReport(ReportItem item)
+    {
+        var studentId = item.studentId;
+        var date = item.date;
+
+        if (DateTime.TryParse(date, out var dt))
+            date = dt.ToString("yyyy-MM-dd");
+
+        var url = APIUrl.Endpoint($"reports/student/{studentId}/print?date={date}");
+        var response = await Http.GetAsync(url);
+
+        if (response.IsSuccessStatusCode)
+        {
+            var bytes = await response.Content.ReadAsByteArrayAsync();
+            var fileName = FileHelper.GetFileNameFromContentDisposition(response);
+            await JS.InvokeVoidAsync("downloadFileFromBytes", fileName, "application/pdf", bytes);
+
+            ShowDownloadSuccessModal = true;
+            StateHasChanged();
+            await Task.Delay(2500);
+            ShowDownloadSuccessModal = false;
+            StateHasChanged();
+        }
+        else await JS.InvokeVoidAsync("alert", "Gagal mengunduh file presensi.");
     }
 }

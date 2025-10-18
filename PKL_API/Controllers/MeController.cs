@@ -71,8 +71,63 @@ namespace PKL_API.Controllers
                         company = s.Company != null ? s.Company.name : "-",
                         s.isPKL
                     })
-                    .ToList();
+                    .FirstOrDefault();
                 extraData = students;
+            }
+            else if (selectedUser.UserRoles.Any(ur => ur.Role.id == 5) && selectedUser.UserRoles.Any(ur => ur.Role.id == 3))
+            {
+                // Cari classId dari Classroom yang diampu oleh WaliKelas (user ini)
+                var classId = _db.Classrooms
+                    .Where(c => c.WaliKelas != null && c.WaliKelas.User.id == selectedUserId)
+                    .Select(c => c.id)
+                    .FirstOrDefault();
+
+                var teacher = _db.Teachers
+                    .Where(t => t.User.id == selectedUserId)
+                    .Select(t => new
+                    {
+                        t.id,
+                        classId = classId,
+                        mentorId = _db.Mentors.Where(m => m.Teacherid == t.id).Select(m => m.id).FirstOrDefault(),
+                        t.User.fullname,
+                        t.nip
+                    })
+                    .FirstOrDefault();
+                extraData = teacher;
+            }
+            else if (selectedUser.UserRoles.Any(ur => ur.Role.id == 5))
+            {
+                // Cari classId dari Classroom yang diampu oleh WaliKelas (user ini)
+                var classId = _db.Classrooms
+                    .Where(c => c.WaliKelas != null && c.WaliKelas.User.id == selectedUserId)
+                    .Select(c => c.id)
+                    .FirstOrDefault();
+
+                var teacher = _db.Teachers
+                    .Where(t => t.User.id == selectedUserId)
+                    .Select(t => new
+                    {
+                        t.id,
+                        classId = classId,
+                        t.User.fullname,
+                        t.nip
+                    })
+                    .FirstOrDefault();
+                extraData = teacher;
+            }
+            else if (selectedUser.UserRoles.Any(ur => ur.Role.id == 3))
+            {
+                var teacher = _db.Teachers
+                    .Where(t => t.User.id == selectedUserId)
+                    .Select(t => new
+                    {
+                        t.id,
+                        mentorId = _db.Mentors.Where(m => m.Teacherid == t.id).Select(m => m.id).FirstOrDefault(),
+                        t.User.fullname,
+                        t.nip
+                    })
+                    .FirstOrDefault();
+                extraData = teacher;
             }
             else if (!selectedUser.UserRoles.Any(ur => ur.Role.id == 2) && !selectedUser.UserRoles.Any(ur => ur.Role.id == 1))
             {

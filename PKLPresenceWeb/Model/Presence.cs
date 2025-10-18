@@ -12,6 +12,7 @@
     public class PresenceItem
     {
         public string id_presence { get; set; }
+        public int studentId { get; set; }
         public string nis { get; set; }
         public string name { get; set; }
         public int classId { get; set; }

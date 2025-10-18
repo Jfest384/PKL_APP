@@ -112,7 +112,7 @@
                     <input class="form-control search-class-input" placeholder="Nama Kelas..." @bind="SearchText" @oninput="OnSearchChanged" />
                 </div>
                 <div class="col-auto ms-auto">
-                    <button class="btn btn-warning w-200" @onclick="() => ShowAddModal = true">
+                    <button class="btn btn-primary w-200" @onclick="OnAddClassClicked">
                         <i class="bi bi-plus-lg me-1"></i> Tambah Kelas
                     </button>
                 </div>
@@ -277,28 +277,6 @@
                                             <td>
                                                 @if (UserRole == "Admin" || UserRole == "Kepala Jurusan")
                                                 {
-                                                    @* <div class="d-flex justify-content-center align-items-center gap-3" style="min-width:120px;">
-                                                        <!-- Kolom kiri: 2 row tombol -->
-                                                        <div class="d-flex flex-column gap-2 justify-content-center align-items-center">
-                                                            <button class="btn btn-sm @(string.IsNullOrWhiteSpace(item[5]) || item[5] == "-" ? "btn-warning" : "btn-success")"
-                                                                    @onclick="() => OnPilihTempatPKL(item)">
-                                                                <i class="bi bi-geo-alt me-1"></i> Lokasi PKL
-                                                            </button>
-                                                            <button class="btn btn-sm btn-primary" style="padding-left: 1.2rem; padding-right: 1.2rem;"
-                                                                    @onclick="() => GoToHistory(item)">
-                                                                <i class="bi bi-clock-history me-1"></i> History
-                                                            </button>
-                                                        </div>
-                                                        <!-- Kolom kanan: slider switch -->
-                                                        <div class="d-flex flex-column justify-content-center align-items-center">
-                                                            <label class="vertical-switch">
-                                                                <input type="checkbox"
-                                                                       checked="@GetStudentLockStatus(int.Parse(item[0]))"
-                                                                       @onchange="e => OnLockSliderChanged(int.Parse(item[0]), GetStudentLockStatus(int.Parse(item[0])))" />
-                                                                <span class="vertical-slider"></span>
-                                                            </label>
-                                                        </div>
-                                                    </div> *@
                                                     <div class="d-flex justify-content-center align-items-center gap-3" style="min-width:120px;">
                                                         <div class="d-flex flex-column gap-2 justify-content-center align-items-center">
                                                             <button class="btn btn-sm @(string.IsNullOrWhiteSpace(item[5]) || item[5] == "-" ? "btn-warning" : "btn-success")"
@@ -309,12 +287,17 @@
                                                                     @onclick="() => GoToHistory(item)">
                                                                 <i class="bi bi-clock-history me-1"></i> History
                                                             </button>
-                                                            <!-- Switch moved below History, now horizontal -->
                                                             <label class="horizontal-switch">
                                                                 <input type="checkbox"
                                                                        checked="@GetStudentLockStatus(int.Parse(item[0]))"
                                                                        @onchange="e => OnLockSliderChanged(int.Parse(item[0]), GetStudentLockStatus(int.Parse(item[0])))" />
-                                                                <span class="horizontal-slider"></span>
+                                                                <span class="horizontal-slider">
+                                                                    <span class="slider-knob">
+                                                                        <span class="slider-text">
+                                                                            @(GetStudentLockStatus(int.Parse(item[0])) ? "ON" : "OFF")
+                                                                        </span>
+                                                                    </span>
+                                                                </span>
                                                             </label>
                                                         </div>
                                                     </div>
@@ -348,10 +331,16 @@
                                             <td>
                                                 <div class="d-flex gap-2 justify-content-center">
                                                     <button class="btn btn-sm btn-success" @onclick="() => OnAssignClassToStudents(int.Parse(item[0]), item[1])">
-                                                        <i class="bi bi-person-plus"></i> Siswa
+                                                        <i class="bi bi-person-plus"></i>
+                                                        <span class="btn-text-sm-hide ms-1">Siswa</span>
                                                     </button>
-                                                    <button class="btn btn-sm btn-danger" @onclick="() => OnDeleteClass(int.Parse(item[0]), item[1])">
-                                                        <i class="bi bi-trash"></i> Kelas
+                                                    <button class="btn btn-sm btn-danger" @onclick="() => OnDeleteClassClicked(item)">
+                                                        <i class="bi bi-trash"></i>
+                                                        <span class="btn-text-sm-hide ms-1">Kelas</span>
+                                                    </button>
+                                                    <button class="btn btn-sm btn-warning" @onclick="() => OnEditClassClicked(Classrooms.FirstOrDefault(c => c.id == int.Parse(item[0])))">
+                                                        <i class="bi bi-pencil"></i>
+                                                        <span class="btn-text-sm-hide ms-1">Edit</span>
                                                     </button>
                                                 </div>
                                             </td>
@@ -380,14 +369,12 @@
                         </button>
                     </li>
 
-                    @* Selalu tampilkan page 1 *@
                     <li class="page-item @(CurrentPage == 1 ? "active" : null)">
                         <button class="page-link" @onclick="() => ChangePage(1)" disabled="@(CurrentPage == 1)">1</button>
                     </li>
 
                     @if (CurrentPage <= 3)
                     {
-                        // Tampilkan halaman 2 sampai 4
                         for (int i = 2; i <= Math.Min(4, TotalPages - 1); i++)
                         {
                             var pageNumber = i;
@@ -506,6 +493,19 @@
             </Modal>
         }
 
+        @if (ShowAddStudentToMentorSuccessModal)
+        {
+            <Modal IsVisible="true">
+                <div class="text-center">
+                    <span class="checkmark-animate">
+                        <i class="bi bi-check-circle-fill" style="font-size:3rem; color:limegreen;"></i>
+                    </span>
+                    <p class="mt-2 fw-bold" style="font-size:20px">Success!</p>
+                    <p class="mt-1">Siswa telah berhasil di-assign ke pembimbing PKL yang dipilih.</p>
+                </div>
+            </Modal>
+        }
+
         @if (ShowPilihPTModal)
         {
             <Modal IsVisible="true">
@@ -559,18 +559,34 @@
             </Modal>
         }
 
+        @if (ShowPilihPTSuccessModal)
+        {
+            <Modal IsVisible="true">
+                <div class="text-center">
+                    <span class="checkmark-animate">
+                        <i class="bi bi-check-circle-fill" style="font-size:3rem; color:limegreen;"></i>
+                    </span>
+                    <p class="mt-2 fw-bold" style="font-size:20px">Success!</p>
+                    <p class="mt-1">Data Lokasi PKL berhasil diupdate.</p>
+                </div>
+            </Modal>
+        }
+
         @if (ShowAddModal)
         {
-            <Modal IsVisible="true" Title="Tambah Kelas">
+            <Modal IsVisible="true" Title="@(AddEditClassMode == "add" ? "Tambah Kelas" : "Edit Kelas")">
                 <div class="modal-scrollable-content">
                     <div class="mb-3 ms-1 me-1">
                         <label class="form-label text-start d-block text-start">Kelas</label>
-                        <input class="form-control" @bind="NewClass.name" />
+                        <input class="form-control" placeholder="Nama kelas..." @bind="NewClass.name" />
                     </div>
-                    <div class="mb-3 ms-1 me-1">
-                        <label class="form-label d-block text-start">Total Siswa</label>
-                        <input class="form-control" type="number" min="1" @bind="NewClass.total_students" />
-                    </div>
+                    @if (AddEditClassMode == "add")
+                    {
+                        <div class="mb-3 ms-1 me-1">
+                            <label class="form-label d-block text-start">Total Siswa</label>
+                            <input class="form-control" type="number" min="1" @bind="NewClass.total_students" />
+                        </div>
+                    }
                     <div class="mb-3 ms-1 me-1">
                         <label class="form-label d-block text-start">Wali Kelas</label>
                         <select class="form-select" @bind="SelectedWalasId">
@@ -587,12 +603,34 @@
                     </div>
                     <div class="mb-3 ms-1 me-1">
                         <label class="form-label d-block text-start">Deskripsi</label>
-                        <input class="form-control" @bind="NewClass.description" />
+                        <textarea class="form-control"
+                                  placeholder="Deskripsi..."
+                                  @bind="NewClass.description"
+                                  @oninput="OnContentInput"
+                                  maxlength="200"
+                                  rows="2">
+                    </textarea>
+                        <div class="char-counter-outer text-end" style="font-size: 15px">@NewClass.description.Length/200</div>
                     </div>
                 </div>
                 <div class="d-flex justify-content-around">
                     <button class="btn btn-danger px-4" @onclick="CancelAdd">Cancel</button>
-                    <button class="btn btn-success px-4" @onclick="ConfirmAdd" disabled="@(IsAddClassValid == false)">Confirm</button>
+                    <button class="btn btn-success px-4" @onclick="ConfirmAddOrEdit" disabled="@(IsAddClassValid == false)">
+                        Confirm
+                    </button>
+                </div>
+            </Modal>
+        }
+
+        @if (ShowAddClassSuccessModal)
+        {
+            <Modal IsVisible="true">
+                <div class="text-center">
+                    <span class="checkmark-animate">
+                        <i class="bi bi-check-circle-fill" style="font-size:3rem; color:limegreen;"></i>
+                    </span>
+                    <p class="mt-2 fw-bold" style="font-size:20px">Success!</p>
+                    <p class="mt-1">@AddClassSuccessText</p>
                 </div>
             </Modal>
         }
@@ -628,43 +666,6 @@
                         <p>Siswa berhasil ditambahkan ke kelas!</p>
                         <button class="btn btn-primary px-4" @onclick="CloseAssignModal">Done</button>
                     </div>
-                }
-            </Modal>
-        }
-
-        @if (ShowDeleteModal)
-        {
-            <Modal IsVisible="true">
-                <div class="modal-scrollable-content">
-                    @if (DeleteModalState == "confirm")
-                    {
-                        <div class="text-center">
-                            <i class="bi bi-trash fs-1 mb-3 text-danger"></i>
-                            <p class="fw-bold">Hapus Kelas</p>
-                            <p>@DeleteModalText</p>
-                        </div>
-                    }
-
-                    else if (DeleteModalState == "done")
-                    {
-                        <div class="text-center">
-                            <i class="bi bi-trash fs-1 mb-3 text-danger"></i>
-                            <p class="fw-bold">Hapus Kelas</p>
-                            <p>@DeleteModalText</p>
-                        </div>
-                    }
-                </div>
-
-                @if (DeleteModalState == "confirm")
-                {
-                    <div class="d-flex justify-content-center gap-3">
-                        <button class="btn btn-warning px-4" @onclick="CloseDeleteModal">Cancel</button>
-                        <button class="btn btn-danger px-4" @onclick="ConfirmDeleteClass">Confirm</button>
-                    </div>
-                }
-                else
-                {
-                    <button class="btn btn-primary px-4 text-center" @onclick="CloseDeleteModal">Done</button>
                 }
             </Modal>
         }
@@ -715,6 +716,19 @@
             </Modal>
         }
 
+        @if (ShowAddMentorModalSuccess)
+        {
+            <Modal IsVisible="true">
+                <div class="text-center">
+                    <span class="checkmark-animate">
+                        <i class="bi bi-check-circle-fill" style="font-size:3rem; color:limegreen;"></i>
+                    </span>
+                    <p class="mt-2 fw-bold" style="font-size:20px">Success!</p>
+                    <p class="mt-1">Pembimbing PKL berhasil ditambahkan.</p>
+                </div>
+            </Modal>
+        }
+
         @if (ShowAssignPKLModal)
         {
             <Modal IsVisible="true">
@@ -753,11 +767,11 @@
                     <span class="checkmark-animate">
                         <i class="bi bi-check-circle-fill" style="font-size:3rem; color:limegreen;"></i>
                     </span>
-                    <p class="mt-2 fw-bold" style="font-size:20px">Success</p>
+                    <p class="mt-2 fw-bold" style="font-size:20px">Success!</p>
                     <p class="mt-1">
                         @(IsAssignPKLMode
-                            ? "Siswa berhasil ditambahkan ke data Siswa PKL!"
-                            : "Siswa berhasil dihapus dari data Siswa PKL!")
+                            ? "Siswa berhasil ditambahkan ke data Siswa PKL."
+                            : "Siswa berhasil dihapus dari data Siswa PKL.")
                     </p>
                 </div>
             </Modal>
@@ -834,7 +848,7 @@
                     <span class="checkmark-animate">
                         <i class="bi bi-check-circle-fill" style="font-size:3rem; color:limegreen;"></i>
                     </span>
-                    <p class="mt-2 fw-bold" style="font-size:20px">Success</p>
+                    <p class="mt-2 fw-bold" style="font-size:20px">Success!</p>
                     <p class="mt-1">@AssignClassSuccessText</p>
                 </div>
             </Modal>
@@ -846,11 +860,11 @@
                 <div class="modal-scrollable-content">
                     <div class="mb-3 ms-1 me-1">
                         <label class="form-label text-start d-block text-start">NIS</label>
-                        <input class="form-control" @bind="NewStudent.nis" />
+                        <input class="form-control" placeholder="contoh: 2311768" @bind="NewStudent.nis" />
                     </div>
                     <div class="mb-3 ms-1 me-1">
                         <label class="form-label text-start d-block text-start">Nama</label>
-                        <input class="form-control" @bind="NewStudent.name" />
+                        <input class="form-control" placeholder="Nama..." @bind="NewStudent.name" />
                     </div>
                     <div class="mb-3 ms-1 me-1">
                         <label class="form-label d-block text-start">Kelas</label>
@@ -906,7 +920,7 @@
                         <i class="bi bi-check-circle-fill" style="font-size:3rem; color:limegreen;"></i>
                     </span>
                     <p class="mt-2 fw-bold" style="font-size:20px">Success!</p>
-                    <p class="mt-1">Siswa berhasil dihapus dari data Siswa TKJ</p>
+                    <p class="mt-1">Siswa berhasil dihapus dari data Siswa TKJ.</p>
                 </div>
             </Modal>
         }
@@ -927,7 +941,7 @@
         {
             <Modal IsVisible="true">
                 <div class="text-center">
-                    <i class="bi bi-trash fs-1 text-danger"></i>
+                    <i class="bi bi-trash fs-1 text-danger checkmark-animate"></i>
                     <p class="fw-bold">Delete Mentor</p>
                     <p>
                         Apakah Anda yakin ingin menghapus <span class="fw-bold">@DeleteMentorName</span> dari data Pembimbing PKL?
@@ -948,7 +962,37 @@
                         <i class="bi bi-check-circle-fill" style="font-size:3rem; color:limegreen;"></i>
                     </span>
                     <p class="mt-2 fw-bold" style="font-size:20px">Success!</p>
-                    <p class="mt-1">Mentor berhasil dihapus.</p>
+                    <p class="mt-1">Pembimbing PKL berhasil dihapus.</p>
+                </div>
+            </Modal>
+        }
+
+        @if (ShowDeleteClassModal)
+        {
+            <Modal IsVisible="true">
+                <div class="text-center">
+                    <i class="bi bi-trash fs-1 text-danger checkmark-animate"></i>
+                    <p class="fw-bold">Delete Kelas</p>
+                    <p>
+                        Apakah Anda yakin ingin menghapus <span class="fw-bold">@DeleteClassName</span> dari data Kelas?
+                    </p>
+                    <div class="d-flex justify-content-center gap-3 mt-4">
+                        <button class="btn btn-danger px-4" @onclick="CancelDeleteClass">No</button>
+                        <button class="btn btn-success px-4" @onclick="ConfirmDeleteClass">Yes</button>
+                    </div>
+                </div>
+            </Modal>
+        }
+
+        @if (ShowDeleteClassSuccessModal)
+        {
+            <Modal IsVisible="true">
+                <div class="text-center">
+                    <span class="checkmark-animate">
+                        <i class="bi bi-check-circle-fill" style="font-size:3rem; color:limegreen;"></i>
+                    </span>
+                    <p class="mt-2 fw-bold" style="font-size:20px">Success!</p>
+                    <p class="mt-1">Kelas berhasil dihapus.</p>
                 </div>
             </Modal>
         }
@@ -957,7 +1001,7 @@
         {
             <Modal IsVisible="true">
                 <div class="text-center">
-                    <span class="checkmark-presence-animate">
+                    <span class="checkmark-animate">
                         <i class="bi bi-check-circle-fill" style="font-size:3rem; color:limegreen;"></i>
                     </span>
                     <p class="mt-2 fw-bold" style="font-size:20px">Success!</p>
@@ -989,6 +1033,7 @@
     private string AddStudentSearchText = "";
     private string CompanySearchText = "";
 
+    bool ShowAddStudentToMentorSuccessModal = false;
     bool ShowAddStudentToMentorModal = false;
     int? SelectedMentorId;
     string? SelectedMentorName;
@@ -997,13 +1042,19 @@
     bool IsLoadingStudents = false;
 
     // Modal Pilih PT
+    bool ShowPilihPTSuccessModal = false;
     bool ShowPilihPTModal = false;
     int? SelectedStudentIdForPT = null;
     int? SelectedCompanyId = null;
     List<CompanyItem> Companies = new();
     bool IsLoadingCompanies = false;
 
+    private bool ShowAddClassSuccessModal = false;
+    private string AddClassSuccessText = "";
     private bool ShowAddModal = false;
+    private string AddEditClassMode = "add"; // "add" atau "edit"
+    private int? EditClassId = null;
+    private ClassItem EditClassData = new();
     private NewClass NewClass = new()
     {
         name = string.Empty,
@@ -1016,17 +1067,61 @@
     private List<WalasItem> WalasList = new();
     private bool IsAddClassValid =>
         !string.IsNullOrWhiteSpace(NewClass.name)
-        && NewClass.total_students > 0
+        && (AddEditClassMode == "edit" || NewClass.total_students > 0)
         && SelectedWalasId.HasValue
         && NewClass.year > 0
         && !string.IsNullOrWhiteSpace(NewClass.description);
 
-    private async void ConfirmAdd()
+    private void OnAddClassClicked()
+    {
+        AddEditClassMode = "add";
+        ShowAddModal = true;
+        NewClass = new()
+        {
+            name = string.Empty,
+            total_students = 0,
+            WaliKelasid = 0,
+            year = DateTime.Now.Year,
+            description = string.Empty
+        };
+        SelectedWalasId = null;
+    }
+
+    private void OnEditClassClicked(ClassItem kelas)
+    {
+        AddEditClassMode = "edit";
+        ShowAddModal = true;
+        EditClassId = kelas.id;
+        NewClass = new()
+        {
+            name = kelas.name,
+            total_students = kelas.students,
+            WaliKelasid = kelas.id_walas,
+            year = kelas.year,
+            description = kelas.description
+        };
+        SelectedWalasId = kelas.id_walas;
+    }
+
+    private async void ConfirmAddOrEdit()
     {
         if (SelectedWalasId.HasValue)
         {
             NewClass.WaliKelasid = SelectedWalasId.Value;
-            var res = await Http.PostAsJsonAsync(APIUrl.Endpoint("classes"), NewClass);
+            HttpResponseMessage res;
+            if (AddEditClassMode == "add")
+                res = await Http.PostAsJsonAsync(APIUrl.Endpoint("classes"), NewClass);
+            else
+            {
+                var editDto = new
+                {
+                    name = NewClass.name,
+                    WaliKelasid = NewClass.WaliKelasid,
+                    year = NewClass.year,
+                    description = NewClass.description
+                };
+                res = await Http.PutAsJsonAsync(APIUrl.Endpoint($"classes/{EditClassId}"), editDto);
+            }
             if (res.IsSuccessStatusCode)
             {
                 ShowAddModal = false;
@@ -1038,6 +1133,16 @@
                     year = DateTime.Now.Year,
                     description = string.Empty
                 };
+                SelectedWalasId = null;
+                EditClassId = null;
+
+                AddClassSuccessText = AddEditClassMode == "add"
+                    ? "Kelas baru berhasil ditambahkan."
+                    : "Data Kelas terkait berhasil diupdate.";
+                ShowAddClassSuccessModal = true;
+                StateHasChanged();
+                await Task.Delay(2500);
+                ShowAddClassSuccessModal = false;
                 await LoadData();
             }
         }
@@ -1055,6 +1160,14 @@
         };
         SelectedWalasId = null;
         ShowAddModal = false;
+    }
+
+    private void OnContentInput(ChangeEventArgs e)
+    {
+        var value = e.Value?.ToString() ?? string.Empty;
+        if (value.Length > 200)
+            value = value.Substring(0, 200);
+        NewClass.description = value;
     }
 
     private bool ShowAddStudentModal = false;
@@ -1110,17 +1223,11 @@
     }
 
     private bool ShowAssignModal = false;
-    private string AssignModalState = ""; // "empty", "confirm", "done"
+    private string AssignModalState = "";
     private string AssignModalText = "";
     private int? SelectedClassIdForAssign;
-    //private int? SelectedStudentId;
     private string? SelectedStudentStatus;
 
-    private bool ShowDeleteModal = false;
-    private string DeleteModalState = ""; // "confirm", "done"
-    private string DeleteModalText = "";
-    private int? SelectedClassIdForDelete;
-    private string? SelectedClassNameForDelete;
     private Dictionary<int, int> StudentCountPerClass = new();
 
     void OnAssignStudent(int classId, string className)
@@ -1129,13 +1236,11 @@
 
         if (SelectedStudentId == null || string.IsNullOrEmpty(SelectedStudentStatus))
         {
-            // Pop up kiri: tidak ada data siswa
             AssignModalState = "empty";
             AssignModalText = "Silakan pilih minimal satu siswa terlebih dahulu sebelum melanjutkan.";
         }
         else
         {
-            // Pop up tengah: konfirmasi
             AssignModalState = "confirm";
             AssignModalText = $"Apakah Anda yakin ingin menambahkan Siswa ini ke Kelas {className}?";
         }
@@ -1151,7 +1256,6 @@
 
             if (response.IsSuccessStatusCode)
             {
-                // Pop up kanan: sukses
                 AssignModalState = "done";
                 AssignModalText = $"Siswa berhasil ditambahkan ke kelas!";
             }
@@ -1169,39 +1273,7 @@
         ShowStudentDetailModal = false;
     }
 
-    void OnDeleteClass(int classId, string className)
-    {
-        SelectedClassIdForDelete = classId;
-        SelectedClassNameForDelete = className;
-        DeleteModalState = "confirm";
-        DeleteModalText = $"Apakah Anda yakin ingin menghapus kelas {className}?";
-        ShowDeleteModal = true;
-    }
 
-    async Task ConfirmDeleteClass()
-    {
-        if (DeleteModalState == "confirm" && SelectedClassIdForDelete.HasValue)
-        {
-            var request = new HttpRequestMessage(HttpMethod.Delete, APIUrl.Endpoint($"classes/{SelectedClassIdForDelete}"));
-            var response = await Http.SendAsync(request);
-
-            if (response.IsSuccessStatusCode)
-            {
-                DeleteModalState = "done";
-                DeleteModalText = $"Kelas {SelectedClassNameForDelete} berhasil di hapus dari Manajemen Kelas!";
-                await LoadData();
-            }
-        }
-    }
-
-    void CloseDeleteModal()
-    {
-        ShowDeleteModal = false;
-        SelectedClassIdForDelete = null;
-        SelectedClassNameForDelete = null;
-        DeleteModalState = "";
-        DeleteModalText = "";
-    }
 
     private async Task LoadWalas()
     {
@@ -1278,7 +1350,6 @@
 
             var res = await Http.GetFromJsonAsync<StudentListResponse>(url);
             Students = res?.students ?? new();
-            // Use backend totalItems to calculate TotalPages
             int totalItems = res?.totalItems ?? Students.Count;
             TotalPages = (int)Math.Ceiling((double)totalItems / PageSize);
 
@@ -1356,8 +1427,8 @@
     private async void OnClassChange(ChangeEventArgs e)
     {
         SelectedClassId = int.TryParse(e.Value?.ToString(), out var id) ? id : null;
-        CachedAllStudents.Clear(); // reset cache
-        IsSortingAllData = false;  // <--- Tambahkan ini!
+        CachedAllStudents.Clear();
+        IsSortingAllData = false;
         LastStudentSearchText = "";
         LastStudentClassId = null;
         CurrentPage = 1;
@@ -1367,8 +1438,8 @@
     private async void OnSearchChanged(ChangeEventArgs e)
     {
         SearchText = e.Value?.ToString() ?? "";
-        CachedAllStudents.Clear(); // reset cache
-        IsSortingAllData = false;  // <--- Tambahkan ini!
+        CachedAllStudents.Clear();
+        IsSortingAllData = false;
         LastStudentSearchText = "";
         LastStudentClassId = null;
         searchDebounceCts?.Cancel();
@@ -1432,7 +1503,6 @@
 
     async void OnAddStudentToMentor(string[] mentorRow)
     {
-        // Ambil mentorId dari mentorRow (misal index 0)
         SelectedMentorId = mentorRow.Length > 0 ? int.TryParse(mentorRow[0], out var id) ? id : (int?)null : null;
         SelectedMentorName = mentorRow.Length > 0 ? mentorRow[0] : null;
 
@@ -1440,7 +1510,6 @@
         SelectedStudentIds.Clear();
         IsLoadingStudents = true;
 
-        // Ambil semua siswa PKL tanpa mentor dari semua halaman
         var allStudents = await GetAllStudentPKLsAsync();
 
         AvailableStudents = allStudents
@@ -1467,6 +1536,10 @@
             if (response.IsSuccessStatusCode)
             {
                 CancelAddStudentToMentor();
+                ShowAddStudentToMentorSuccessModal = true;
+                StateHasChanged();
+                await Task.Delay(2500);
+                ShowAddStudentToMentorSuccessModal = false;
                 await LoadData();
             }
         }
@@ -1517,6 +1590,10 @@
             if (response.IsSuccessStatusCode)
             {
                 ClosePilihPTModal();
+                ShowPilihPTSuccessModal = true;
+                StateHasChanged();
+                await Task.Delay(2500);
+                ShowPilihPTSuccessModal = false;
                 await LoadData();
             }
             else await JS.InvokeVoidAsync("alert", "Gagal assign tempat PKL. Coba lagi setelah beberapa saat.");
@@ -1809,6 +1886,7 @@
         return CachedAllClassrooms;
     }
 
+    private bool ShowAddMentorModalSuccess = false;
     private bool ShowAddMentorModal = false;
     private string MentorSearchText = "";
     private string TeacherSearchText = "";
@@ -1917,12 +1995,13 @@
             TeacherList.Clear();
             SelectedTeacherIds.Clear();
             SelectedTeacherUserIds.Clear();
+            ShowAddMentorModalSuccess = true;
+            StateHasChanged();
+            await Task.Delay(2500);
+            ShowAddMentorModalSuccess = false;
             await LoadData();
         }
-        else
-        {
-            await JS.InvokeVoidAsync("alert", "Gagal menambah mentor. Silakan coba lagi.");
-        }
+        else await JS.InvokeVoidAsync("alert", "Gagal menambah mentor. Silakan coba lagi.");
     }
 
     private HashSet<int> SelectedSiswaPKLIds = new();
@@ -2225,10 +2304,13 @@
     private int? DeleteMentorId = null;
     private string DeleteMentorName = "";
 
-    // Event handler tombol Delete di tab Siswa TKJ
+    private bool ShowDeleteClassModal = false;
+    private bool ShowDeleteClassSuccessModal = false;
+    private int? DeleteClassId = null;
+    private string DeleteClassName = "";
+
     private void OnDeleteStudentTKJClicked()
     {
-        // Ambil semua studentId yang dipilih
         DeleteStudentTKJIds = GetPagedSortedData()
             .Where(item => SelectedSiswaPKLIds.Contains(int.Parse(item[0])))
             .Select(item => int.Parse(item[0]))
@@ -2260,8 +2342,6 @@
             return;
 
         ShowDeleteStudentTKJModal = false;
-
-        // Panggil API DELETE students/delete
         var request = new HttpRequestMessage(HttpMethod.Delete, APIUrl.Endpoint("students/delete"))
         {
             Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(DeleteStudentTKJIds), System.Text.Encoding.UTF8, "application/json")
@@ -2278,10 +2358,7 @@
             ShowDeleteStudentTKJSuccessModal = false;
             await LoadData();
         }
-        else
-        {
-            await JS.InvokeVoidAsync("alert", "Gagal menghapus siswa. Silakan coba lagi.");
-        }
+        else await JS.InvokeVoidAsync("alert", "Gagal menghapus siswa. Silakan coba lagi.");
     }
 
     private void CloseDeleteStudentTKJError()
@@ -2374,5 +2451,49 @@
             StateHasChanged();
         }
         else await JS.InvokeVoidAsync("alert", "Gagal mengubah status lock siswa.");
+    }
+
+    private void OnDeleteClassClicked(string[] classRow)
+    {
+        // Ambil mentorId dan nama mentor dari row
+        DeleteClassId = classRow.Length > 0 ? int.TryParse(classRow[0], out var id) ? id : (int?)null : null;
+        DeleteClassName = classRow.Length > 1 ? classRow[1] : "";
+
+        if (DeleteClassId == null || string.IsNullOrWhiteSpace(DeleteClassName))
+            return;
+
+        ShowDeleteClassModal = true;
+        StateHasChanged();
+    }
+
+    private void CancelDeleteClass()
+    {
+        ShowDeleteClassModal = false;
+        DeleteClassId = null;
+        DeleteClassName = "";
+        StateHasChanged();
+    }
+
+    private async void ConfirmDeleteClass()
+    {
+        if (!DeleteClassId.HasValue)
+            return;
+        ShowDeleteClassModal = false;
+
+        // Panggil API DELETE classes/delete
+        var request = new HttpRequestMessage(HttpMethod.Delete, APIUrl.Endpoint($"classes/{DeleteClassId}"));
+        var response = await Http.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            ShowDeleteClassSuccessModal = true;
+            DeleteClassId = null;
+            DeleteClassName = "";
+            StateHasChanged();
+            await Task.Delay(2500);
+            ShowDeleteClassSuccessModal = false;
+            await LoadData();
+        }
+        else await JS.InvokeVoidAsync("alert", "Gagal menghapus kelas. Silakan coba lagi.");
     }
 }

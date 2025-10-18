@@ -128,7 +128,24 @@ namespace PKLPresenceWeb.Model
         public string fullname { get; set; }
         public string role { get; set; }
         public string email { get; set; }
-        private bool gender { get; set; }
+        public bool gender { get; set; }
+        public UserItem data { get; set; }
+    }
+
+    public class UserItem
+    {
+        public int id { get; set; }
+        public int mentorId { get; set; }
+        public int classId { get; set; }
+        public string fullname { get; set; }
+        public string nip { get; set; }
+        public string nis { get; set; }
+        public string nisn { get; set; }
+        public string classroom { get; set; }
+        public string mentor { get; set; }
+        public string company { get; set; }
+        public bool isPKL { get; set; }
+
     }
 
     public class WalasItem

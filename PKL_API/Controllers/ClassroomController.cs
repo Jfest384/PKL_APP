@@ -128,6 +128,54 @@ namespace PKL_API.Controllers
         }
 
         [Authorize]
+        [HttpPut("{classId}")]
+        public async Task<IActionResult> EditClassroom(int classId, [FromBody] ClassroomEditDTO dto)
+        {
+            // Validasi classId
+            if (classId <= 0)
+                return BadRequest("classId is required and must be greater than 0.");
+
+            // Ambil user id dari claims
+            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "id");
+            if (userIdClaim == null)
+                return Unauthorized("User ID not found in token.");
+
+            int userId = int.Parse(userIdClaim.Value);
+
+            // Ambil role user
+            var userRole = await _db.Roles
+                .Where(r => _db.UserRoles.Any(ur => ur.User.id == userId && ur.Role.id == r.id))
+                .Select(r => r.id)
+                .FirstOrDefaultAsync();
+
+            if (userRole != 1 && userRole != 4)
+                return StatusCode(403, "Only admin and kepala jurusan can edit a class.");
+
+            // Cari classroom
+            var classroom = await _db.Classrooms.FindAsync(classId);
+            if (classroom == null)
+                return NotFound("Classroom not found.");
+
+            // Validasi input
+            if (string.IsNullOrWhiteSpace(dto.name))
+                return BadRequest("Class name is required.");
+
+            var waliKelas = await _db.WaliKelas.FindAsync(dto.WaliKelasid);
+            if (waliKelas == null)
+                return BadRequest("Wali Kelas not found.");
+
+            // Update data classroom
+            classroom.name = dto.name;
+            classroom.WaliKelasid = dto.WaliKelasid;
+            classroom.year = dto.year;
+            classroom.description = dto.description;
+
+            await _db.SaveChangesAsync();
+
+            return Ok(new { message = "Classroom updated successfully." });
+        }
+
+        [Authorize]
         [HttpDelete("{classId}")]
         public async Task<IActionResult> DeleteClassroom(int classId)
         {
