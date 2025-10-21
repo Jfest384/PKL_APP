@@ -521,14 +521,25 @@
                         }
                     </select>
                 </div>
-                <div class="col-12 col-md-auto d-flex align-items-center gap-2 mt-2 mt-md-0">
-                    <input type="date"
-                           class="form-control"
-                           style="w-100 w-md-auto"
-                           value="@selectedDate"
-                           min="@MinDate"
-                           max="@MaxDate"
-                           @onchange="OnDateSelected" />
+                <div class="col-12 col-md-auto">
+                    <div class="date-group-responsive d-flex align-items-center gap-1">
+                        <button class="chevron-date-btn"
+                                @onclick="PrevDate">
+                            <i class="bi bi-chevron-left"></i>
+                        </button>
+                        <input type="date"
+                               class="form-control"
+                               style="min-width: 120px;"
+                               value="@selectedDate"
+                               min="@MinDate"
+                               max="@MaxDate"
+                               @onchange="OnDateSelected" />
+                        <button class="chevron-date-btn"
+                                @onclick="NextDate"
+                                disabled="@IsTodaySelected">
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -2538,6 +2549,40 @@
         catch
         {
             IsLockLocationOn = false;
+        }
+    }
+
+    private bool IsTodaySelected =>
+    DateTime.TryParse(selectedDate, out var selDate) &&
+    selDate.Date == DateTime.Today;
+
+    private async void PrevDate()
+    {
+        if (DateTime.TryParse(selectedDate, out var selDate))
+        {
+            var prev = selDate.AddDays(-1);
+            if (prev >= DateTime.Parse(MinDate))
+            {
+                selectedDate = prev.ToString("yyyy-MM-dd");
+                CurrentPage = 1;
+                await LoadPresence(selectedDate);
+                StateHasChanged();
+            }
+        }
+    }
+
+    private async void NextDate()
+    {
+        if (DateTime.TryParse(selectedDate, out var selDate))
+        {
+            var next = selDate.AddDays(1);
+            if (next <= DateTime.Today)
+            {
+                selectedDate = next.ToString("yyyy-MM-dd");
+                CurrentPage = 1;
+                await LoadPresence(selectedDate);
+                StateHasChanged();
+            }
         }
     }
 }

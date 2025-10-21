@@ -1340,6 +1340,25 @@ input[type="radio"].presence-radio-input[b-yabyv8rrba] {
     .d-sm-none[b-yabyv8rrba] {
         display: block !important;
     }
+
+    .date-group-responsive[b-yabyv8rrba] {
+        width: 100%;
+        justify-content: space-between;
+        gap: 0;
+    }
+
+        .date-group-responsive .form-control[type="date"][b-yabyv8rrba] {
+            width: 100%;
+            min-width: 0;
+            margin-left: 4px;
+            margin-right: 4px;
+        }
+
+        .date-group-responsive .chevron-date-btn[b-yabyv8rrba] {
+            min-width: 32px;
+            min-height: 32px;
+            font-size: 1.1rem;
+        }
 }
 
 @media (min-width: 577px) {
@@ -1355,6 +1374,32 @@ input[type="radio"].presence-radio-input[b-yabyv8rrba] {
         display: none !important;
     }
 }
+
+.chevron-date-btn[b-yabyv8rrba] {
+    background: none;
+    border: none;
+    padding: 2px 8px;
+    min-width: 28px;
+    min-height: 28px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    color: #444;
+}
+
+    .chevron-date-btn:disabled[b-yabyv8rrba] {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .chevron-date-btn:active[b-yabyv8rrba],
+    .chevron-date-btn:focus[b-yabyv8rrba] {
+        outline: none;
+        background: none;
+        color: blue;
+    }
 /* /Pages/Clients/Login.razor.rz.scp.css */
 .login-page[b-wdph3wuyzt] {
     min-height: 100vh;
@@ -2850,6 +2895,25 @@ input[type="radio"].presence-radio-input[b-ku9a753df1] {
     .btn-text-sm-hide[b-ku9a753df1] {
         display: none !important;
     }
+
+    .date-group-responsive[b-ku9a753df1] {
+        width: 100%;
+        justify-content: space-between;
+        gap: 0;
+    }
+
+        .date-group-responsive .form-control[type="date"][b-ku9a753df1] {
+            width: 100%;
+            min-width: 0;
+            margin-left: 4px;
+            margin-right: 4px;
+        }
+
+        .date-group-responsive .chevron-date-btn[b-ku9a753df1] {
+            min-width: 32px;
+            min-height: 32px;
+            font-size: 1.1rem;
+        }
 }
 
 @media (min-width: 577px) {
@@ -2947,6 +3011,32 @@ input:checked + .slider[b-ku9a753df1] {
         text-align: center;
         padding: 0.4rem 0.5rem;
         font-size: 0.95rem;
+    }
+
+.chevron-date-btn[b-ku9a753df1] {
+    background: none;
+    border: none;
+    padding: 2px 8px;
+    min-width: 28px;
+    min-height: 28px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    color: #444;
+}
+
+    .chevron-date-btn:disabled[b-ku9a753df1] {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .chevron-date-btn:active[b-ku9a753df1],
+    .chevron-date-btn:focus[b-ku9a753df1] {
+        outline: none;
+        background: none;
+        color: blue;
     }
 /* /Pages/Clients/Profile.razor.rz.scp.css */
 /* Container halaman */
