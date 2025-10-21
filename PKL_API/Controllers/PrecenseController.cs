@@ -76,11 +76,10 @@ namespace PKL_API.Controllers
             }
 
             // --- Validasi lokasi PKL (radius 500 meter, support multi lokasi untuk studentId 53/55) ---
-            if (dto.PresenceTypeid == 1)
+            if (dto.PresenceTypeid == 1 && student.isLock)
             {
                 var statusLockLocation = await _db.StatusLockLocations.FirstOrDefaultAsync();
-                var studentLock = await _db.Students.FirstOrDefaultAsync();
-                if ((statusLockLocation != null && statusLockLocation.status) && (studentLock != null && studentLock.isLock))
+                if ((statusLockLocation != null && statusLockLocation.status))
                 {
                     // Khusus studentId 53/55: support 2 lokasi
                     if (student.id == 53 || student.id == 55)
