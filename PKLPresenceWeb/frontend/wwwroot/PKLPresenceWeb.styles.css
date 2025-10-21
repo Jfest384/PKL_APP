@@ -1376,8 +1376,8 @@ input[type="radio"].presence-radio-input[b-yabyv8rrba] {
 }
 
 .chevron-date-btn[b-yabyv8rrba] {
-    background: none;
-    border: none;
+    background: none !important;
+    border: none !important;
     padding: 2px 8px;
     min-width: 28px;
     min-height: 28px;
@@ -1396,8 +1396,8 @@ input[type="radio"].presence-radio-input[b-yabyv8rrba] {
 
     .chevron-date-btn:active[b-yabyv8rrba],
     .chevron-date-btn:focus[b-yabyv8rrba] {
-        outline: none;
-        background: none;
+        outline: none !important;
+        background: none !important;
         color: blue;
     }
 /* /Pages/Clients/Login.razor.rz.scp.css */
@@ -3014,8 +3014,8 @@ input:checked + .slider[b-ku9a753df1] {
     }
 
 .chevron-date-btn[b-ku9a753df1] {
-    background: none;
-    border: none;
+    background: none !important;
+    border: none !important;
     padding: 2px 8px;
     min-width: 28px;
     min-height: 28px;
@@ -3034,8 +3034,8 @@ input:checked + .slider[b-ku9a753df1] {
 
     .chevron-date-btn:active[b-ku9a753df1],
     .chevron-date-btn:focus[b-ku9a753df1] {
-        outline: none;
-        background: none;
+        outline: none !important;
+        background: none !important;
         color: blue;
     }
 /* /Pages/Clients/Profile.razor.rz.scp.css */

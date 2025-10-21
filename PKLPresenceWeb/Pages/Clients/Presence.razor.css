@@ -756,8 +756,8 @@ input:checked + .slider {
     }
 
 .chevron-date-btn {
-    background: none;
-    border: none;
+    background: none !important;
+    border: none !important;
     padding: 2px 8px;
     min-width: 28px;
     min-height: 28px;
@@ -776,7 +776,7 @@ input:checked + .slider {
 
     .chevron-date-btn:active,
     .chevron-date-btn:focus {
-        outline: none;
-        background: none;
+        outline: none !important;
+        background: none !important;
         color: blue;
     }
