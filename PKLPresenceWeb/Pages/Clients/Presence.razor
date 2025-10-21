@@ -861,7 +861,7 @@
                     {
                         <button class="btn btn-link"
                                 @onclick="ShowNextPresence"
-                                disabled="@(SelectedPresenceIndex >= Presences.Where(p => !string.IsNullOrWhiteSpace(p.presence_type) && p.presence_type != "-").Count() - 1)">
+                                disabled="@(SelectedPresenceIndex >= Presences?.Where(p => !string.IsNullOrWhiteSpace(p.presence_type) && p.presence_type != "-").Count() - 1)">
                             <i class="bi bi-chevron-right"></i>
                         </button>
                     }
@@ -1293,7 +1293,7 @@
     private bool ShowPresenceSuccess = false;
     private bool ShowFeedbackSuccess = false;
 
-    private bool IsLockLocationOn = false;
+    private bool IsLockLocationOn = true;
     private string SliderColor => IsLockLocationOn ? "#14BD2D" : "#ccc";
     private bool ShowLockLocationSuccess = false;
     private string LockLocationSuccessMessage = "";
@@ -1523,6 +1523,7 @@
             await LoadPresenceTypes();
             await LoadPresence();
             await LoadMentors();
+            await LoadLockLocationStatusAsync();
         }
     }
 
@@ -1661,6 +1662,8 @@
 
     async void ShowFeedback(PresenceItem item)
     {
+        var list = Presences.Where(p => !string.IsNullOrWhiteSpace(p.presence_type) && p.presence_type != "-").ToList();
+        SelectedPresenceIndex = list.FindIndex(p => p.id_presence == item.id_presence);
         SelectedPresenceDetail = item;
         ModalTitle = "Give Feedback";
         ShowFeedbackModal = true;
@@ -2518,6 +2521,23 @@
         else
         {
             await JS.InvokeVoidAsync("alert", "Gagal mengunduh file presensi.");
+        }
+    }
+
+    private async Task LoadLockLocationStatusAsync()
+    {
+        try
+        {
+            var response = await Http.GetAsync(APIUrl.Endpoint("assign/status-lock-location"));
+            if (response.IsSuccessStatusCode)
+            {
+                var text = await response.Content.ReadAsStringAsync();
+                IsLockLocationOn = text.Trim().Equals("true", StringComparison.OrdinalIgnoreCase);
+            }
+        }
+        catch
+        {
+            IsLockLocationOn = false;
         }
     }
 }

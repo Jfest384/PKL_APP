@@ -553,7 +553,7 @@
         IsLoading = true;
         StateHasChanged();
         var studentId = HistoryState.StudentId;
-        var url = PKLPresenceWeb.Model.APIUrl.Endpoint($"repots/history-reports?studentId={studentId}&page={ReportPage}");
+        var url = PKLPresenceWeb.Model.APIUrl.Endpoint($"reports/history-reports?studentId={studentId}&page={ReportPage}");
         ReportHistory = await Http.GetFromJsonAsync<ReportHistoryResponse>(url);
         IsLoading = false;
         StateHasChanged();
@@ -590,7 +590,7 @@
 
         if (!string.IsNullOrWhiteSpace(id))
         {
-            var url = PKLPresenceWeb.Model.APIUrl.Endpoint($"repots/preview/{id}");
+            var url = PKLPresenceWeb.Model.APIUrl.Endpoint($"reports/preview/{id}");
             await JS.InvokeVoidAsync("window.open", url, "_blank");
         }
         else

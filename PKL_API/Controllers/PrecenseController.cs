@@ -79,7 +79,8 @@ namespace PKL_API.Controllers
             if (dto.PresenceTypeid == 1)
             {
                 var statusLockLocation = await _db.StatusLockLocations.FirstOrDefaultAsync();
-                if (statusLockLocation != null && statusLockLocation.status)
+                var studentLock = await _db.Students.FirstOrDefaultAsync();
+                if ((statusLockLocation != null && statusLockLocation.status) && (studentLock != null && studentLock.isLock))
                 {
                     // Khusus studentId 53/55: support 2 lokasi
                     if (student.id == 53 || student.id == 55)
@@ -984,7 +985,7 @@ namespace PKL_API.Controllers
                 checkSymbol = "✔️";
             else if (detail == null)
                 checkSymbol = "❌";
-            else if (typeId == 1)
+            else if (typeId == 1 && typeId == 5)
                 checkSymbol = !string.IsNullOrWhiteSpace(detail.daily_report) ? "✔️" : "❌";
             else if (typeId == 2)
             {
