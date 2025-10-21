@@ -985,7 +985,7 @@ namespace PKL_API.Controllers
                 checkSymbol = "✔️";
             else if (detail == null)
                 checkSymbol = "❌";
-            else if (typeId == 1 && typeId == 5)
+            else if (typeId == 1 || typeId == 5)
                 checkSymbol = !string.IsNullOrWhiteSpace(detail.daily_report) ? "✔️" : "❌";
             else if (typeId == 2)
             {
