@@ -13,12 +13,12 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddDbContext<PklContext>(opt =>
 {
-    opt.UseSqlServer("Data Source=localhost\\SQLEXPRESS;Initial Catalog=PKL_APP_TEST;Integrated Security=True;Trust Server Certificate=True");
+    opt.UseSqlServer("Data Source=PRESENSI\\SQLEXPRESS;Initial Catalog=PKL_APP_TEST;Integrated Security=True;Trust Server Certificate=True");
 });
 
 builder.Services.AddHangfire(config =>
 {
-    config.UseSqlServerStorage("Data Source=localhost\\SQLEXPRESS;Initial Catalog=PKL_APP_TEST;Integrated Security=True;Trust Server Certificate=True");
+    config.UseSqlServerStorage("Data Source=PRESENSI\\SQLEXPRESS;Initial Catalog=PKL_APP_TEST;Integrated Security=True;Trust Server Certificate=True");
 });
 builder.Services.AddHangfireServer();
 
@@ -173,7 +173,7 @@ app.MapPost("/waha/{**path}", async (HttpContext context, HttpClient http) =>
 
 app.UseHangfireDashboard("/api/hangfire", new DashboardOptions
 {
-    Authorization = new[] { new RoleBasedAuthorizationFilter("Admin", "Kepala Jurusan") }
+    //Authorization = new[] { new RoleBasedAuthorizationFilter("Admin", "Kepala Jurusan") }
 });
 
 
