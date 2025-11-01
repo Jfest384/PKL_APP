@@ -9,7 +9,7 @@ using System.Text;
 
 namespace PKL_API.Controllers
 {
-    [Route("api/me")]
+    [Route("me")]
     [ApiController]
     public class MeController : ControllerBase
     {
@@ -40,10 +40,7 @@ namespace PKL_API.Controllers
                 .Include(u => u.Teachers)
                 .FirstOrDefault(q => q.id == selectedUserId);
 
-            if (selectedUser == null)
-            {
-                return NotFound("User no found");
-            }
+            if (selectedUser == null) return NotFound("User no found");
 
             // Ambil semua role user
             var userRoles = selectedUser.UserRoles.Select(ur => ur.Role.name).ToList();
@@ -53,12 +50,12 @@ namespace PKL_API.Controllers
 
             if (selectedUser.UserRoles.Any(ur => ur.Role.id == 2))
             {
-                // Tampilkan semua data student, ganti id_class, id_department, id_mentor, id_company menjadi nama
                 var students = _db.Students
                     .Include(s => s.User)
                     .Include(s => s.Classroom)
                     .Include(s => s.Mentor).ThenInclude(m => m.User)
                     .Include(s => s.Company)
+                    .Include(s => s.StudentValidation)
                     .Where(s => s.Userid == selectedUserId)
                     .Select(s => new
                     {
@@ -69,7 +66,7 @@ namespace PKL_API.Controllers
                         classroom = s.Classroom != null ? s.Classroom.name : "-",
                         mentor = s.Mentor != null && s.Mentor.User != null ? s.Mentor.User.fullname : "-",
                         company = s.Company != null ? s.Company.name : "-",
-                        s.isPKL
+                        s.StudentValidation.isPKL
                     })
                     .FirstOrDefault();
                 extraData = students;

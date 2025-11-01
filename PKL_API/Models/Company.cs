@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace PKL_API.Models
 {
@@ -12,6 +13,13 @@ namespace PKL_API.Models
         public string? address { get; set; }
         [StringLength(20)]
         public string? phone { get; set; }
-        public required ICollection<Student> Students { get; set; }
+
+        [Column(TypeName = "decimal(10,7)")]
+        public decimal? lat { get; set; }
+
+        [Column("long", TypeName = "decimal(10,7)")]
+        public decimal? longitude { get; set; }
+
+        public ICollection<Student>? Students { get; set; }
     }
 }

@@ -7,7 +7,7 @@ using PKL_API.Models.DTO;
 
 namespace PKL_API.Controllers
 {
-    [Route("api/reports")]
+    [Route("reports")]
     [ApiController]
     public class ReportController : ControllerBase
     {
@@ -41,9 +41,10 @@ namespace PKL_API.Controllers
                 .Include(s => s.User)
                 .Include(s => s.Classroom)
                 .Include(s => s.Company)
+                .Include(s => s.StudentValidation)
                 .FirstOrDefaultAsync(s => s.Userid == userId);
 
-            if (student == null || !(student.isPKL ?? false))
+            if (student == null || !(student.StudentValidation.isPKL))
                 return StatusCode(403, "Only active PKL students can submit reports.");
 
             if (string.IsNullOrWhiteSpace(dto.description))
@@ -116,6 +117,10 @@ namespace PKL_API.Controllers
                 WeekStartDate = weekStartDate,
                 CreatedAt = now
             });
+
+            student.StudentValidation.isReport = true;
+            student.StudentValidation.update_daily = DateTime.Now;
+            _db.StudentValidations.Update(student.StudentValidation);
             await _db.SaveChangesAsync();
 
             return Ok(new
@@ -283,14 +288,14 @@ namespace PKL_API.Controllers
                     .Include(s => s.User)
                     .Include(s => s.Classroom)
                     .Include(s => s.Company)
-                    .Where(s => s.Mentorid == mentor.id && s.isPKL == true);
+                    .Where(s => s.Mentorid == mentor.id && (s.StudentValidation.isPKL));
 
                 var waliKelasStudentsQuery = classroom != null
                     ? _db.Students
                         .Include(s => s.User)
                         .Include(s => s.Classroom)
                         .Include(s => s.Company)
-                        .Where(s => s.Classroomid == classroom.id && s.isPKL == true)
+                        .Where(s => s.Classroomid == classroom.id && (s.StudentValidation.isPKL))
                     : Enumerable.Empty<Student>().AsQueryable();
 
                 var studentsQuery = mentorStudentsQuery.Union(waliKelasStudentsQuery);
@@ -397,7 +402,7 @@ namespace PKL_API.Controllers
                     .Include(s => s.User)
                     .Include(s => s.Classroom)
                     .Include(s => s.Company)
-                    .Where(s => s.Mentorid == mentor.id && s.isPKL == true);
+                    .Where(s => s.Mentorid == mentor.id && (s.StudentValidation.isPKL));
 
                 if (classId.HasValue)
                     studentsQuery = studentsQuery.Where(s => s.Classroomid == classId.Value);
@@ -503,7 +508,7 @@ namespace PKL_API.Controllers
                     .Include(s => s.User)
                     .Include(s => s.Classroom)
                     .Include(s => s.Company)
-                    .Where(s => s.Classroomid == classroom.id && s.isPKL == true);
+                    .Where(s => s.Classroomid == classroom.id && (s.StudentValidation.isPKL));
 
                 if (classId.HasValue)
                     studentsQuery = studentsQuery.Where(s => s.Classroomid == classId.Value);
@@ -600,7 +605,7 @@ namespace PKL_API.Controllers
                     .Include(s => s.User)
                     .Include(s => s.Classroom)
                     .Include(s => s.Company)
-                    .Where(s => s.isPKL == true);
+                    .Where(s => s.StudentValidation.isPKL);
 
                 if (classId.HasValue)
                     studentsQuery = studentsQuery.Where(s => s.Classroomid == classId.Value);

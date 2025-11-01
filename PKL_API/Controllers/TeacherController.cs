@@ -6,7 +6,7 @@ using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 namespace PKL_API.Controllers
 {
-    [Route("api/teachers")]
+    [Route("teachers")]
     [ApiController]
     public class TeacherController : ControllerBase
     {

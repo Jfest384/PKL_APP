@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace PKLPresenceWeb.Model
 {
@@ -156,6 +157,15 @@ namespace PKLPresenceWeb.Model
         public int teacherid { get; set; }
     }
 
+    public class CompanyListResponse
+    {
+        public int page { get; set; }
+        public int pageSize { get; set; }
+        public int totalItems { get; set; }
+        public int totalPages { get; set; }
+        public List<CompanyItem> companies { get; set; } = new();
+    }
+
     public class CompanyItem
     {
         public int id { get; set; }
@@ -184,5 +194,86 @@ namespace PKLPresenceWeb.Model
         public int studentId { get; set; }
         public bool? isPKL { get; set; }
         public int? idClass { get; set; }
+    }
+
+    public class WahaSession
+    {
+        public string name { get; set; }
+        public string status { get; set; }
+        public int? config { get; set; }
+        public MeInfo me { get; set; }
+        public EngineInfo engine { get; set; }
+    }
+
+    public class MeInfo
+    {
+        public string id { get; set; }
+        public string pushName { get; set; }
+    }
+
+    public class EngineInfo
+    {
+        public string engine { get; set; }
+        public string WWebVersion { get; set; }
+        public string state { get; set; }
+    }
+
+    public class DefaultChatItem
+    {
+        [JsonPropertyName("id")]
+        public int Id { get; set; }
+
+        [JsonPropertyName("serviceId")]
+        public int ServiceId { get; set; }
+
+        [JsonPropertyName("service_name")]
+        public string ServiceName { get; set; } = string.Empty;
+
+        [JsonPropertyName("contactId")]
+        public List<int> ContactId { get; set; } = new();
+
+        [JsonPropertyName("id_chat")]
+        public List<string> IdChat { get; set; } = new();
+
+        [JsonPropertyName("chat_name")]
+        public List<string> ChatName { get; set; } = new();
+    }
+
+    public class DefaultChatDetail
+    {
+        public int contactId { get; set; }
+        public string chat_name { get; set; }
+        public string id_chat { get; set; }
+        public int serviceId { get; set; }
+        public string service_name { get; set; }
+        public ChatTemplate Template { get; set; } = new();
+    }
+
+    public class ChatTemplate
+    {
+        [JsonPropertyName("id")]
+        public int Id { get; set; }
+
+        [JsonPropertyName("name")]
+        public string Name { get; set; } = string.Empty;
+
+        [JsonPropertyName("content")]
+        public string Content { get; set; } = string.Empty;
+
+        [JsonPropertyName("chatServices")]
+        public object? ChatServices { get; set; }
+    }
+
+    public class ChatServiceItem
+    {
+        public int id { get; set; }
+        public string service_name { get; set; }
+    }
+
+    public class ChatContactItem
+    {
+        public int id { get; set; }
+        public string id_chat { get; set; }
+        public string chat_name { get; set; }
     }
 }

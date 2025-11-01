@@ -28,6 +28,11 @@ namespace PKL_API
         public DbSet<PresenceFeedback> PresenceFeedbacks { get; set; }
         public DbSet<ReportFeedback> ReportFeedbacks { get; set; }
         public DbSet<StatusLockLocation> StatusLockLocations { get; set; }
+        public DbSet<StudentValidation> StudentValidations { get; set; }
+        public DbSet<ChatService> ChatServices { get; set; }
+        public DbSet<DefaultChat> DefaultChats { get; set; }
+        public DbSet<ChatContact> ChatContacts { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

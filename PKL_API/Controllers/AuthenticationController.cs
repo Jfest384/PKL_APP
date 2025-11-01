@@ -9,7 +9,7 @@ using System.Text;
 
 namespace PKL_API.Controllers
 {
-    [Route("api/authentication")]
+    [Route("authentication")]
     [ApiController]
     public class AuthenticationController : ControllerBase
     {

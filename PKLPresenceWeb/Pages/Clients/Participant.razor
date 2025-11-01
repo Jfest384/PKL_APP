@@ -26,16 +26,40 @@
     </div>
 
     <div class="content-section">
-        <ul class="nav nav-tabs mb-3 d-flex flex-row justify-content-between flex-nowrap">
-            @foreach (var tab in VisibleTabs)
-            {
-                <li class="nav-item flex-fill text-center">
-                    <button class="nav-link @(CurrentTab == tab ? "active fw-bold" : "")" style="width:100%;" @onclick="() => ChangeTab(tab)">@tab</button>
-                </li>
-            }
-        </ul>
+        @if ((UserRole == "Admin" || UserRole == "Kepala Jurusan"))
+        {
+            <div class="d-none d-sm-block">
+                <ul class="nav nav-tabs mb-3 d-flex flex-row justify-content-between flex-nowrap">
+                    @foreach (var tab in VisibleTabs)
+                    {
+                        <li class="nav-item flex-fill text-center">
+                            <button class="nav-link @(CurrentTab == tab ? "active fw-bold" : "")" style="width:100%;" @onclick="() => ChangeTab(tab)">@tab</button>
+                        </li>
+                    }
+                </ul>
+            </div>
+            <div class="d-block d-sm-none mb-3">
+                <select class="form-select tab-dropdown-fill" @onchange="OnTabDropdownChanged" value="@CurrentTab">
+                    @foreach (var tab in VisibleTabs)
+                    {
+                        <option value="@tab">@tab</option>
+                    }
+                </select>
+            </div>
+        }
+        else
+        {
+            <ul class="nav nav-tabs mb-3 d-flex flex-row justify-content-between flex-nowrap">
+                @foreach (var tab in VisibleTabs)
+                {
+                    <li class="nav-item flex-fill text-center">
+                        <button class="nav-link @(CurrentTab == tab ? "active fw-bold" : "")" style="width:100%;" @onclick="() => ChangeTab(tab)">@tab</button>
+                    </li>
+                }
+            </ul>
+        }
 
-        @if (UserRole != "Student" && CurrentTab != "Pembimbing PKL" && CurrentTab != "Manajemen Kelas")
+        @if (UserRole != "Student" && CurrentTab != "Pembimbing PKL" && CurrentTab != "Manajemen Kelas" && CurrentTab != "Daftar PT" && CurrentTab != "Message")
         {
             <div class="row g-2 mb-3 align-items-center">
                 <div class="col">
@@ -78,7 +102,7 @@
                             <button class="btn btn-success" style="width:48px;" @onclick="() => ShowAddStudentModal = true">
                                 <i class="bi bi-plus-lg"></i>
                             </button>
-                            <button class="btn btn-danger" style="width:48px;">
+                            <button class="btn btn-danger" style="width:48px;" @onclick="OnDeleteStudentTKJClicked">
                                 <i class="bi bi-trash"></i>
                             </button>
                         </div>
@@ -113,7 +137,21 @@
                 </div>
                 <div class="col-auto ms-auto">
                     <button class="btn btn-primary w-200" @onclick="OnAddClassClicked">
-                        <i class="bi bi-plus-lg me-1"></i> Tambah Kelas
+                        <i class="bi bi-plus-lg me-1"></i> Kelas
+                    </button>
+                </div>
+            </div>
+        }
+
+        @if (CurrentTab == "Daftar PT")
+        {
+            <div class="row g-2 align-items-center mb-3">
+                <div class="col">
+                    <input class="form-control search-class-input" placeholder="Nama PT..." @bind="SearchText" @oninput="OnSearchChanged" />
+                </div>
+                <div class="col-auto ms-auto">
+                    <button class="btn btn-primary w-200">
+                        <i class="bi bi-plus-lg me-1"></i> Company
                     </button>
                 </div>
             </div>
@@ -133,6 +171,139 @@
             </div>
         }
 
+        @if (CurrentTab == "Message")
+        {
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <div class="section-title">Whatsapp Management</div>
+                <button class="btn btn-sm btn-warning p-2" style="min-height: 30px; min-width: 30px;" @onclick="OnSendReminderClicked">
+                    <i class="bi bi-bell mx-1"></i>
+                    <span class="message-action-btn-text me-1">Send Reminder</span>
+                </button>
+                @* <button class="btn btn-sm btn-success me-1">
+                    <i class="bi bi-info-circle"></i>
+                    <span class="message-action-btn-text">Test</span>
+                </button> *@
+            </div>
+            <div class="student-detail-card mb-4">
+                <div class="student-detail-header">WAHA Session</div>
+                @if (WahaSession == null)
+                {
+                    <p class="text-muted">WAHA session belum tersedia.</p>
+                }
+                else
+                {
+                    <div class="student-detail-body">
+                        <div class="student-detail-col student-detail-col-left">
+                            <div class="student-detail-row">
+                                <label class="student-detail-label">Name</label>
+                                <input class="student-detail-input" value="@WahaSession?.name" readonly />
+                            </div>
+                            <div class="student-detail-row">
+                                <label class="student-detail-label">Status</label>
+                                <input class="student-detail-input fw-bold" style="color: forestgreen" value="@WahaSession?.status" readonly />
+                            </div>
+                            <div class="student-detail-row">
+                                <label class="student-detail-label">Config</label>
+                                <input class="student-detail-input"
+                                       value="@(WahaSession?.config?.ToString() ?? "-")" readonly />
+                            </div>
+                            <div class="student-detail-row">
+                                <label class="student-detail-label">Me (id)</label>
+                                <input class="student-detail-input" value="@WahaSession?.me.id" readonly />
+                            </div>
+                        </div>
+                        <div class="student-detail-col student-detail-col-right">
+                            <div class="student-detail-row">
+                                <label class="student-detail-label">Me (name)</label>
+                                <input class="student-detail-input" value="@WahaSession?.me.pushName" readonly />
+                            </div>
+                            <div class="student-detail-row">
+                                <label class="student-detail-label">Engine</label>
+                                <input class="student-detail-input" value="@WahaSession?.engine.engine" readonly />
+                            </div>
+                            <div class="student-detail-row">
+                                <label class="student-detail-label">WWebVersion</label>
+                                <input class="student-detail-input" value="@WahaSession?.engine.WWebVersion" readonly />
+                            </div>
+                            <div class="student-detail-row">
+                                <label class="student-detail-label">Engine State</label>
+                                <input class="student-detail-input fw-bold" style="color: forestgreen" value="@WahaSession?.engine.state" readonly />
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <div class="student-detail-card mb-4">
+                <div class="student-detail-header d-flex justify-content-between align-items-center">
+                    <span>Default Chat</span>
+                    <button class="btn btn-sm btn-outline-primary" @onclick="OpenDefaultChatSettingsModal">
+                        <i class="bi bi-gear"></i> Settings
+                    </button>
+                </div>
+                <div class="student-detail-body">
+                    @if (IsLoadingDefaultChats)
+                    {
+                        <div class="text-center my-3">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    }
+                    else if (DefaultChats.Count == 0)
+                    {
+                        <div class="text-center text-muted">Tidak ada data Default Chat.</div>
+                    }
+                    else
+                    {
+                        <div class="scrollable-x">
+                            <table class="table table-bordered message">
+                                <thead>
+                                    <tr>
+                                        <th class="text-center">Service</th>
+                                        <th class="text-center">Chat ID</th>
+                                        <th class="text-center">Chat Name</th>
+                                        <th class="text-center">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @for (int i = 0; i < DefaultChats.Count; i++)
+                                    {
+                                        var chat = DefaultChats[i];
+                                        <tr>
+                                            <td class="text-center">@chat.ServiceName</td>
+                                            <td>
+                                                @string.Join(", ", chat.IdChat)
+                                            </td>
+                                            <td>
+                                                @string.Join(", ", chat.ChatName)
+                                            </td>
+                                            <td class="text-center">
+                                                <button class="btn btn-sm btn-success me-1"
+                                                        @onclick="() => SendTestTemplateAsync(chat.IdChat.FirstOrDefault())"
+                                                        disabled="@IsSendingReminder">
+                                                    <i class="bi bi-info-circle"></i>
+                                                    <span class="message-action-btn-text ms-1">Test</span>
+                                                </button>
+                                                <button class="btn btn-sm btn-warning me-1" @onclick="() => OnEditDefaultChat(chat)">
+                                                    <i class="bi bi-pencil"></i>
+                                                    <span class="message-action-btn-text ms-1">Edit</span>
+                                                </button>
+                                                <button class="btn btn-sm btn-danger" @onclick="() => OnClearDefaultChat(chat)">
+                                                    <i class="bi bi-trash"></i>
+                                                    <span class="message-action-btn-text ms-1">Clear</span>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
         @if (IsLoading)
         {
             <div class="text-center my-5">
@@ -141,7 +312,7 @@
                 </div>
             </div>
         }
-        else
+        else if (CurrentTab != "Message")
         {
             <div class="scrollable-x">
                 <table class="table table-bordered @GetTableCode()">
@@ -161,6 +332,7 @@
                                 else if (CurrentTab == "Pembimbing PKL" && (header == "Nama" || header == "NIP")) sortable = true;
                                 else if (CurrentTab == "Siswa PKL" && (header == "NIS" || header == "Nama" || header == "Kelas" || header == "Pembimbing" || header == "Tempat PKL")) sortable = true;
                                 else if (CurrentTab == "Manajemen Kelas" && (header == "Kelas" || header == "Total Siswa" || header == "Wali Kelas" || header == "Tahun")) sortable = true;
+								else if (CurrentTab == "Daftar PT" && (header == "Nama")) sortable = true;
 
                                 <th class="text-center @(sortable ? "sortable" : "")"
                                     @onclick="sortable ? (() => SortBy(header)) : null"
@@ -326,26 +498,40 @@
                                         <td>@item[3]</td>
                                         <td>@item[4]</td>
                                         <td>@item[5]</td>
-                                        @if (UserRole == "Admin" || UserRole == "Kepala Jurusan")
-                                        {
-                                            <td>
-                                                <div class="d-flex gap-2 justify-content-center">
-                                                    <button class="btn btn-sm btn-success" @onclick="() => OnAssignClassToStudents(int.Parse(item[0]), item[1])">
-                                                        <i class="bi bi-person-plus"></i>
-                                                        <span class="btn-text-sm-hide ms-1">Siswa</span>
-                                                    </button>
-                                                    <button class="btn btn-sm btn-danger" @onclick="() => OnDeleteClassClicked(item)">
-                                                        <i class="bi bi-trash"></i>
-                                                        <span class="btn-text-sm-hide ms-1">Kelas</span>
-                                                    </button>
-                                                    <button class="btn btn-sm btn-warning" @onclick="() => OnEditClassClicked(Classrooms.FirstOrDefault(c => c.id == int.Parse(item[0])))">
-                                                        <i class="bi bi-pencil"></i>
-                                                        <span class="btn-text-sm-hide ms-1">Edit</span>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        }
+                                        <td>
+                                            <div class="d-flex gap-2 justify-content-center">
+                                                <button class="btn btn-sm btn-success" @onclick="() => OnAssignClassToStudents(int.Parse(item[0]), item[1])">
+                                                    <i class="bi bi-person-plus"></i>
+                                                    <span class="btn-text-sm-hide ms-1">Siswa</span>
+                                                </button>
+                                                <button class="btn btn-sm btn-danger" @onclick="() => OnDeleteClassClicked(item)">
+                                                    <i class="bi bi-trash"></i>
+                                                    <span class="btn-text-sm-hide ms-1">Kelas</span>
+                                                </button>
+                                                <button class="btn btn-sm btn-warning" @onclick="() => OnEditClassClicked(Classrooms.FirstOrDefault(c => c.id == int.Parse(item[0])))">
+                                                    <i class="bi bi-pencil"></i>
+                                                    <span class="btn-text-sm-hide ms-1">Edit</span>
+                                                </button>
+                                            </div>
+                                        </td>
                                     }
+                                    else if (CurrentTab == "Daftar PT")
+                                    {
+                                        <td>@item[1]</td>
+                                        <td>@item[2]</td>
+                                        <td>
+                                            <div class="d-flex gap-2 justify-content-center">
+                                                <button class="btn btn-sm btn-danger" @onclick="() => OnDeleteCompanyClicked(item)">
+                                                    <i class="bi bi-trash"></i>
+                                                    <span class="btn-text-sm-hide ms-1">Delete</span>
+                                                </button>
+                                                <button class="btn btn-sm btn-warning">
+                                                    <i class="bi bi-pencil"></i>
+                                                    <span class="btn-text-sm-hide ms-1">Edit</span>
+                                                </button>
+                                            </div>
+                                        </td>
+									})
                                 </tr>
                             }
                         }
@@ -942,9 +1128,13 @@
             <Modal IsVisible="true">
                 <div class="text-center">
                     <i class="bi bi-trash fs-1 text-danger checkmark-animate"></i>
-                    <p class="fw-bold">Delete Mentor</p>
+                    <p class="fw-bold">
+                        @(DeleteMentorModalMode == "deleteMentor" ? "Delete Mentor" : "Clear Default Chat")
+                    </p>
                     <p>
-                        Apakah Anda yakin ingin menghapus <span class="fw-bold">@DeleteMentorName</span> dari data Pembimbing PKL?
+                        @(DeleteMentorModalMode == "deleteMentor"
+                                            ? (MarkupString)$"Apakah Anda yakin ingin menghapus <span class='fw-bold'>{DeleteMentorName}</span> dari data Pembimbing PKL?"
+                                            : (MarkupString)$"Apakah Anda yakin ingin mereset pengaturan Default Chat saat ini?")
                     </p>
                     <div class="d-flex justify-content-center gap-3 mt-4">
                         <button class="btn btn-danger px-4" @onclick="CancelDeleteMentor">No</button>
@@ -962,7 +1152,11 @@
                         <i class="bi bi-check-circle-fill" style="font-size:3rem; color:limegreen;"></i>
                     </span>
                     <p class="mt-2 fw-bold" style="font-size:20px">Success!</p>
-                    <p class="mt-1">Pembimbing PKL berhasil dihapus.</p>
+                    <p class="mt-1">
+                        @(DeleteMentorModalMode == "deleteMentor"
+                                            ? "Pembimbing PKL berhasil dihapus."
+                                            : "Pengaturan Default Chat berhasil direset.")
+                    </p>
                 </div>
             </Modal>
         }
@@ -972,9 +1166,13 @@
             <Modal IsVisible="true">
                 <div class="text-center">
                     <i class="bi bi-trash fs-1 text-danger checkmark-animate"></i>
-                    <p class="fw-bold">Delete Kelas</p>
+                    <p class="fw-bold">
+                        @(DeleteMode == "company" ? "Delete Company" : "Delete Kelas")
+                    </p>
                     <p>
-                        Apakah Anda yakin ingin menghapus <span class="fw-bold">@DeleteClassName</span> dari data Kelas?
+                        @(DeleteMode == "company"
+                            ? (MarkupString)$"Apakah Anda yakin ingin menghapus <span class='fw-bold'>{DeleteCompanyName}</span> dari data PT?"
+                            : (MarkupString)$"Apakah Anda yakin ingin menghapus <span class='fw-bold'>{DeleteClassName}</span> dari data Kelas?")
                     </p>
                     <div class="d-flex justify-content-center gap-3 mt-4">
                         <button class="btn btn-danger px-4" @onclick="CancelDeleteClass">No</button>
@@ -992,10 +1190,14 @@
                         <i class="bi bi-check-circle-fill" style="font-size:3rem; color:limegreen;"></i>
                     </span>
                     <p class="mt-2 fw-bold" style="font-size:20px">Success!</p>
-                    <p class="mt-1">Kelas berhasil dihapus.</p>
-                </div>
-            </Modal>
-        }
+                    <p class="mt-1">
+                        @(DeleteMode == "company"
+                                            ? "Company berhasil dihapus."
+                                            : "Kelas berhasil dihapus.")
+                </p>
+            </div>
+        </Modal>
+                }
 
         @if (ShowLockLocationSuccess)
         {
@@ -1006,6 +1208,132 @@
                     </span>
                     <p class="mt-2 fw-bold" style="font-size:20px">Success!</p>
                     <p class="mt-1">@LockLocationSuccessMessage</p>
+                </div>
+            </Modal>
+        }
+
+        @if (ShowDefaultChatSettingsModal)
+        {
+            <Modal IsVisible="true" Title="Default Chat Settings">
+                <div class="modal-scrollable-content">
+                    <div class="mb-3 mt-1 mx-1">
+                        <label class="form-label text-start d-block">Service</label>
+                        <select class="form-select"
+                                @bind="SelectedServiceId"
+                                disabled="@(DefaultChatModalMode == "edit")">
+                            <option value="">Pilih Service</option>
+                            @foreach (var service in ChatServices)
+                            {
+                                <option value="@service.id">@service.service_name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-start d-block">Default Chat</label>
+                        <div class="dropdown" style="width:100%;">
+                            <div class="form-control d-flex flex-wrap align-items-center" style="min-height:48px; cursor:pointer;" @onclick="ToggleContactDropdown">
+                                @foreach (var contact in SelectedContacts)
+                                {
+                                    <span class="badge bg-primary me-1 mb-1">
+                                        @contact.chat_name
+                                        <button type="button" class="btn btn-sm btn-link text-white p-0 ms-1" @onclick:stopPropagation="true" @onclick="() => RemoveContact(contact)">
+                                            <i class="bi bi-x"></i>
+                                        </button>
+                                    </span>
+                                }
+                                <input class="border-0 flex-grow-1" style="min-width:120px; outline:none;" placeholder="Search..." @bind="ContactSearchText" @oninput="OnContactSearchChanged" @onfocus="() => ShowContactDropdown = true" />
+                                <span class="ms-auto"><i class="bi bi-chevron-down"></i></span>
+                            </div>
+                            @if (ShowContactDropdown)
+                            {
+                                <div class="dropdown-menu show w-100 mt-1" style="max-height:180px;overflow-y:auto;position:relative;">
+                                    @if (FilteredContacts.Count == 0)
+                                    {
+                                        <div class="dropdown-item text-muted">Tidak ada chat ditemukan.</div>
+                                    }
+                                    else
+                                    {
+                                        @foreach (var contact in FilteredContacts)
+                                        {
+                                            <div class="dropdown-item" style="cursor:pointer;" @onclick="() => AddContact(contact)">
+                                                <span>@contact.chat_name</span>
+                                            </div>
+                                        }
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-center gap-3 mt-3">
+                    <button class="btn btn-danger px-4" @onclick="CancelDefaultChatSettings">Cancel</button>
+                    <button class="btn btn-success px-4"
+                            @onclick="ConfirmDefaultChatSettings"
+                            disabled="@(SelectedServiceId == null || SelectedContacts.Count == 0)">
+                        Confirm
+                    </button>
+                </div>
+            </Modal>
+        }
+
+        @if (ShowDefaultChatSuccessModal)
+        {
+            <Modal IsVisible="true">
+                <div class="text-center">
+                    <span class="checkmark-animate">
+                        <i class="bi bi-check-circle-fill" style="font-size:3rem; color:limegreen;"></i>
+                    </span>
+                    <p class="mt-2 fw-bold" style="font-size:20px">Success!</p>
+                    <p class="mt-1">@DefaultChatSuccessText</p>
+                </div>
+            </Modal>
+        }
+
+        @if (ShowSendReminderModal)
+        {
+            <Modal IsVisible="true" Title="">
+                <div class="modal-scrollable-content px-1">
+                    <div class="d-flex flex-column align-items-center justify-content-center mb-4">
+                        <i class="bi bi-whatsapp" style="font-size:32px;color:#25D366;"></i>
+                        <span class="fw-bold mt-2" style="font-size:22px;">Send Reminder</span>
+                    </div>
+                    <div class="text-start fw-bold mb-2">Default Chat</div>
+                    <div class="d-flex align-items-center justify-content-center mb-4">
+                        <button class="btn btn-light" style="height:38px;width:38px;" @onclick="PrevReminderChat" disabled="@(CurrentReminderIndex == 0)">
+                            <i class="bi bi-chevron-left"></i>
+                        </button>
+                        <textarea class="form-control mx-2 text-center" style="width:220px;" rows="1" readonly>@CurrentReminderChatName</textarea>
+                        <button class="btn btn-light" style="height:38px;width:38px;" @onclick="NextReminderChat" disabled="@(CurrentReminderIndex == ReminderChatNamesList.Count - 1)">
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
+                    </div>
+                    <div class="text-start fw-bold mb-2">Message</div>
+                    <textarea class="form-control mb-3" rows="4" @bind="ReminderMessage"></textarea>
+                </div>
+                <div class="d-flex justify-content-center gap-3 mt-3">
+                    <button class="btn btn-danger px-4" @onclick="CancelSendReminder">Cancel</button>
+                    <button class="btn btn-success px-4 d-flex align-items-center" @onclick="SendReminderAsync" disabled="@IsSendingReminder">
+                        <i class="bi bi-whatsapp me-2"></i> Send Reminder
+                    </button>
+                </div>
+                @if (IsSendingReminder)
+                {
+                    <div class="text-center my-2">
+                        <span class="spinner-border text-success" role="status"></span>
+                    </div>
+                }
+            </Modal>
+        }
+
+        @if (ShowSendMessageSuccessModal)
+        {
+            <Modal IsVisible="true">
+                <div class="text-center">
+                    <span class="checkmark-animate">
+                        <i class="bi bi-check-circle-fill" style="font-size:3rem; color:limegreen;"></i>
+                    </span>
+                    <p class="mt-2 fw-bold" style="font-size:20px">Success!</p>
+                    <p class="mt-1">Pesan berhasil terkirim.</p>
                 </div>
             </Modal>
         }
@@ -1048,6 +1376,8 @@
     int? SelectedCompanyId = null;
     List<CompanyItem> Companies = new();
     bool IsLoadingCompanies = false;
+
+    private WahaSession? WahaSession;
 
     private bool ShowAddClassSuccessModal = false;
     private string AddClassSuccessText = "";
@@ -1293,6 +1623,8 @@
         var user = await Http.GetFromJsonAsync<UserResponse>(APIUrl.Endpoint("me"));
         UserRole = user?.role ?? "";
 
+        WahaSession = await Http.GetFromJsonAsync<WahaSession>(APIUrl.Endpoint("waha/sessions/default"));
+
         // ===== Ambil foto profile =====
         var photoRequest = new HttpRequestMessage(HttpMethod.Get, APIUrl.Endpoint("me/photo"));
         photoRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
@@ -1309,7 +1641,7 @@
         if (UserRole == "Admin" || UserRole == "Kepala Jurusan")
         {
             await LoadClasses();
-            VisibleTabs = new() { "Siswa TKJ", "Pembimbing PKL", "Siswa PKL", "Manajemen Kelas" };
+            VisibleTabs = new() { "Siswa TKJ", "Pembimbing PKL", "Siswa PKL", "Manajemen Kelas", "Daftar PT", "Message" };
         }
         else if (UserRole == "Student")
             VisibleTabs = new() { "Siswa PKL", "Pembimbing PKL" };
@@ -1322,6 +1654,12 @@
         CurrentTab = VisibleTabs.FirstOrDefault() ?? "";
         await LoadWalas();
         await LoadData();
+
+        if (CurrentTab == "Message")
+        {
+            await LoadDefaultChats();
+            await LoadDefaultChatDetails();
+        }
     }
 
     private async Task LoadClasses()
@@ -1392,6 +1730,15 @@
                 .GroupBy(s => s.classroomid)
                 .ToDictionary(g => g.Key, g => g.Count());
         }
+        else if (CurrentTab == "Daftar PT")
+        {
+            url = APIUrl.Endpoint($"data/companies?page={CurrentPage}&pageSize={PageSize}");
+            if (!string.IsNullOrWhiteSpace(SearchText)) url += $"&name={SearchText}";
+            var res = await Http.GetFromJsonAsync<CompanyListResponse>(url);
+            Companies = res?.companies ?? new();
+            int totalItems = res?.totalItems ?? Companies.Count;
+            TotalPages = (int)Math.Ceiling((double)totalItems / PageSize);
+        }
 
         IsLoading = false;
         StateHasChanged();
@@ -1413,6 +1760,12 @@
         SelectedSiswaPKLIds.Clear();
         AssignedStudents.Clear();
         await LoadData();
+
+        if (tab == "Message")
+        {
+            await LoadDefaultChats();
+            await LoadDefaultChatDetails();
+        }
     }
 
     private async Task ChangePage(int page)
@@ -1479,6 +1832,11 @@
             var source = IsSortingAllData ? CachedAllMentors : Mentors;
             return source.Select(m => new[] { m.id.ToString(), m.nip, m.fullname, string.Join(", ", m.classes) }).ToList();
         }
+        else if (CurrentTab == "Daftar PT")
+        {
+            var source = IsSortingAllData ? CachedAllCompanies : Companies;
+            return source.Select(t => new[] { t.id.ToString(), t.name, t.address }).ToList();
+        }
         return new();
     }
 
@@ -1489,6 +1847,7 @@
         if (CurrentTab == "Pembimbing PKL" && UserRole == "Student") return new() { "Nama", "Kelas Dibimbing" };
         if (CurrentTab == "Siswa PKL") return new() { "NIS", "Nama", "Kelas", "Pembimbing", "Tempat PKL" };
         if (CurrentTab == "Manajemen Kelas") return new() { "Kelas", "Total Siswa", "Wali Kelas", "Tahun", "Deskripsi" };
+        if (CurrentTab == "Daftar PT") return new() { "Nama", "Alamat" };
         return new();
     }
 
@@ -1564,9 +1923,12 @@
 
         try
         {
-            var result = await Http.GetFromJsonAsync<List<CompanyItem>>(APIUrl.Endpoint("data/companies"));
+            var result = await Http.GetFromJsonAsync<CompanyListResponse>(APIUrl.Endpoint("data/companies?page=1&pageSize=1000"));
             if (result != null)
-                Companies = result;
+            {
+                Companies = result.companies;
+                await JS.InvokeVoidAsync("console.log", $"Companies count: {Companies.Count}");
+            }
         }
         finally
         {
@@ -1637,9 +1999,9 @@
                 return "pembimbing-table";
         }
         else if (CurrentTab == "Manajemen Kelas")
-        {
             return "class";
-        }
+        else if (CurrentTab == "Daftar PT")
+            return "pt";
         return "";
     }
 
@@ -1744,6 +2106,22 @@
                 Mentors = CachedAllMentors;
             }
         }
+        else if (CurrentTab == "Daftar PT")
+        {
+            if (CachedAllCompanies.Count > 0 && LastStudentSearchText == SearchText)
+            {
+                Companies = CachedAllCompanies;
+            }
+            else
+            {
+                var url = APIUrl.Endpoint($"data/companies?page=1&pageSize=1000");
+                if (!string.IsNullOrWhiteSpace(SearchText)) url += $"&name={SearchText}";
+                var res = await Http.GetFromJsonAsync<CompanyListResponse>(url);
+                CachedAllCompanies = res?.companies ?? new();
+                Companies = CachedAllCompanies;
+                LastStudentSearchText = SearchText;
+            }
+        }
         StateHasChanged();
     }
 
@@ -1782,6 +2160,10 @@
             else if (SortColumn == "Wali Kelas") keySelector = row => row[3];
             else if (SortColumn == "Tahun") keySelector = row => row[4];
         }
+        else if (CurrentTab == "Daftar PT")
+        {
+            if (SortColumn == "Nama") keySelector = row => row[1];
+        }
 
         if (SortColumn == "NIS" || SortColumn == "Total Siswa")
         {
@@ -1810,6 +2192,7 @@
     private List<StudentPKLItem> CachedAllStudentPKLs = new();
     private List<MentorItem> CachedAllMentors = new();
     private List<ClassItem> CachedAllClassrooms = new();
+    private List<CompanyItem> CachedAllCompanies = new();
 
     private string LastStudentSearchText = "";
     private int? LastStudentClassId = null;
@@ -2302,12 +2685,18 @@
     private bool ShowDeleteMentorModal = false;
     private bool ShowDeleteMentorSuccessModal = false;
     private int? DeleteMentorId = null;
+    private int? DeleteDefaultChatId = null;
     private string DeleteMentorName = "";
+    private string DeleteMentorModalMode = "deleteMentor";
 
     private bool ShowDeleteClassModal = false;
     private bool ShowDeleteClassSuccessModal = false;
     private int? DeleteClassId = null;
     private string DeleteClassName = "";
+
+    private string DeleteMode = "class";
+    private int? DeleteCompanyId = null;
+    private string DeleteCompanyName = "";
 
     private void OnDeleteStudentTKJClicked()
     {
@@ -2370,7 +2759,7 @@
 
     private void OnDeleteMentorClicked(string[] mentorRow)
     {
-        // Ambil mentorId dan nama mentor dari row
+        DeleteMentorModalMode = "deleteMentor";
         DeleteMentorId = mentorRow.Length > 0 ? int.TryParse(mentorRow[0], out var id) ? id : (int?)null : null;
         DeleteMentorName = mentorRow.Length > 2 ? mentorRow[2] : "";
 
@@ -2381,38 +2770,72 @@
         StateHasChanged();
     }
 
+    private async Task OnClearDefaultChat(DefaultChatItem chat)
+    {
+        DeleteMentorModalMode = "deleteDefaultChat";
+        DeleteDefaultChatId = chat.ServiceId;
+        if (DeleteDefaultChatId == null)
+            return;
+        ShowDeleteMentorModal = true;
+        StateHasChanged();
+    }
+
     private void CancelDeleteMentor()
     {
         ShowDeleteMentorModal = false;
         DeleteMentorId = null;
         DeleteMentorName = "";
+        DeleteDefaultChatId = null;
         StateHasChanged();
     }
 
     private async void ConfirmDeleteMentor()
     {
-        if (!DeleteMentorId.HasValue)
-            return;
         ShowDeleteMentorModal = false;
 
-        // Panggil API DELETE mentors/delete
-        var request = new HttpRequestMessage(HttpMethod.Delete, APIUrl.Endpoint("mentors/delete"))
+        if (DeleteMentorModalMode == "deleteMentor")
         {
-            Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(DeleteMentorId.Value), System.Text.Encoding.UTF8, "application/json")
-        };
-        var response = await Http.SendAsync(request);
+            if (!DeleteMentorId.HasValue)
+                return;
 
-        if (response.IsSuccessStatusCode)
-        {
-            ShowDeleteMentorSuccessModal = true;
-            DeleteMentorId = null;
-            DeleteMentorName = "";
-            StateHasChanged();
-            await Task.Delay(2500);
-            ShowDeleteMentorSuccessModal = false;
-            await LoadData();
+            var request = new HttpRequestMessage(HttpMethod.Delete, APIUrl.Endpoint("mentors/delete"))
+            {
+                Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(DeleteMentorId.Value), System.Text.Encoding.UTF8, "application/json")
+            };
+            var response = await Http.SendAsync(request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                ShowDeleteMentorSuccessModal = true;
+                CancelDeleteMentor();
+                StateHasChanged();
+                await Task.Delay(2500);
+                ShowDeleteMentorSuccessModal = false;
+                await LoadData();
+            }
+            else await JS.InvokeVoidAsync("alert", "Gagal menghapus mentor. Silakan coba lagi.");
         }
-        else await JS.InvokeVoidAsync("alert", "Gagal menghapus mentor. Silakan coba lagi.");
+        else if (DeleteMentorModalMode == "deleteDefaultChat")
+        {
+            if (!DeleteDefaultChatId.HasValue)
+                return;
+            var request = new HttpRequestMessage(HttpMethod.Delete, APIUrl.Endpoint("data/default-chats/delete"))
+            {
+                Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(DeleteDefaultChatId.Value), System.Text.Encoding.UTF8, "application/json")
+			};
+            var response = await Http.SendAsync(request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                ShowDeleteMentorSuccessModal = true;
+                CancelDeleteMentor();
+                StateHasChanged();
+                await Task.Delay(2500);
+                ShowDeleteMentorSuccessModal = false;
+                await LoadDefaultChats();
+            }
+            else await JS.InvokeVoidAsync("alert", "Gagal menghapus Default Chat. Silakan coba lagi.");
+        }
     }
 
     private bool ShowLockLocationSuccess = false;
@@ -2455,13 +2878,18 @@
 
     private void OnDeleteClassClicked(string[] classRow)
     {
-        // Ambil mentorId dan nama mentor dari row
+        DeleteMode = "class";
         DeleteClassId = classRow.Length > 0 ? int.TryParse(classRow[0], out var id) ? id : (int?)null : null;
         DeleteClassName = classRow.Length > 1 ? classRow[1] : "";
+        ShowDeleteClassModal = true;
+        StateHasChanged();
+    }
 
-        if (DeleteClassId == null || string.IsNullOrWhiteSpace(DeleteClassName))
-            return;
-
+    private void OnDeleteCompanyClicked(string[] companyRow)
+    {
+        DeleteMode = "company";
+        DeleteCompanyId = companyRow.Length > 0 ? int.TryParse(companyRow[0], out var id) ? id : (int?)null : null;
+        DeleteCompanyName = companyRow.Length > 1 ? companyRow[1] : "";
         ShowDeleteClassModal = true;
         StateHasChanged();
     }
@@ -2471,29 +2899,392 @@
         ShowDeleteClassModal = false;
         DeleteClassId = null;
         DeleteClassName = "";
+        DeleteCompanyId = null;
+        DeleteCompanyName = "";
+        DeleteMode = "class";
         StateHasChanged();
     }
 
     private async void ConfirmDeleteClass()
     {
-        if (!DeleteClassId.HasValue)
-            return;
         ShowDeleteClassModal = false;
 
-        // Panggil API DELETE classes/delete
-        var request = new HttpRequestMessage(HttpMethod.Delete, APIUrl.Endpoint($"classes/{DeleteClassId}"));
-        var response = await Http.SendAsync(request);
+        if (DeleteMode == "company")
+        {
+            if (!DeleteCompanyId.HasValue)
+                return;
+
+            var request = new HttpRequestMessage(HttpMethod.Delete, APIUrl.Endpoint("data/companies/delete"))
+            {
+                Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(DeleteCompanyId.Value), System.Text.Encoding.UTF8, "application/json")
+            };
+            var response = await Http.SendAsync(request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                ShowDeleteClassSuccessModal = true;
+                DeleteCompanyId = null;
+                DeleteCompanyName = "";
+                StateHasChanged();
+                await Task.Delay(2500);
+                ShowDeleteClassSuccessModal = false;
+                await LoadData();
+            }
+            else await JS.InvokeVoidAsync("alert", "Gagal menghapus company. Silakan coba lagi.");
+        }
+        else // delete class
+        {
+            if (!DeleteClassId.HasValue)
+                return;
+
+            var request = new HttpRequestMessage(HttpMethod.Delete, APIUrl.Endpoint($"classes/{DeleteClassId}"));
+            var response = await Http.SendAsync(request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                ShowDeleteClassSuccessModal = true;
+                DeleteClassId = null;
+                DeleteClassName = "";
+                StateHasChanged();
+                await Task.Delay(2500);
+                ShowDeleteClassSuccessModal = false;
+                await LoadData();
+            }
+            else await JS.InvokeVoidAsync("alert", "Gagal menghapus kelas. Silakan coba lagi.");
+        }
+    }
+
+    private async void OnTabDropdownChanged(ChangeEventArgs e)
+    {
+        var selectedTab = e.Value?.ToString() ?? VisibleTabs.FirstOrDefault() ?? "";
+        await ChangeTab(selectedTab);
+    }
+
+    private List<DefaultChatItem> DefaultChats = new();
+    private bool IsLoadingDefaultChats = false;
+
+    private async Task LoadDefaultChats()
+    {
+        IsLoadingDefaultChats = true;
+        DefaultChats = await Http.GetFromJsonAsync<List<DefaultChatItem>>(APIUrl.Endpoint("data/default-chats")) ?? new();
+        IsLoadingDefaultChats = false;
+        StateHasChanged();
+    }
+
+    private List<DefaultChatDetail> DefaultChatDetails = new();
+    private async Task LoadDefaultChatDetails()
+    {
+        if (DefaultChats == null || DefaultChats.Count == 0)
+            return;
+
+        IsLoadingDefaultChats = true;
+        StateHasChanged();
+
+        try
+        {
+            // Ambil semua contactId unik dari DefaultChats
+            var contactIds = DefaultChats
+                .SelectMany(dc => dc.ContactId)
+                .Distinct()
+                .ToList();
+
+            var tasks = new List<Task<DefaultChatDetail>>();
+
+            // Jalankan request paralel (lebih cepat)
+            foreach (var contactId in contactIds)
+            {
+                var task = Http.GetFromJsonAsync<DefaultChatDetail>(
+                    APIUrl.Endpoint($"data/detail-default-chat?contactId={contactId}")
+                );
+                tasks.Add(task!);
+            }
+
+            // Tunggu semua request selesai
+            var results = await Task.WhenAll(tasks);
+
+            // Simpan hasil yang tidak null
+            DefaultChatDetails = results
+                .Where(r => r != null)
+                .ToList()!;
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"[ERROR] LoadDefaultChatDetails: {ex.Message}");
+        }
+        finally
+        {
+            IsLoadingDefaultChats = false;
+            StateHasChanged();
+        }
+    }
+
+    private async void OnEditDefaultChat(DefaultChatItem chat)
+    {
+        DefaultChatModalMode = "edit";
+        EditingDefaultChat = chat;
+        ShowDefaultChatSettingsModal = true;
+        SelectedServiceId = chat.ServiceId;
+        ContactSearchText = "";
+
+        ChatServices = await Http.GetFromJsonAsync<List<ChatServiceItem>>(APIUrl.Endpoint("data/chat-services")) ?? new();
+        ChatContacts = await Http.GetFromJsonAsync<List<ChatContactItem>>(APIUrl.Endpoint("data/chat-contacts")) ?? new();
+        SelectedContacts = ChatContacts.Where(c => chat.ContactId.Contains(c.id)).ToList();
+        StateHasChanged();
+    }
+
+    private bool ShowDefaultChatSettingsModal = false;
+    private bool ShowDefaultChatSuccessModal = false;
+    private List<ChatServiceItem> ChatServices = new();
+    private int? SelectedServiceId = null;
+    private List<ChatContactItem> ChatContacts = new();
+    private List<ChatContactItem> SelectedContacts = new();
+    private string ContactSearchText = "";
+    private string DefaultChatModalMode = "add";
+    private DefaultChatItem? EditingDefaultChat = null;
+    private string DefaultChatSuccessText = "Default Chat berhasil dibuat";
+
+    private async void OpenDefaultChatSettingsModal()
+    {
+        DefaultChatModalMode = "add";
+        EditingDefaultChat = null;
+        ShowDefaultChatSettingsModal = true;
+        SelectedServiceId = null;
+        SelectedContacts.Clear();
+        ContactSearchText = "";
+
+        ChatServices = await Http.GetFromJsonAsync<List<ChatServiceItem>>(APIUrl.Endpoint("data/chat-services")) ?? new();
+        ChatContacts = await Http.GetFromJsonAsync<List<ChatContactItem>>(APIUrl.Endpoint("data/chat-contacts")) ?? new();
+        StateHasChanged();
+    }
+
+    private void CancelDefaultChatSettings()
+    {
+        ShowDefaultChatSettingsModal = false;
+        SelectedServiceId = null;
+        SelectedContacts.Clear();
+        ContactSearchText = "";
+    }
+
+    private async void ConfirmDefaultChatSettings()
+    {
+        if (SelectedServiceId.HasValue && SelectedContacts.Count > 0)
+        {
+            var payload = new
+            {
+                chatServiceid = SelectedServiceId.Value,
+                chatContactid = SelectedContacts.Select(c => c.id).ToList()
+            };
+
+            HttpResponseMessage res;
+            if (DefaultChatModalMode == "add")
+            {
+                res = await Http.PostAsJsonAsync(APIUrl.Endpoint("data/default-chats/add"), payload);
+                DefaultChatSuccessText = "Default Chat berhasil dibuat.";
+            }
+            else // edit
+            {
+                res = await Http.PutAsJsonAsync(APIUrl.Endpoint($"data/default-chats/{EditingDefaultChat?.Id}"), payload);
+                DefaultChatSuccessText = "Default Chat berhasil diubah.";
+            }
+
+            if (res.IsSuccessStatusCode)
+            {
+                ShowDefaultChatSettingsModal = false;
+                ShowDefaultChatSuccessModal = true;
+                SelectedServiceId = null;
+                SelectedContacts.Clear();
+                ContactSearchText = "";
+                StateHasChanged();
+                await Task.Delay(2500);
+                ShowDefaultChatSuccessModal = false;
+                await LoadDefaultChats();
+                await LoadDefaultChatDetails();
+            }
+            else await JS.InvokeVoidAsync("alert", "Gagal menyimpan Default Chat. Silakan coba lagi.");
+        }
+    }
+
+    // --- Contact Multi-Select Logic ---
+    private void AddContact(ChatContactItem contact)
+    {
+        if (!SelectedContacts.Any(c => c.id == contact.id))
+            SelectedContacts.Add(contact);
+    }
+
+    private void RemoveContact(ChatContactItem contact)
+    {
+        SelectedContacts.RemoveAll(c => c.id == contact.id);
+    }
+
+    private List<ChatContactItem> FilteredContacts =>
+        string.IsNullOrWhiteSpace(ContactSearchText)
+            ? ChatContacts.Where(c => !SelectedContacts.Any(s => s.id == c.id)).ToList()
+            : ChatContacts.Where(c =>
+                !SelectedContacts.Any(s => s.id == c.id) &&
+                (c.chat_name?.Contains(ContactSearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (c.id_chat?.Contains(ContactSearchText, StringComparison.OrdinalIgnoreCase) ?? false)
+            ).ToList();
+
+    private bool ShowContactDropdown = false;
+    private void ToggleContactDropdown()
+    {
+        ShowContactDropdown = !ShowContactDropdown;
+    }
+
+    private async Task OnContactSearchChanged(ChangeEventArgs e)
+    {
+        ContactSearchText = e.Value?.ToString() ?? "";
+        ShowContactDropdown = true;
+        StateHasChanged();
+    }
+
+    // Tutup dropdown jika klik di luar
+    [Inject] private IJSRuntime JSRuntime { get; set; }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (ShowContactDropdown)
+            await JSRuntime.InvokeVoidAsync("window.addEventListener", "click", DotNetObjectReference.Create(this), "CloseContactDropdown");
+    }
+
+    [JSInvokable]
+    public void CloseContactDropdown()
+    {
+        ShowContactDropdown = false;
+        StateHasChanged();
+    }
+
+    private bool ShowSendReminderModal = false;
+    private bool ShowSendMessageSuccessModal = false;
+    private List<string> ReminderChatNamesList = new();
+    private List<string> ReminderChatIdsList = new();
+    private int CurrentReminderIndex = 0;
+    private string ReminderMessage = "";
+    private bool IsSendingReminder = false;
+    private string CurrentReminderChatName => ReminderChatNamesList.ElementAtOrDefault(CurrentReminderIndex) ?? "";
+    private string CurrentReminderChatId => ReminderChatIdsList.ElementAtOrDefault(CurrentReminderIndex) ?? "";
+
+    private async void OnSendReminderClicked()
+    {
+        ShowSendReminderModal = true;
+        ReminderChatNamesList.Clear();
+        ReminderChatIdsList.Clear();
+        CurrentReminderIndex = 0;
+
+        var response = DefaultChats;
+        if (response != null && response.Count > 0)
+        {
+            ReminderChatNamesList = response.SelectMany(x => x.ChatName).Distinct().ToList();
+            ReminderChatIdsList = response.SelectMany(x => x.IdChat).Distinct().ToList();
+
+            var chatId = ReminderChatIdsList.FirstOrDefault();
+            var detail = DefaultChatDetails.FirstOrDefault(d => d.id_chat == chatId);
+            ReminderMessage = detail?.Template?.Content ?? "";
+        }
+    }
+
+    private void PrevReminderChat()
+    {
+        if (CurrentReminderIndex > 0)
+        {
+            CurrentReminderIndex--;
+            UpdateReminderMessage();
+        }
+    }
+
+    private void NextReminderChat()
+    {
+        if (CurrentReminderIndex < ReminderChatNamesList.Count - 1)
+        {
+            CurrentReminderIndex++;
+            UpdateReminderMessage();
+        }
+    }
+
+    private void UpdateReminderMessage()
+    {
+        var chatId = CurrentReminderChatId;
+        var detail = DefaultChatDetails.FirstOrDefault(d => d.id_chat == chatId);
+        ReminderMessage = detail?.Template?.Content ?? "";
+    }
+
+    private void CancelSendReminder()
+    {
+        ShowSendReminderModal = false;
+        ReminderChatNamesList.Clear();
+        ReminderChatIdsList.Clear();
+        ReminderMessage = "";
+        CurrentReminderIndex = 0;
+        IsSendingReminder = false;
+    }
+
+    private async void SendReminderAsync()
+    {
+        if (ReminderChatIdsList.Count == 0 || string.IsNullOrWhiteSpace(ReminderMessage))
+            return;
+        IsSendingReminder = true;
+
+        var chatId = CurrentReminderChatId;
+        var payload = new
+        {
+            chatId = chatId,
+            reply_to = (string)null,
+            text = ReminderMessage,
+            linkPreview = true,
+            linkPreviewHighQuality = false,
+            session = "default"
+        };
+
+        var response = await Http.PostAsJsonAsync(APIUrl.Endpoint("waha/sendText"), payload);
+        IsSendingReminder = false;
+        ShowSendReminderModal = false;
+        ReminderChatNamesList.Clear();
+        ReminderChatIdsList.Clear();
+        ReminderMessage = "";
+        CurrentReminderIndex = 0;
+        StateHasChanged();
 
         if (response.IsSuccessStatusCode)
         {
-            ShowDeleteClassSuccessModal = true;
-            DeleteClassId = null;
-            DeleteClassName = "";
+            ShowSendMessageSuccessModal = true;
             StateHasChanged();
             await Task.Delay(2500);
-            ShowDeleteClassSuccessModal = false;
-            await LoadData();
+            ShowSendMessageSuccessModal = false;
+            StateHasChanged();
         }
-        else await JS.InvokeVoidAsync("alert", "Gagal menghapus kelas. Silakan coba lagi.");
+    }
+
+    private async Task SendTestTemplateAsync(string chatId)
+    {
+        if (string.IsNullOrWhiteSpace(chatId))
+        {
+            await JS.InvokeVoidAsync("alert", "Chat ID belum dipilih!");
+            return;
+        }
+        try
+        {
+            IsSendingReminder = true;
+            var payload = new
+            {
+                ChatId = chatId
+            };
+
+            var response = await Http.PostAsJsonAsync(APIUrl.Endpoint("data/default-chats/test-send"), payload);
+            if (response.IsSuccessStatusCode)
+            {
+                ShowSendMessageSuccessModal = true;
+                StateHasChanged();
+                await Task.Delay(2500);
+                ShowSendMessageSuccessModal = false;
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", $"Terjadi error:\n{ex.Message}");
+        }
+        finally
+        {
+            IsSendingReminder = false;
+        }
     }
 }

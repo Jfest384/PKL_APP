@@ -121,7 +121,7 @@
                                             </button>
                                             <button class="btn btn-sm btn-warning"
                                                     @onclick="() => ShowReportModal(item)"
-                                                    disabled="@(item.presence_type == "-" || GetPresenceTypeId(item) == 4 || item.isComplete != "❌")">
+                                                    disabled="@(item.presence_type == "-" || GetPresenceTypeId(item) == 4 || (item.isComplete != "❌" && !IsToday(item.date)))">
                                                 <i class="bi bi-pencil me-1"></i> Report
                                             </button>
                                         </div>
@@ -1904,17 +1904,35 @@
     Dictionary<string, string?> ReportPhotoPreviews = new();
     string ReportModalError = "";
     string ReportActivityInput = "";
+    private string ReportModalMode = "add";
 
     private void ShowReportModal(PresenceItem item)
     {
         ReportPresenceId = int.TryParse(item.id_presence, out var id) ? id : 0;
         ReportPresenceTypeId = GetPresenceTypeId(item);
         ReportPresenceTypeName = PresenceTypes.FirstOrDefault(x => x.id == ReportPresenceTypeId)?.name ?? "";
-        ReportTextInput = "";
-        ReportActivityInput = "";
         ReportPhotos.Clear();
         ReportPhotoPreviews.Clear();
         ReportModalError = "";
+
+        // Tentukan mode: add atau edit
+        if (!string.IsNullOrWhiteSpace(item.report) && item.report != "-" && (ReportPresenceTypeId == 1 || ReportPresenceTypeId == 5))
+        {
+            ReportModalMode = "edit";
+            ReportTextInput = item.report ?? "";
+        }
+        else if (ReportPresenceTypeId == 2 || ReportPresenceTypeId == 3)
+        {
+            ReportModalMode = "edit";
+            _ = LoadReportPhotoPreviewsAsync(item);
+        }
+        else
+        {
+            ReportModalMode = "add";
+            ReportTextInput = "";
+        }
+
+        ReportActivityInput = "";
         ShowReportModalFlag = true;
     }
 
@@ -1935,6 +1953,27 @@
         StateHasChanged();
     }
 
+    private async Task LoadReportPhotoPreviewsAsync(PresenceItem item)
+    {
+        try
+        {
+            var photos = await Http.GetFromJsonAsync<List<PresencePhotoResponse>>(APIUrl.Endpoint($"presence/{item.id_presence}/photos"));
+            if (photos != null)
+            {
+                foreach (var photo in photos)
+                {
+                    var field = MapPhotoTypeToField(photo.type);
+                    var apiBase = "https://presensi-test.smksabdev.my.id/";
+                    var base64 = await GetPhotoBase64Async($"{apiBase}{photo.url}");
+                    if (!string.IsNullOrEmpty(field) && !string.IsNullOrEmpty(base64))
+                        ReportPhotoPreviews[field] = base64;
+                }
+            }
+        }
+        catch { }
+        StateHasChanged();
+    }
+
     private void CancelReportModal()
     {
         ShowReportModalFlag = false;
@@ -1945,6 +1984,7 @@
         ReportPhotos.Clear();
         ReportPhotoPreviews.Clear();
         ReportModalError = "";
+        ReportModalMode = "add";
     }
 
     private async Task ConfirmReportModal()
@@ -2584,5 +2624,12 @@
                 StateHasChanged();
             }
         }
+    }
+
+    private bool IsToday(string date)
+    {
+        if (DateTime.TryParse(date, out var dt))
+            return dt.Date == DateTime.Today;
+        return false;
     }
 }

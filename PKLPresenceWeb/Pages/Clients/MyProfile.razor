@@ -161,8 +161,8 @@
                 nisnipFullname = $"{nis} - {fullname}";
 
                 await LoadClasses();
-                var companyResp = await Http.GetFromJsonAsync<List<CompanyItem>>(APIUrl.Endpoint("data/companies"));
-                companyList = companyResp ?? new();
+                var companyResp = await Http.GetFromJsonAsync<CompanyListResponse>(APIUrl.Endpoint("data/companies?page=1&pageSize=1000"));
+                companyList = companyResp?.companies ?? new();
 
                 selectedClassId = classList.FirstOrDefault(c => c.name == userData.classroom)?.id;
                 selectedCompanyId = companyList.FirstOrDefault(c => c.name == userData.company)?.id;
@@ -174,8 +174,8 @@
                 nisnipFullname = $"{nip} - {fullname}";
 
                 await LoadClasses();
-                var companyResp = await Http.GetFromJsonAsync<List<CompanyItem>>(APIUrl.Endpoint("data/companies"));
-                companyList = companyResp ?? new();
+                var companyResp = await Http.GetFromJsonAsync<CompanyListResponse>(APIUrl.Endpoint("data/companies?page=1&pageSize=1000"));
+                companyList = companyResp?.companies ?? new();
             }
 
             // Ambil foto profil seperti sebelumnya

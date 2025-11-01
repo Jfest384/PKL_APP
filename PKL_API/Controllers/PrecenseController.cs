@@ -9,7 +9,7 @@ using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 namespace PKL_API.Controllers
 {
-    [Route("api/presence")]
+    [Route("presence")]
     [ApiController]
     public class PrecenseController : ControllerBase
     {
@@ -43,6 +43,7 @@ namespace PKL_API.Controllers
             var student = await _db.Students
                 .Include(s => s.User)
                 .Include(s => s.Mentor)
+                .Include(s => s.StudentValidation)
                 .FirstOrDefaultAsync(s => s.Userid == userId);
             if (student == null)
                 return NotFound("Student not found");
@@ -76,7 +77,7 @@ namespace PKL_API.Controllers
             }
 
             // --- Validasi lokasi PKL (radius 500 meter, support multi lokasi untuk studentId 53/55) ---
-            if (dto.PresenceTypeid == 1 && student.isLock)
+            if (dto.PresenceTypeid == 1 && student.StudentValidation.isLock)
             {
                 var statusLockLocation = await _db.StatusLockLocations.FirstOrDefaultAsync();
                 if ((statusLockLocation != null && statusLockLocation.status))
@@ -242,7 +243,13 @@ namespace PKL_API.Controllers
                 Classroomid = student.Classroomid ?? throw new Exception("Student does not have a classroom assigned."),
             };
 
+            student.StudentValidation.isPresence = true;
+            if (dto.PresenceTypeid == 4)
+                student.StudentValidation.isDailyReport = true;
+            student.StudentValidation.update_daily = DateTime.Now;
+
             _db.Presences.Add(presence);
+            _db.StudentValidations.Update(student.StudentValidation);
             await _db.SaveChangesAsync();
 
             return Ok(new { message = "Presence submitted successfully" });
@@ -338,7 +345,9 @@ namespace PKL_API.Controllers
             if (presence == null)
                 return NotFound("Presence not found.");
 
-            var student = await _db.Students.FirstOrDefaultAsync(s => s.Userid == userId);
+            var student = await _db.Students
+                .Include(s => s.StudentValidation)
+                .FirstOrDefaultAsync(s => s.Userid == userId);
             if (student == null || presence.Studentid != student.id)
                 return StatusCode(403, "You are not allowed to edit this presence.");
 
@@ -409,6 +418,10 @@ namespace PKL_API.Controllers
                 presence.Detail.daily_report = dto.daily_report;
                 presence.Detail.update_at = DateOnly.FromDateTime(DateTime.Now);
             }
+
+            student.StudentValidation.isDailyReport = true;
+            student.StudentValidation.update_daily = DateTime.Now;
+
             await _db.SaveChangesAsync();
             return Ok(new { message = "Presence updated successfully" });
         }
@@ -499,6 +512,8 @@ namespace PKL_API.Controllers
                         .ThenInclude(s => s.Classroom!)
                     .Include(p => p.Student)
                         .ThenInclude(s => s.Mentor!)
+                    .Include(p => p.Student)
+                        .ThenInclude(s => s.StudentValidation!)
                     .Include(p => p.PresenceType)
                     .Include(p => p.Detail)
                     .Include(p => p.PresenceFeedback)
@@ -563,13 +578,15 @@ namespace PKL_API.Controllers
                 var mentorStudentsQuery = _db.Students
                     .Include(s => s.User)
                     .Include(s => s.Classroom)
-                    .Where(s => s.Mentorid == mentor.id && s.isPKL == true);
+                    .Include(s => s.StudentValidation)
+                    .Where(s => s.Mentorid == mentor.id && s.StudentValidation.isPKL == true);
 
                 var waliKelasStudentsQuery = classroom != null
                     ? _db.Students
                         .Include(s => s.User)
                         .Include(s => s.Classroom)
-                        .Where(s => s.Classroomid == classroom.id && s.isPKL == true)
+                        .Include(s => s.StudentValidation)
+                        .Where(s => s.Classroomid == classroom.id && s.StudentValidation.isPKL == true)
                     : Enumerable.Empty<Student>().AsQueryable();
 
                 var studentsQuery = mentorStudentsQuery.Union(waliKelasStudentsQuery);
@@ -619,7 +636,7 @@ namespace PKL_API.Controllers
                                 mentor = "-",
                                 walas = "-"
                             },
-                        isPresence = presence != null ? "✔️" : "❌",
+                        isPresence = s.StudentValidation?.isPresence == true ? "✔️" : "❌",
                         lat = presence?.Detail?.lat.ToString() ?? "-",
                         longitude = presence?.Detail?.longitude?.ToString() ?? "-",
                         report = presence?.Detail?.daily_report ?? "-",
@@ -673,7 +690,8 @@ namespace PKL_API.Controllers
                 var studentsQuery = _db.Students
                     .Include(s => s.User)
                     .Include(s => s.Classroom)
-                    .Where(s => s.Mentorid == mentor.id && s.isPKL == true);
+                    .Include(s => s.StudentValidation)
+                    .Where(s => s.Mentorid == mentor.id && s.StudentValidation.isPKL == true);
 
                 if (classId.HasValue)
                     studentsQuery = studentsQuery.Where(s => s.Classroomid == classId.Value);
@@ -723,7 +741,7 @@ namespace PKL_API.Controllers
                                 mentor = "-",
                                 walas = "-"
                             },
-                        isPresence = presence != null ? "✔️" : "❌",
+                        isPresence = s.StudentValidation?.isPresence == true ? "✔️" : "❌",
                         lat = presence?.Detail?.lat.ToString() ?? "-",
                         longitude = presence?.Detail?.longitude?.ToString() ?? "-",
                         report = presence?.Detail?.daily_report ?? "-",
@@ -779,7 +797,8 @@ namespace PKL_API.Controllers
                 var studentsQuery = _db.Students
                     .Include(s => s.User)
                     .Include(s => s.Classroom)
-                    .Where(s => s.Classroomid == classroom.id && s.isPKL == true);
+                    .Include(s => s.StudentValidation)
+                    .Where(s => s.Classroomid == classroom.id && s.StudentValidation.isPKL == true);
 
                 if (classId.HasValue)
                     studentsQuery = studentsQuery.Where(s => s.Classroomid == classId.Value);
@@ -826,7 +845,7 @@ namespace PKL_API.Controllers
                                 mentor = "-",
                                 walas = "-"
                             },
-                        isPresence = presence != null ? "✔️" : "❌",
+                        isPresence = s.StudentValidation?.isPresence == true ? "✔️" : "❌",
                         lat = presence?.Detail?.lat.ToString() ?? "-",
                         longitude = presence?.Detail?.longitude?.ToString() ?? "-",
                         report = presence?.Detail?.daily_report ?? "-",
@@ -874,7 +893,8 @@ namespace PKL_API.Controllers
                 var studentsQuery = _db.Students
                     .Include(s => s.User)
                     .Include(s => s.Classroom)
-                    .Where(s => s.isPKL == true);
+                    .Include(s => s.StudentValidation)
+                    .Where(s => s.StudentValidation.isPKL == true);
 
                 if (classId.HasValue)
                     studentsQuery = studentsQuery.Where(s => s.Classroomid == classId.Value);
@@ -922,7 +942,7 @@ namespace PKL_API.Controllers
                                 mentor = "-",
                                 walas = "-"
                             },
-                        isPresence = presence != null ? "✔️" : "❌",
+                        isPresence = s.StudentValidation?.isPresence == true ? "✔️" : "❌",
                         lat = presence?.Detail?.lat.ToString() ?? "-",
                         longitude = presence?.Detail?.longitude.ToString() ?? "-",
                         report = presence?.Detail?.daily_report ?? "-",
@@ -1108,7 +1128,8 @@ namespace PKL_API.Controllers
             // Ambil semua student PKL di kelas ini
             var students = await _db.Students
                 .Include(s => s.User)
-                .Where(s => s.Classroomid == classroom.id && (s.isPKL ?? false))
+                .Include(s => s.StudentValidation)
+                .Where(s => s.Classroomid == classroom.id && (s.StudentValidation.isPKL))
                 .OrderBy(s => s.User.fullname)
                 .ToListAsync();
 
@@ -1180,7 +1201,7 @@ namespace PKL_API.Controllers
             var students = await _db.Students
                 .Include(s => s.User)
                 .Include(s => s.Classroom)
-                .Where(s => s.Mentorid == mentorId && (s.isPKL ?? false))
+                .Where(s => s.Mentorid == mentorId && (s.StudentValidation.isPKL))
                 .OrderBy(s => s.User.fullname)
                 .ToListAsync();
 
@@ -1278,7 +1299,8 @@ namespace PKL_API.Controllers
                 ? await _db.Students
                     .Include(s => s.User)
                     .Include(s => s.Classroom)
-                    .Where(s => s.Mentorid == mentor.id && (s.isPKL ?? false))
+                    .Include(s => s.StudentValidation)
+                    .Where(s => s.Mentorid == mentor.id && (s.StudentValidation.isPKL))
                     .ToListAsync()
                 : new List<Student>();
 
@@ -1287,7 +1309,8 @@ namespace PKL_API.Controllers
                 ? await _db.Students
                     .Include(s => s.User)
                     .Include(s => s.Classroom)
-                    .Where(s => s.Classroomid == classroom.id && (s.isPKL ?? false))
+                    .Include(s => s.StudentValidation)
+                    .Where(s => s.Classroomid == classroom.id && (s.StudentValidation.isPKL))
                     .ToListAsync()
                 : new List<Student>();
 

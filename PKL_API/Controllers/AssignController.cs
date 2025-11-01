@@ -6,7 +6,7 @@ using PKL_API.Models.DTO;
 
 namespace PKL_API.Controllers
 {
-    [Route("api/assign")]
+    [Route("assign")]
     [ApiController]
     public class AssignController : ControllerBase
     {
@@ -36,7 +36,9 @@ namespace PKL_API.Controllers
                 return BadRequest("No student data provided.");
 
             var studentIds = dtos.Select(d => d.studentId).ToList();
-            var students = await _db.Students.Where(s => studentIds.Contains(s.id)).ToListAsync();
+            var students = await _db.Students
+                .Include(s => s.StudentValidation)
+                .Where(s => studentIds.Contains(s.id)).ToListAsync();
 
             var notFoundIds = studentIds.Except(students.Select(s => s.id)).ToList();
             if (notFoundIds.Count > 0)
@@ -59,7 +61,7 @@ namespace PKL_API.Controllers
                 // Ubah hanya jika isPKL dikirim
                 if (dto.isPKL.HasValue)
                 {
-                    student.isPKL = dto.isPKL.Value;
+                    student.StudentValidation.isPKL = dto.isPKL.Value;
                     if (!dto.isPKL.Value)
                     {
                         student.Mentorid = null;
@@ -80,44 +82,35 @@ namespace PKL_API.Controllers
         {
             var user = await AuthHelper.GetCurrentUser(HttpContext, _db);
             if (user == null)
-            {
                 return StatusCode(403, "User not found.");
-            }
 
             // Get role id from user via UserRoles table
             var userRole = await _db.UserRoles.FirstOrDefaultAsync(ur => ur.Userid == user.id);
             if (userRole == null)
-            {
                 return StatusCode(403, "User role not found.");
-            }
+
             var roleId = userRole.RoleId;
             if (roleId != 1 && roleId != 4 && roleId != 5)
-            {
                 return StatusCode(403, "You do not have permission to edit this data.");
-            }
 
-            var student = await _db.Students.FindAsync(studentId);
+            var student = await _db.Students
+                .Include(s => s.StudentValidation)
+                .FirstOrDefaultAsync(s => s.id == studentId);
             if (student == null)
-            {
                 return NotFound("Student not found.");
-            }
 
-            if (student.isPKL == false)
-            {
+            if (student.StudentValidation?.isPKL == false)
                 return BadRequest("Student is not currently assigned to PKL.");
-            }
 
             var company = await _db.Companies.FindAsync(companyId);
             if (company == null)
-            {
-                return NotFound("Mentor not found.");
-            }
+                return NotFound("Company not found.");
 
             student.Companyid = companyId;
             _db.Students.Update(student);
             await _db.SaveChangesAsync();
 
-            return Ok(new { message = "Student mentor updated successfully." });
+            return Ok(new { message = "Student company updated successfully." });
         }
 
         [Authorize]
@@ -142,6 +135,7 @@ namespace PKL_API.Controllers
                 return NotFound("Mentor not found.");
 
             var students = await _db.Students
+                .Include(s => s.StudentValidation)
                 .Where(s => studentIds.Contains(s.id))
                 .ToListAsync();
 
@@ -154,7 +148,7 @@ namespace PKL_API.Controllers
             // Check PKL status and assign mentor
             foreach (var student in students)
             {
-                if (student.isPKL == false)
+                if (student.StudentValidation?.isPKL == false)
                     return BadRequest($"Student with id {student.id} is not currently assigned to PKL.");
                 student.Mentorid = mentorId;
             }
@@ -194,60 +188,6 @@ namespace PKL_API.Controllers
             await _db.SaveChangesAsync();
             return Ok(new { message = "Mentor assigned to selected students successfully." });
         }
-
-        //[Authorize]
-        //[HttpPut("company/{companyId}")]
-        //public async Task<IActionResult> AssignCompanyToStudents(int companyId, [FromBody] List<int> studentIds)
-        //{
-        //    var user = await AuthHelper.GetCurrentUser(HttpContext, _db);
-        //    if (user == null)
-        //    {
-        //        return StatusCode(403, "User not found.");
-        //    }
-
-        //    // Get role id from user via UserRoles table
-        //    var userRole = await _db.UserRoles.FirstOrDefaultAsync(ur => ur.Userid == user.id);
-        //    if (userRole == null)
-        //    {
-        //        return StatusCode(403, "User role not found.");
-        //    }
-        //    var roleId = userRole.RoleId;
-        //    if (roleId != 1 && roleId != 4)
-        //    {
-        //        return StatusCode(403, "You do not have permission to edit this data.");
-        //    }
-
-        //    var company = await _db.Companies.FindAsync(companyId);
-        //    if (company == null)
-        //    {
-        //        return NotFound("Company not found.");
-        //    }
-
-        //    var students = await _db.Students
-        //        .Where(s => studentIds.Contains(s.id))
-        //        .ToListAsync();
-
-        //    if (students.Count != studentIds.Count)
-        //    {
-        //        var notFoundIds = studentIds.Except(students.Select(s => s.id)).ToList();
-        //        return NotFound($"Student(s) not found: {string.Join(", ", notFoundIds)}");
-        //    }
-
-        //    // Check PKL status and assign company
-        //    foreach (var student in students)
-        //    {
-        //        if (!student.isPKL)
-        //        {
-        //            return BadRequest($"Student with id {student.id} is not currently assigned to PKL.");
-        //        }
-        //        student.Companyid = companyId;
-        //    }
-
-        //    _db.Students.UpdateRange(students);
-        //    await _db.SaveChangesAsync();
-
-        //    return Ok(new { message = "Company assigned to selected students successfully." });
-        //}
 
         [Authorize]
         [HttpGet("status-lock-location")]
@@ -318,21 +258,23 @@ namespace PKL_API.Controllers
             if (dto.status != 0 && dto.status != 1)
                 return BadRequest("Status value must be 0 or 1.");
 
-            var student = await _db.Students.FirstOrDefaultAsync(s => s.id == dto.studentId);
+            var student = await _db.Students
+                .Include(s => s.StudentValidation)
+                .FirstOrDefaultAsync(s => s.id == dto.studentId);
             if (student == null)
                 return NotFound("Student not found.");
 
-            student.isLock = dto.status == 1;
-            student.update_at = DateTime.Now;
+            student.StudentValidation.isLock = dto.status == 1;
+            student.StudentValidation.update_daily = DateTime.Now;
 
             _db.Students.Update(student);
             await _db.SaveChangesAsync();
 
-            var message = student.isLock == true
+            var message = student.StudentValidation.isLock == true
                 ? "Lock Location berhasil diaktifkan."
                 : "Lock Location berhasil dinonaktifkan.";
 
-            return Ok(new { message, isLock = student.isLock ? 1 : 0, update_at = student.update_at });
+            return Ok(new { message, isLock = student.StudentValidation.isLock ? 1 : 0, update_at = student.StudentValidation.update_daily });
         }
     }
 }

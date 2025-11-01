@@ -17,11 +17,12 @@ window.renderPresenceMapWithMarker = function (elementId, lat, lng, dotnetHelper
     if (window.presenceMapInstance) {
         window.presenceMapInstance.remove();
     }
+
     var map = L.map(elementId).setView([lat, lng], 16);
     window.presenceMapInstance = map;
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors'
+    L.tileLayer('https://api.maptiler.com/maps/satellite/{z}/{x}/{y}.jpg?key=V2NKLc84EZrQT0sfWuu5', {
+        attribution: '© MapTiler © OpenStreetMap contributors'
     }).addTo(map);
 
     // Marker tidak draggable

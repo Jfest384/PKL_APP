@@ -15,10 +15,13 @@ namespace PKL_API.Models
         [StringLength(255)]
         public string? description { get; set; }
         public int? year { get; set; }
+        [Column("id_contact")]
+        public int? ChatContactid { get; set; }
 
         public ICollection<Student> Students { get; set; }
         public ICollection<Presence> Presences { get; set; }
         public ICollection<Report> Reports { get; set; }
         public WaliKelas WaliKelas { get; set; }
+        public ChatContact? ChatContact { get; set; }
     }
 }

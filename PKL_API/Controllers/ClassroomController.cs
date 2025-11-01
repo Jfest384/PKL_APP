@@ -9,7 +9,7 @@ using QuestPDF.Infrastructure;
 
 namespace PKL_API.Controllers
 {
-    [Route("api/classes")]
+    [Route("classes")]
     [ApiController]
     public class ClassroomController : ControllerBase
     {

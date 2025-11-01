@@ -23,11 +23,13 @@ namespace PKL_API.Models
         [ForeignKey(nameof(Classroomid))]
         public Classroom? Classroom { get; set; }
 
+
         [Column("id_department")]
         public int Departmentid { get; set; }
 
         [ForeignKey(nameof(Departmentid))]
         public Department? Department { get; set; }
+
 
         [Column("id_mentor")]
         public int? Mentorid { get; set; }
@@ -35,20 +37,23 @@ namespace PKL_API.Models
         [ForeignKey(nameof(Mentorid))]
         public Mentor? Mentor { get; set; }
 
+
         [Column("id_company")]
         public int? Companyid { get; set; }
 
         [ForeignKey(nameof(Companyid))]
         public Company? Company { get; set; }
 
-        public bool? isPKL { get; set; }
+
+        [Column("id_validation")]
+        public int StudentValidationid { get; set; }
+
+        [ForeignKey(nameof(StudentValidationid))]
+        public StudentValidation? StudentValidation { get; set; }
+
 
         [ForeignKey(nameof(Userid))]
         public User? User { get; set; }
-
-        public bool isLock { get; set; }
-        public DateTime? update_at { get; set; }
-
 
         public ICollection<Presence>? Presences { get; set; }
         public ICollection<Report>? Reports { get; set; }
