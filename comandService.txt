@@ -1,0 +1,10 @@
+New-Service -Name "PKL_HangfireWorker" `
+  -BinaryPathName "C:\PKL_APP\WorkerService\PKL_HangfireWorker.exe" `
+  -DisplayName "PKL Hangfire Worker" `
+  -StartupType Automatic
+
+
+Start-Service "PKL_HangfireWorker"
+
+
+Get-Service "PKL_HangfireWorker"
