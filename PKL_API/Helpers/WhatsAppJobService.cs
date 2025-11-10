@@ -14,6 +14,8 @@ namespace PKL_API.Helpers
         public WhatsAppJobService(IConfiguration config, IHttpClientFactory factory)
         {
             _connectionString = config.GetConnectionString("DefaultConnection");
+            if (string.IsNullOrEmpty(_connectionString))
+                throw new InvalidOperationException("Connection string is null!");
             _httpClient = factory.CreateClient("waha");
         }
 

@@ -179,10 +179,6 @@
                     <i class="bi bi-bell mx-1"></i>
                     <span class="message-action-btn-text me-1">Send Reminder</span>
                 </button>
-                @* <button class="btn btn-sm btn-success me-1">
-                    <i class="bi bi-info-circle"></i>
-                    <span class="message-action-btn-text">Test</span>
-                </button> *@
             </div>
             <div class="student-detail-card mb-4">
                 <div class="student-detail-header">WAHA Session</div>
@@ -280,7 +276,7 @@
                                             </td>
                                             <td class="text-center">
                                                 <button class="btn btn-sm btn-success me-1"
-                                                        @onclick="() => SendTestTemplateAsync(chat.IdChat.FirstOrDefault())"
+                                                        @onclick="() => SendTestTemplateAsync()"
                                                         disabled="@IsSendingReminder">
                                                     <i class="bi bi-info-circle"></i>
                                                     <span class="message-action-btn-text ms-1">Test</span>
@@ -373,7 +369,7 @@
                         }
                         else
                         {
-                            var rowIndex = (CurrentPage - 1) * PageSize; // 10 = page size, sesuaikan jika page size dinamis
+                            var rowIndex = (CurrentPage - 1) * PageSize;
                             @foreach (var item in GetPagedSortedData())
                             {
                                 rowIndex++;
@@ -1308,7 +1304,10 @@
                         </button>
                     </div>
                     <div class="text-start fw-bold mb-2">Message</div>
-                    <textarea class="form-control mb-3" rows="4" @bind="ReminderMessage"></textarea>
+                    <textarea class="form-control mb-3" rows="6"
+                              @bind="ReminderMessageRaw"
+                              @bind:event="oninput"
+                              @onchange="OnReminderMessageChanged"></textarea>
                 </div>
                 <div class="d-flex justify-content-center gap-3 mt-3">
                     <button class="btn btn-danger px-4" @onclick="CancelSendReminder">Cancel</button>
@@ -3158,27 +3157,41 @@
     private List<string> ReminderChatNamesList = new();
     private List<string> ReminderChatIdsList = new();
     private int CurrentReminderIndex = 0;
-    private string ReminderMessage = "";
     private bool IsSendingReminder = false;
     private string CurrentReminderChatName => ReminderChatNamesList.ElementAtOrDefault(CurrentReminderIndex) ?? "";
     private string CurrentReminderChatId => ReminderChatIdsList.ElementAtOrDefault(CurrentReminderIndex) ?? "";
+    private Dictionary<string, string> ReminderMessageCache = new();
 
     private async void OnSendReminderClicked()
     {
         ShowSendReminderModal = true;
         ReminderChatNamesList.Clear();
         ReminderChatIdsList.Clear();
+        ReminderMessageCache.Clear();
         CurrentReminderIndex = 0;
 
         var response = DefaultChats;
         if (response != null && response.Count > 0)
         {
-            ReminderChatNamesList = response.SelectMany(x => x.ChatName).Distinct().ToList();
-            ReminderChatIdsList = response.SelectMany(x => x.IdChat).Distinct().ToList();
+            ReminderChatNamesList = response
+                .SelectMany(x => x.ChatName)
+                .Distinct()
+                .ToList();
 
-            var chatId = ReminderChatIdsList.FirstOrDefault();
-            var detail = DefaultChatDetails.FirstOrDefault(d => d.id_chat == chatId);
-            ReminderMessage = detail?.Template?.Content ?? "";
+            ReminderChatIdsList = response
+                .SelectMany(x => x.IdChat)
+                .Distinct()
+                .ToList();
+
+            foreach (var chatId in ReminderChatIdsList)
+            {
+                var fullMsg = GetDefaultMessage(chatId);
+                var commonInner = ExtractCommonInner(fullMsg);
+
+                ReminderMessageCache[chatId] = commonInner ?? "";
+                Console.WriteLine($"[{chatId}] Cache COMMON: {ReminderMessageCache[chatId]}");
+            }
+            UpdateReminderMessage();
         }
     }
 
@@ -3200,13 +3213,6 @@
         }
     }
 
-    private void UpdateReminderMessage()
-    {
-        var chatId = CurrentReminderChatId;
-        var detail = DefaultChatDetails.FirstOrDefault(d => d.id_chat == chatId);
-        ReminderMessage = detail?.Template?.Content ?? "";
-    }
-
     private void CancelSendReminder()
     {
         ShowSendReminderModal = false;
@@ -3219,72 +3225,201 @@
 
     private async void SendReminderAsync()
     {
-        if (ReminderChatIdsList.Count == 0 || string.IsNullOrWhiteSpace(ReminderMessage))
+        if (ReminderChatIdsList.Count == 0)
             return;
+
         IsSendingReminder = true;
-
-        var chatId = CurrentReminderChatId;
-        var payload = new
+        try
         {
-            chatId = chatId,
-            reply_to = (string)null,
-            text = ReminderMessage,
-            linkPreview = true,
-            linkPreviewHighQuality = false,
-            session = "default"
-        };
+            var tasks = ReminderChatIdsList.Select(async chatId =>
+            {
+                var fullMsg = GetDefaultMessage(chatId);
+                if (ReminderMessageCache.TryGetValue(chatId, out var cachedCommon))
+                    fullMsg = ReplaceCommonInner(fullMsg, cachedCommon);
 
-        var response = await Http.PostAsJsonAsync(APIUrl.Endpoint("waha/sendText"), payload);
-        IsSendingReminder = false;
-        ShowSendReminderModal = false;
-        ReminderChatNamesList.Clear();
-        ReminderChatIdsList.Clear();
-        ReminderMessage = "";
-        CurrentReminderIndex = 0;
-        StateHasChanged();
+                var messageToSend = ToDisplayMessage(fullMsg);
+                var payload = new
+                {
+                    chatId = chatId,
+                    reply_to = (string)null,
+                    text = messageToSend,
+                    linkPreview = true,
+                    linkPreviewHighQuality = false,
+                    session = "default"
+                };
+                await Http.PostAsJsonAsync(APIUrl.Endpoint("waha/sendText"), payload);
+            });
 
-        if (response.IsSuccessStatusCode)
-        {
+            await Task.WhenAll(tasks);
             ShowSendMessageSuccessModal = true;
             StateHasChanged();
             await Task.Delay(2500);
             ShowSendMessageSuccessModal = false;
             StateHasChanged();
         }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", $"Terjadi error saat mengirim pesan:\n{ex.Message}");
+        }
+        finally
+        {
+            IsSendingReminder = false;
+            ShowSendReminderModal = false;
+            ReminderChatNamesList.Clear();
+            ReminderChatIdsList.Clear();
+            ReminderMessageCache.Clear();
+            ReminderMessage = "";
+            CurrentReminderIndex = 0;
+            StateHasChanged();
+        }
     }
 
-    private async Task SendTestTemplateAsync(string chatId)
+    private async Task SendTestTemplateAsync()
     {
-        if (string.IsNullOrWhiteSpace(chatId))
+        var allChatIds = DefaultChats?
+            .SelectMany(x => x.IdChat)
+            .Distinct()
+            .ToList() ?? new List<string>();
+
+        if (allChatIds.Count == 0)
         {
-            await JS.InvokeVoidAsync("alert", "Chat ID belum dipilih!");
+            await JS.InvokeVoidAsync("alert", "Tidak ada chat ID yang ditemukan!");
             return;
         }
+
+        IsSendingReminder = true;
         try
         {
-            IsSendingReminder = true;
-            var payload = new
+            var tasks = allChatIds.Select(async chatId =>
             {
-                ChatId = chatId
-            };
+                var payload = new { ChatId = chatId };
+                await Http.PostAsJsonAsync(APIUrl.Endpoint("data/default-chats/test-send"), payload);
+            });
 
-            var response = await Http.PostAsJsonAsync(APIUrl.Endpoint("data/default-chats/test-send"), payload);
-            if (response.IsSuccessStatusCode)
-            {
-                ShowSendMessageSuccessModal = true;
-                StateHasChanged();
-                await Task.Delay(2500);
-                ShowSendMessageSuccessModal = false;
-                StateHasChanged();
-            }
+            await Task.WhenAll(tasks);
+            ShowSendMessageSuccessModal = true;
+            StateHasChanged();
+            await Task.Delay(2500);
+            ShowSendMessageSuccessModal = false;
+            StateHasChanged();
         }
         catch (Exception ex)
         {
-            await JS.InvokeVoidAsync("alert", $"Terjadi error:\n{ex.Message}");
+            await JS.InvokeVoidAsync("alert", $"Terjadi error saat mengirim pesan test:\n{ex.Message}");
         }
         finally
         {
             IsSendingReminder = false;
         }
+    }
+
+    private void OnReminderMessageChanged(ChangeEventArgs e)
+    {
+        var newRawMessage = e.Value?.ToString() ?? "";
+        if (string.IsNullOrEmpty(CurrentReminderChatId))
+            return;
+
+        var newCommonInner = ExtractCommonInner(newRawMessage);
+        if (string.IsNullOrEmpty(newCommonInner))
+            return;
+        ReminderMessageCache[CurrentReminderChatId] = newCommonInner;
+
+        foreach (var chatId in ReminderChatIdsList)
+        {
+            if (string.IsNullOrEmpty(chatId) || chatId == CurrentReminderChatId)
+                continue;
+
+            var oldFullMsg = GetDefaultMessage(chatId);
+            var updatedFullMsg = ReplaceCommonInner(oldFullMsg, newCommonInner);
+
+            ReminderMessageCache[chatId] = newCommonInner;
+            Console.WriteLine($"[{chatId}] Cache COMMON: {ReminderMessageCache[chatId]}");
+        }
+        StateHasChanged();
+    }
+
+    private void OnDisplayInputChanged(string displayValue)
+    {
+        ReminderMessage = displayValue;
+        OnReminderMessageChanged(new ChangeEventArgs { Value = ReminderMessageRaw });
+    }
+
+    private string ExtractCommonInner(string message)
+    {
+        var startTag = "[COMMON]";
+        var endTag = "[/COMMON]";
+        var start = message.IndexOf(startTag);
+        var end = message.IndexOf(endTag);
+
+        if (start >= 0 && end > start)
+            return message.Substring(start + startTag.Length, end - (start + startTag.Length));
+        return "";
+    }
+
+    private string ReplaceCommonInner(string message, string newInner)
+    {
+        var startTag = "[COMMON]";
+        var endTag = "[/COMMON]";
+        var start = message.IndexOf(startTag);
+        var end = message.IndexOf(endTag);
+
+        if (start >= 0 && end > start)
+        {
+            var before = message.Substring(0, start + startTag.Length);
+            var after = message.Substring(end);
+            return before + newInner + after;
+        }
+        return $"{startTag}{newInner}{endTag}\n{message}";
+    }
+
+    private string GetDefaultMessage(string chatId)
+    {
+        var detail = DefaultChatDetails.FirstOrDefault(d => d.id_chat == chatId);
+        return detail?.Template?.Content ?? "";
+    }
+
+    private string ToDisplayMessage(string raw) =>
+        raw.Replace("[COMMON]", "").Replace("[/COMMON]", "").Replace("\\n", "\n");
+
+    private string ToRawMessage(string display)
+    {
+        if (!display.Contains("[COMMON]"))
+            return $"[COMMON]{display}[/COMMON]";
+        return display;
+    }
+
+    private string _reminderMessageRaw = "";
+    private string _reminderMessage = "";
+
+    private string ReminderMessageRaw
+    {
+        get => _reminderMessageRaw;
+        set
+        {
+            _reminderMessageRaw = value;
+            _reminderMessage = ToDisplayMessage(value);
+        }
+    }
+
+    private string ReminderMessage
+    {
+        get => _reminderMessage;
+        set
+        {
+            var raw = ToRawMessage(value);
+            _reminderMessage = value;
+            _reminderMessageRaw = raw;
+            ReminderMessageCache[CurrentReminderChatId] = raw;
+        }
+    }
+
+    private void UpdateReminderMessage()
+    {
+        var chatId = CurrentReminderChatId;
+        var fullMsg = GetDefaultMessage(chatId);
+
+        if (ReminderMessageCache.TryGetValue(chatId, out var cachedCommon))
+            fullMsg = ReplaceCommonInner(fullMsg, cachedCommon);
+        ReminderMessageRaw = fullMsg;
     }
 }
