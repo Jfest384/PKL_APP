@@ -1,52 +1,59 @@
 ﻿using Hangfire;
 using PKL_HangfireWorker.Services;
 
-var builder = Host.CreateApplicationBuilder(args);
-builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
-
-builder.Services.AddHangfire(config =>
+try
 {
-    var conn = builder.Configuration.GetConnectionString("DefaultConnection");
-    config.UseSqlServerStorage(conn);
-});
+    File.AppendAllText("service-start.log", $"{DateTime.Now}: Service starting...\n");
 
-builder.Services.AddHangfireServer();
+    var builder = Host.CreateApplicationBuilder(args);
+    builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
 
-builder.Services.AddHttpClient("waha", client =>
-{
-    var baseUrl = builder.Configuration["HttpClients:waha"];
-    client.BaseAddress = new Uri(baseUrl);
-});
-builder.Services.AddScoped<WhatsAppJobService>();
+    builder.Services.AddWindowsService(options =>
+    {
+        options.ServiceName = "PKL Hangfire Worker";
+    });
 
-var app = builder.Build();
+    builder.Services.AddHangfire(config =>
+    {
+        var conn = builder.Configuration.GetConnectionString("DefaultConnection");
+        config.UseSqlServerStorage(conn);
+    });
+    builder.Services.AddHangfireServer();
 
-using (var scope = app.Services.CreateScope())
-{
-    var jobManager = scope.ServiceProvider.GetRequiredService<IRecurringJobManager>();
-    var jakarta = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+    builder.Services.AddHttpClient("waha", client =>
+    {
+        var baseUrl = builder.Configuration["HttpClients:waha"];
+        client.BaseAddress = new Uri(baseUrl);
+    });
+    builder.Services.AddScoped<WhatsAppJobService>();
 
-    jobManager.AddOrUpdate<WhatsAppJobService>(
-        "wa-job-pagi",
-        job => job.ExecuteAsync(),
-        "*/1 * * * *",
-        jakarta
-    );
+    var app = builder.Build();
 
-    jobManager.AddOrUpdate<WhatsAppJobService>(
-        "wa-job-sore",
-        job => job.ExecuteAsync(),
-        "0 16 * * 1-5",
-        jakarta
-    );
+    using (var scope = app.Services.CreateScope())
+    {
+        var jobManager = scope.ServiceProvider.GetRequiredService<IRecurringJobManager>();
+        var jakarta = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+
+        jobManager.AddOrUpdate<WhatsAppJobService>(
+            "wa-job-pagi",
+            job => job.ExecuteAsync(),
+            "*/1 * * * *",
+            jakarta
+        );
+
+        jobManager.AddOrUpdate<WhatsAppJobService>(
+            "wa-job-sore",
+            job => job.ExecuteAsync(),
+            "0 16 * * 1-5",
+            jakarta
+        );
+    }
+
+    File.AppendAllText("service-start.log", $"{DateTime.Now}: Starting host...\n");
+    app.Run();
 }
-
-Console.WriteLine("✅ Hangfire Worker berjalan...");
-
-// tambahkan ini
-builder.Services.AddWindowsService(options =>
+catch (Exception ex)
 {
-    options.ServiceName = "PKL Hangfire Worker";
-});
-
-app.Run();
+    File.AppendAllText("service-error.log", $"{DateTime.Now}: {ex}\n");
+    throw;
+}
