@@ -37,7 +37,9 @@ Harap segera melakukan pengisian presensi dan report harian bagi yang belum.]"
             {
                 Id = 2,
                 Name = "Reminder Presensi",
-                Content = @"[‼ REMINDER ‼\n\nHarap segera melakukan pengisian presensi dan report harian bagi yang belum.]"
+                Content = @"[‼ REMINDER ‼
+
+Harap segera melakukan pengisian presensi dan report harian bagi yang belum.]"
             }
         },
         {
@@ -46,7 +48,10 @@ Harap segera melakukan pengisian presensi dan report harian bagi yang belum.]"
             {
                 Id = 3,
                 Name = "Reminder Report",
-                Content = @"[‼ REMINDER ‼\n\nJika hari ini melakukan bimbingan laporan\ningat untuk mengisi presensi bimbingan laporan dan mengupload file laporan PKL nya.]"
+                Content = @"[‼ REMINDER ‼
+
+Jika hari ini melakukan bimbingan laporan
+ingat untuk mengisi presensi bimbingan laporan dan mengupload file laporan PKL nya.]"
             }
         },
         {

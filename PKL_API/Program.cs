@@ -20,6 +20,7 @@ builder.Services.AddHangfire(config =>
 {
     config.UseSqlServerStorage("Data Source=localhost\\SQLEXPRESS;Initial Catalog=PKL_APP_TEST;Integrated Security=True;Trust Server Certificate=True");
 });
+builder.Services.AddHangfireServer();
 
 builder.Services.AddAuthentication("Bearer").AddJwtBearer(opt =>
 {
@@ -40,7 +41,9 @@ builder.Services.AddSwaggerGen(opt =>
         In = ParameterLocation.Header,
         Name = "Authorization",
         Scheme = "Bearer",
-        Type = SecuritySchemeType.Http
+        Type = SecuritySchemeType.Http,
+        BearerFormat = "JWT",
+        Description = "Masukkan token JWT dengan format: Bearer {token}"
     });
 
     opt.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -98,13 +101,44 @@ builder.Services.AddHttpClient("waha", client =>
 var cultureInfo = new CultureInfo("en-US");
 CultureInfo.DefaultThreadCurrentCulture = cultureInfo;
 CultureInfo.DefaultThreadCurrentUICulture = cultureInfo;
+
 SyncfusionLicenseProvider.RegisterLicense("Ngo9BigBOggjHTQxAR8/V1JEaF1cWWhBYVJzWmFZfVtgdVVMZVxbRHJPIiBoS35Rc0VrWXdccnFVRmRUVkx+VEFd");
+QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 
 var app = builder.Build();
+
 app.UsePathBase("/api");
+
+app.UseRouting();
+app.UseCors("AllowAllClients");
+app.UseAuthentication();
+app.UseAuthorization();
+app.UseHttpsRedirection();
 
 if (app.Environment.IsDevelopment() || app.Environment.IsProduction())
 {
+    app.Use(async (context, next) =>
+    {
+        if (context.Request.Path.StartsWithSegments("/api/swagger"))
+        {
+            var user = context.User;
+            if (!user.Identity?.IsAuthenticated ?? true)
+            {
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                await context.Response.WriteAsync("Unauthorized: please login.");
+                return;
+            }
+
+            if (!user.IsInRole("Admin") && !user.IsInRole("Kepala Jurusan"))
+            {
+                context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                await context.Response.WriteAsync("Forbidden: Access denied.");
+                return;
+            }
+        }
+        await next();
+    });
+
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
@@ -112,39 +146,6 @@ if (app.Environment.IsDevelopment() || app.Environment.IsProduction())
         c.RoutePrefix = "swagger";
     });
 }
-
-app.UseRouting();
-app.UseHttpsRedirection();
-QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
-app.UseCors("AllowAllClients");
-app.UseAuthentication();
-app.UseAuthorization();
-
-app.Use(async (context, next) =>
-{
-    if (!context.Request.Path.StartsWithSegments("/api/swagger"))
-    {
-        await next();
-        return;
-    }
-
-    var user = context.User;
-    if (!user.Identity?.IsAuthenticated ?? true)
-    {
-        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-        await context.Response.WriteAsync("Unauthorized: please login.");
-        return;
-    }
-
-    if (!user.IsInRole("Admin") && !user.IsInRole("Kepala Jurusan"))
-    {
-        context.Response.StatusCode = StatusCodes.Status403Forbidden;
-        await context.Response.WriteAsync("Forbidden: Access denied.");
-        return;
-    }
-
-    await next();
-});
 
 app.MapGet("/waha/{**path}", async (HttpContext context, HttpClient http) =>
 {
@@ -176,9 +177,16 @@ app.MapPost("/waha/{**path}", async (HttpContext context, HttpClient http) =>
     await context.Response.WriteAsync(await response.Content.ReadAsStringAsync());
 });
 
-app.MapHangfireDashboard("/hangfire", new DashboardOptions
+app.Map("/api/hangfire", hangfireApp =>
 {
-    Authorization = new[] { new RoleBasedAuthorizationFilter("Admin", "Kepala Jurusan") }
+    hangfireApp.UseAuthentication();
+    hangfireApp.UseAuthorization();
+
+    hangfireApp.UseHangfireDashboard("/api/hangfire", new DashboardOptions
+    {
+        Authorization = new[] { new RoleBasedAuthorizationFilter("Admin", "Kepala Jurusan") }
+    });
 });
+
 app.MapControllers();
 app.Run();
