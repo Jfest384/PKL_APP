@@ -146,6 +146,36 @@ app.Use(async (context, next) =>
     await next();
 });
 
+app.MapGet("/waha/{**path}", async (HttpContext context, HttpClient http) =>
+{
+    var path = context.Request.Path.Value?.Replace("/waha/", "");
+    var targetUrl = $"http://138.138.138.193:3000/api/{path}";
+    var response = await http.GetAsync(targetUrl);
+    var content = await response.Content.ReadAsStringAsync();
+
+    context.Response.StatusCode = (int)response.StatusCode;
+    await context.Response.WriteAsync(content);
+});
+
+app.MapPost("/waha/{**path}", async (HttpContext context, HttpClient http) =>
+{
+    var path = context.Request.Path.Value?.Replace("/waha/", "");
+    var targetUrl = $"http://138.138.138.193:3000/api/{path}";
+
+    using var content = new StreamContent(context.Request.Body);
+    foreach (var header in context.Request.Headers)
+    {
+        if (!content.Headers.TryAddWithoutValidation(header.Key, header.Value.ToArray()))
+        {
+
+        }
+    }
+
+    var response = await http.PostAsync(targetUrl, content);
+    context.Response.StatusCode = (int)response.StatusCode;
+    await context.Response.WriteAsync(await response.Content.ReadAsStringAsync());
+});
+
 app.MapHangfireDashboard("/hangfire", new DashboardOptions
 {
     Authorization = new[] { new RoleBasedAuthorizationFilter("Admin", "Kepala Jurusan") }

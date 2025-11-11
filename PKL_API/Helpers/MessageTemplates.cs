@@ -22,13 +22,13 @@ namespace PKL_API.Helpers
 {studentList}
 
 
-[COMMON]💡 Keterangan :
+[💡 Keterangan :
 ✅ = Sudah mengisi presensi dan report harian
 ⚠ = Sudah presensi, tapi belum isi report harian
 ❌ = Belum mengisi presensi
 
 
-Harap segera melakukan pengisian presensi dan report harian bagi yang belum.[/COMMON]"
+Harap segera melakukan pengisian presensi dan report harian bagi yang belum.]"
             }
         },
         {
@@ -37,7 +37,7 @@ Harap segera melakukan pengisian presensi dan report harian bagi yang belum.[/CO
             {
                 Id = 2,
                 Name = "Reminder Presensi",
-                Content = @"[COMMON]‼ REMINDER ‼\n\nHarap segera melakukan pengisian presensi dan report harian bagi yang belum.[/COMMON]"
+                Content = @"[‼ REMINDER ‼\n\nHarap segera melakukan pengisian presensi dan report harian bagi yang belum.]"
             }
         },
         {
@@ -46,7 +46,7 @@ Harap segera melakukan pengisian presensi dan report harian bagi yang belum.[/CO
             {
                 Id = 3,
                 Name = "Reminder Report",
-                Content = @"[COMMON]‼ REMINDER ‼\n\nJika hari ini melakukan bimbingan laporan\ningat untuk mengisi presensi bimbingan laporan dan mengupload file laporan PKL nya.[/COMMON]"
+                Content = @"[‼ REMINDER ‼\n\nJika hari ini melakukan bimbingan laporan\ningat untuk mengisi presensi bimbingan laporan dan mengupload file laporan PKL nya.]"
             }
         },
         {
@@ -55,9 +55,9 @@ Harap segera melakukan pengisian presensi dan report harian bagi yang belum.[/CO
             {
                 Id = 4,
                 Name = "Reminder Training",
-                Content = @"[COMMON]‼ REMINDER ‼
+                Content = @"[‼ REMINDER ‼
 
-Ingat hari ini untuk belajar persiapan UKK dan Sertifikasi.[/COMMON]"
+Ingat hari ini untuk belajar persiapan UKK dan Sertifikasi.]"
             }
         },
         {
@@ -85,13 +85,13 @@ Ingat hari ini untuk belajar persiapan UKK dan Sertifikasi.[/COMMON]"
 {studentList}
 
 
-[COMMON]💡 Keterangan :
+[💡 Keterangan :
 ✅ = Sudah mengisi presensi dan report harian
 ⚠ = Sudah presensi, tapi belum isi report harian
 ❌ = Belum mengisi presensi
 
 
-Harap segera melakukan pengisian presensi dan report harian bagi yang belum.[/COMMON]"
+Harap segera melakukan pengisian presensi dan report harian bagi yang belum.]"
             }
         }
     };

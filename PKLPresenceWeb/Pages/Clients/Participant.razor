@@ -3346,8 +3346,8 @@
 
     private string ExtractCommonInner(string message)
     {
-        var startTag = "[COMMON]";
-        var endTag = "[/COMMON]";
+        var startTag = "[";
+        var endTag = "]";
         var start = message.IndexOf(startTag);
         var end = message.IndexOf(endTag);
 
@@ -3358,8 +3358,8 @@
 
     private string ReplaceCommonInner(string message, string newInner)
     {
-        var startTag = "[COMMON]";
-        var endTag = "[/COMMON]";
+        var startTag = "[";
+        var endTag = "]";
         var start = message.IndexOf(startTag);
         var end = message.IndexOf(endTag);
 
@@ -3379,12 +3379,12 @@
     }
 
     private string ToDisplayMessage(string raw) =>
-        raw.Replace("[COMMON]", "").Replace("[/COMMON]", "").Replace("\\n", "\n");
+        raw.Replace("[", "").Replace("]", "").Replace("\\n", "\n");
 
     private string ToRawMessage(string display)
     {
-        if (!display.Contains("[COMMON]"))
-            return $"[COMMON]{display}[/COMMON]";
+        if (!display.Contains("["))
+            return $"[{display}]";
         return display;
     }
 
