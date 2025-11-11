@@ -1,60 +1,74 @@
 ﻿using Hangfire;
 using PKL_HangfireWorker.Services;
 
-File.AppendAllText("service-start.log", $"{DateTime.Now}: Worker starting...\n");
+File.AppendAllText(Path.Combine(AppContext.BaseDirectory, "service-start.log"),
+    $"{DateTime.Now}: Worker starting...\n");
 
-var builder = Host.CreateDefaultBuilder(args)
-    .UseWindowsService(options =>
-    {
-        options.ServiceName = "PKL Hangfire Worker";
-    })
-    .ConfigureServices((context, services) =>
-    {
-        var config = context.Configuration;
-        services.AddHangfire(cfg =>
-        {
-            var conn = config.GetConnectionString("DefaultConnection");
-            cfg.UseSqlServerStorage(conn);
-        });
-        services.AddHangfireServer();
+var builder = Host.CreateApplicationBuilder(args);
 
-        services.AddHttpClient("waha", client =>
-        {
-            var baseUrl = config["HttpClients:waha"];
-            client.BaseAddress = new Uri(baseUrl);
-        });
+// 🔹 Pastikan appsettings.json terbaca walau service berjalan dari System32
+builder.Configuration.AddJsonFile(
+    Path.Combine(AppContext.BaseDirectory, "appsettings.json"),
+    optional: false,
+    reloadOnChange: true
+);
 
-        services.AddScoped<WhatsAppJobService>();
-    })
-    .Build();
-
-using (var scope = builder.Services.CreateScope())
+// 🔹 Registrasikan agar bisa jalan sebagai Windows Service
+builder.Services.AddWindowsService(options =>
 {
-    var jobManager = scope.ServiceProvider.GetRequiredService<IRecurringJobManager>();
-    var jakarta = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+    options.ServiceName = "PKL Hangfire Worker";
+});
 
-    jobManager.AddOrUpdate<WhatsAppJobService>(
-        "wa-job-pagi",
-        job => job.ExecuteAsync(),
-        "*/1 * * * *",
-        jakarta
-    );
+// 🔹 Tambahkan Hangfire
+builder.Services.AddHangfire(config =>
+{
+    var conn = builder.Configuration.GetConnectionString("DefaultConnection");
+    config.UseSqlServerStorage(conn);
+});
+builder.Services.AddHangfireServer();
 
-    jobManager.AddOrUpdate<WhatsAppJobService>(
-        "wa-job-sore",
-        job => job.ExecuteAsync(),
-        "0 16 * * 1-5",
-        jakarta
-    );
-}
+// 🔹 Tambahkan HttpClient
+builder.Services.AddHttpClient("waha", client =>
+{
+    var baseUrl = builder.Configuration["HttpClients:waha"];
+    client.BaseAddress = new Uri(baseUrl);
+});
+builder.Services.AddScoped<WhatsAppJobService>();
+
+var app = builder.Build();
 
 try
 {
-    File.AppendAllText("service-start.log", $"{DateTime.Now}: Running...\n");
-    builder.Run();
+    using (var scope = app.Services.CreateScope())
+    {
+        var jobManager = scope.ServiceProvider.GetRequiredService<IRecurringJobManager>();
+        var jakarta = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+
+        // 🕒 Jadwal otomatis
+        jobManager.AddOrUpdate<WhatsAppJobService>(
+            "wa-job-pagi",
+            job => job.ExecuteAsync(),
+            "*/1 * * * *",
+            jakarta
+        );
+
+        jobManager.AddOrUpdate<WhatsAppJobService>(
+            "wa-job-sore",
+            job => job.ExecuteAsync(),
+            "0 16 * * 1-5",
+            jakarta
+        );
+    }
+
+    File.AppendAllText(Path.Combine(AppContext.BaseDirectory, "service-start.log"),
+        $"{DateTime.Now}: Hangfire jobs registered. Running...\n");
+
+    // 🟢 Jalankan aplikasi (blok utama service)
+    app.Run();
 }
 catch (Exception ex)
 {
-    File.AppendAllText("service-error.log", $"{DateTime.Now}: {ex}\n");
+    File.AppendAllText(Path.Combine(AppContext.BaseDirectory, "service-error.log"),
+        $"{DateTime.Now}: {ex}\n");
     throw;
 }
