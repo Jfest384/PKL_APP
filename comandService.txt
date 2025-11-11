@@ -8,6 +8,3 @@ Start-Service "PKL_HangfireWorker"
 
 
 Get-Service "PKL_HangfireWorker"
-
-
-sc delete "PKL_HangfireWorker"
