@@ -636,7 +636,7 @@ namespace PKL_API.Controllers
                                 mentor = "-",
                                 walas = "-"
                             },
-                        isPresence = s.StudentValidation?.isPresence == true ? "✔️" : "❌",
+                        isPresence = presence != null ? "✔️" : "❌",
                         lat = presence?.Detail?.lat.ToString() ?? "-",
                         longitude = presence?.Detail?.longitude?.ToString() ?? "-",
                         report = presence?.Detail?.daily_report ?? "-",
@@ -741,7 +741,7 @@ namespace PKL_API.Controllers
                                 mentor = "-",
                                 walas = "-"
                             },
-                        isPresence = s.StudentValidation?.isPresence == true ? "✔️" : "❌",
+                        isPresence = presence != null ? "✔️" : "❌",
                         lat = presence?.Detail?.lat.ToString() ?? "-",
                         longitude = presence?.Detail?.longitude?.ToString() ?? "-",
                         report = presence?.Detail?.daily_report ?? "-",
@@ -845,7 +845,7 @@ namespace PKL_API.Controllers
                                 mentor = "-",
                                 walas = "-"
                             },
-                        isPresence = s.StudentValidation?.isPresence == true ? "✔️" : "❌",
+                        isPresence = presence != null ? "✔️" : "❌",
                         lat = presence?.Detail?.lat.ToString() ?? "-",
                         longitude = presence?.Detail?.longitude?.ToString() ?? "-",
                         report = presence?.Detail?.daily_report ?? "-",
@@ -942,7 +942,7 @@ namespace PKL_API.Controllers
                                 mentor = "-",
                                 walas = "-"
                             },
-                        isPresence = s.StudentValidation?.isPresence == true ? "✔️" : "❌",
+                        isPresence = presence != null ? "✔️" : "❌",
                         lat = presence?.Detail?.lat.ToString() ?? "-",
                         longitude = presence?.Detail?.longitude.ToString() ?? "-",
                         report = presence?.Detail?.daily_report ?? "-",

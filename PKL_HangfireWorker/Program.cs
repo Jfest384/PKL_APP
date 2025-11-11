@@ -43,7 +43,8 @@ try
         jobManager.AddOrUpdate<WhatsAppJobService>(
             "wa-job-pagi",
             job => job.ExecuteAsync(),
-            "*/1 * * * *",
+            //"*/1 * * * *",
+            "0 10 * * 1-5",
             jakarta
         );
 

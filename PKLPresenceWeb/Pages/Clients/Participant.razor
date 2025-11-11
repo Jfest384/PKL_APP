@@ -187,7 +187,10 @@
         {
             <div class="d-flex align-items-center justify-content-between mb-3">
                 <div class="section-title">Whatsapp Management</div>
-                <button class="btn btn-sm btn-warning p-2" style="min-height: 30px; min-width: 30px;" @onclick="OnSendReminderClicked">
+                <button class="btn btn-sm btn-warning p-2"
+                        style="min-height: 30px; min-width: 30px;"
+                        @onclick="OnSendReminderClicked"
+                        disabled="@(DefaultChats == null || DefaultChats.Count == 0)">
                     <i class="bi bi-bell mx-1"></i>
                     <span class="message-action-btn-text me-1">Send Reminder</span>
                 </button>
@@ -1316,12 +1319,13 @@
                         </button>
                     </div>
                     <div class="text-start fw-bold mb-2">Message</div>
-                    <textarea class="form-control mb-3" rows="6"
+                    <textarea class="form-control mb-1" rows="6"
                               @bind="ReminderMessageRaw"
                               @bind:event="oninput"
                               @onchange="OnReminderMessageChanged"></textarea>
+                    <span class="text-danger">*Jangan menghapus kurung siku!</span>
                 </div>
-                <div class="d-flex justify-content-center gap-3 mt-3">
+                <div class="d-flex justify-content-center gap-3 mt-4">
                     <button class="btn btn-danger px-4" @onclick="CancelSendReminder">Cancel</button>
                     <button class="btn btn-success px-4 d-flex align-items-center" @onclick="SendReminderAsync" disabled="@IsSendingReminder">
                         <i class="bi bi-whatsapp me-2"></i> Send Reminder
@@ -1369,7 +1373,7 @@
                 <div class="text-center">
                     <i class="bi bi-info-circle fs-1 text-primary"></i>
                     <p class="mt-2 fw-bold" style="font-size:20px">Message</p>
-                    <p class="mt-1">Status Message sedang tidak aktifl.</p>
+                    <p class="mt-1">Status Message sedang tidak aktif.</p>
                 </div>
             </Modal>
         }
@@ -3262,7 +3266,6 @@
                 var commonInner = ExtractCommonInner(fullMsg);
 
                 ReminderMessageCache[chatId] = commonInner ?? "";
-                Console.WriteLine($"[{chatId}] Cache COMMON: {ReminderMessageCache[chatId]}");
             }
             UpdateReminderMessage();
         }
@@ -3406,7 +3409,6 @@
             var updatedFullMsg = ReplaceCommonInner(oldFullMsg, newCommonInner);
 
             ReminderMessageCache[chatId] = newCommonInner;
-            Console.WriteLine($"[{chatId}] Cache COMMON: {ReminderMessageCache[chatId]}");
         }
         StateHasChanged();
     }

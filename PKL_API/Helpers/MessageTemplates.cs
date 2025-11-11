@@ -71,7 +71,7 @@ Ingat hari ini untuk belajar persiapan UKK dan Sertifikasi.]"
             {
                 Id = 5,
                 Name = "Test",
-                Content = "Test!"
+                Content = @"[Test!]"
             }
         },
         {
