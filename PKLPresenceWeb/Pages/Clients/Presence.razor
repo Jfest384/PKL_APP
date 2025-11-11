@@ -1963,7 +1963,7 @@
                 foreach (var photo in photos)
                 {
                     var field = MapPhotoTypeToField(photo.type);
-                    var apiBase = "https://presensi-test.smksabdev.my.id/";
+                    var apiBase = "https://presensi.smksabdev.my.id/";
                     var base64 = await GetPhotoBase64Async($"{apiBase}{photo.url}");
                     if (!string.IsNullOrEmpty(field) && !string.IsNullOrEmpty(base64))
                         ReportPhotoPreviews[field] = base64;

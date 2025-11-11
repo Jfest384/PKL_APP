@@ -32,8 +32,14 @@
                 <ul class="nav nav-tabs mb-3 d-flex flex-row justify-content-between flex-nowrap">
                     @foreach (var tab in VisibleTabs)
                     {
+                        var isMessageTab = tab == "Message";
                         <li class="nav-item flex-fill text-center">
-                            <button class="nav-link @(CurrentTab == tab ? "active fw-bold" : "")" style="width:100%;" @onclick="() => ChangeTab(tab)">@tab</button>
+                            <button class="nav-link @(CurrentTab == tab ? "active fw-bold" : "") @(isMessageTab && IsMessageTabDisabled ? "disabled" : "")"
+                                    style="width:100%;"
+                                    @onclick="isMessageTab && IsMessageTabDisabled ? null : (() => ChangeTab(tab))"
+                                    disabled="@(isMessageTab && IsMessageTabDisabled)">
+                                @tab
+                            </button>
                         </li>
                     }
                 </ul>
@@ -42,7 +48,7 @@
                 <select class="form-select tab-dropdown-fill" @onchange="OnTabDropdownChanged" value="@CurrentTab">
                     @foreach (var tab in VisibleTabs)
                     {
-                        <option value="@tab">@tab</option>
+                        <option value="@tab" disabled="@(tab == "Message" && IsMessageTabDisabled)">@tab</option>
                     }
                 </select>
             </div>
@@ -52,8 +58,14 @@
             <ul class="nav nav-tabs mb-3 d-flex flex-row justify-content-between flex-nowrap">
                 @foreach (var tab in VisibleTabs)
                 {
+                    var isMessageTab = tab == "Message";
                     <li class="nav-item flex-fill text-center">
-                        <button class="nav-link @(CurrentTab == tab ? "active fw-bold" : "")" style="width:100%;" @onclick="() => ChangeTab(tab)">@tab</button>
+                        <button class="nav-link @(CurrentTab == tab ? "active fw-bold" : "") @(isMessageTab && IsMessageTabDisabled ? "disabled" : "")"
+                                style="width:100%;"
+                                @onclick="isMessageTab && IsMessageTabDisabled ? null : (() => ChangeTab(tab))"
+                                disabled="@(isMessageTab && IsMessageTabDisabled)">
+                            @tab
+                        </button>
                     </li>
                 }
             </ul>
@@ -1336,6 +1348,31 @@
                 </div>
             </Modal>
         }
+
+        @if (ShowVpnWarningModal)
+        {
+            <Modal IsVisible="true" Title="">
+                <div class="text-center">
+                    <i class="bi bi-exclamation-triangle fs-1 text-warning"></i>
+                    <p class="mt-2 fw-bold" style="font-size:20px">Connection</p>
+                    <p class="mt-1">Anda Harus terhubung dengan VPN TKJ untuk mendapatkan data.</p>
+                </div>
+                <div class="d-flex justify-content-center mt-4">
+                    <button class="btn btn-primary px-4" @onclick="CloseVpnWarningModal">Close</button>
+                </div>
+            </Modal>
+        }
+
+        @if (ShowWahaStoppedModal)
+        {
+            <Modal IsVisible="true" Title="">
+                <div class="text-center">
+                    <i class="bi bi-info-circle fs-1 text-primary"></i>
+                    <p class="mt-2 fw-bold" style="font-size:20px">Message</p>
+                    <p class="mt-1">Status Message sedang tidak aktifl.</p>
+                </div>
+            </Modal>
+        }
     </div>
 </div>
 
@@ -1602,11 +1639,28 @@
         ShowStudentDetailModal = false;
     }
 
-
-
     private async Task LoadWalas()
     {
         WalasList = await Http.GetFromJsonAsync<List<WalasItem>>(APIUrl.Endpoint("data/walas"));
+    }
+
+    private bool ShowWahaStoppedModal = false;
+    private bool IsMessageTabDisabled = false;
+
+    private async Task ShowWahaStoppedInfoModalAsync()
+    {
+        ShowWahaStoppedModal = true;
+        StateHasChanged();
+        await Task.Delay(2500);
+        ShowWahaStoppedModal = false;
+        StateHasChanged();
+    }
+
+    private bool ShowVpnWarningModal = false;
+    private void CloseVpnWarningModal()
+    {
+        ShowVpnWarningModal = false;
+        Navigation.NavigateTo("/home", forceLoad: true);
     }
 
     protected override async Task OnInitializedAsync()
@@ -1621,8 +1675,6 @@
 
         var user = await Http.GetFromJsonAsync<UserResponse>(APIUrl.Endpoint("me"));
         UserRole = user?.role ?? "";
-
-        WahaSession = await Http.GetFromJsonAsync<WahaSession>(APIUrl.Endpoint("waha/sessions/default"));
 
         // ===== Ambil foto profile =====
         var photoRequest = new HttpRequestMessage(HttpMethod.Get, APIUrl.Endpoint("me/photo"));
@@ -1641,6 +1693,27 @@
         {
             await LoadClasses();
             VisibleTabs = new() { "Siswa TKJ", "Pembimbing PKL", "Siswa PKL", "Manajemen Kelas", "Daftar PT", "Message" };
+            try
+            {
+                WahaSession = await Http.GetFromJsonAsync<WahaSession>(APIUrl.Endpoint("waha/sessions/default"));
+                if (WahaSession?.status == "STOPPED")
+                {
+                    IsMessageTabDisabled = true;
+                    await ShowWahaStoppedInfoModalAsync();
+                }
+            }
+            catch (HttpRequestException)
+            {
+                ShowVpnWarningModal = true;
+                StateHasChanged();
+                return;
+            }
+            catch (Exception)
+            {
+                ShowVpnWarningModal = true;
+                StateHasChanged();
+                return;
+            }
         }
         else if (UserRole == "Student")
             VisibleTabs = new() { "Siswa PKL", "Pembimbing PKL" };
@@ -1654,7 +1727,7 @@
         await LoadWalas();
         await LoadData();
 
-        if (CurrentTab == "Message")
+        if (CurrentTab == "Message" && !IsMessageTabDisabled)
         {
             await LoadDefaultChats();
             await LoadDefaultChatDetails();
