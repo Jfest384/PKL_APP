@@ -419,8 +419,11 @@ namespace PKL_API.Controllers
                 presence.Detail.update_at = DateOnly.FromDateTime(DateTime.Now);
             }
 
-            student.StudentValidation.isDailyReport = true;
-            student.StudentValidation.update_daily = DateTime.Now;
+            if (presence.date == DateOnly.FromDateTime(DateTime.Now))
+            {
+                student.StudentValidation.isDailyReport = true;
+                student.StudentValidation.update_daily = DateTime.Now;
+            }
 
             await _db.SaveChangesAsync();
             return Ok(new { message = "Presence updated successfully" });

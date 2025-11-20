@@ -117,28 +117,7 @@ app.UseHttpsRedirection();
 
 if (app.Environment.IsDevelopment() || app.Environment.IsProduction())
 {
-    app.Use(async (context, next) =>
-    {
-        if (context.Request.Path.StartsWithSegments("/api/swagger"))
-        {
-            var user = context.User;
-            if (!user.Identity?.IsAuthenticated ?? true)
-            {
-                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                await context.Response.WriteAsync("Unauthorized: please login.");
-                return;
-            }
-
-            if (!user.IsInRole("Admin") && !user.IsInRole("Kepala Jurusan"))
-            {
-                context.Response.StatusCode = StatusCodes.Status403Forbidden;
-                await context.Response.WriteAsync("Forbidden: Access denied.");
-                return;
-            }
-        }
-        await next();
-    });
-
+    app.UseMiddleware<SwaggerBasicAuthMiddleware>("admin", "SMKsabdev123");
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
@@ -177,14 +156,14 @@ app.MapPost("/waha/{**path}", async (HttpContext context, HttpClient http) =>
     await context.Response.WriteAsync(await response.Content.ReadAsStringAsync());
 });
 
-app.Map("/api/hangfire", hangfireApp =>
+app.Map("/hangfire", hangfireApp =>
 {
-    hangfireApp.UseAuthentication();
-    hangfireApp.UseAuthorization();
-
-    hangfireApp.UseHangfireDashboard("/api/hangfire", new DashboardOptions
+    hangfireApp.UseHangfireDashboard("/dashboard", new DashboardOptions
     {
-        Authorization = new[] { new RoleBasedAuthorizationFilter("Admin", "Kepala Jurusan") }
+        Authorization = new[]
+        {
+            new BasicDashboardAuthorizationFilter("admin", "SMKsabdev123")
+        }
     });
 });
 
