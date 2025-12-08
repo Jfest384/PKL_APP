@@ -1,4 +1,4 @@
-﻿@inherits LayoutComponentBase
+﻿@* @inherits LayoutComponentBase
 @inject NavigationManager Navigation
 
 <div class="main-content">
@@ -19,4 +19,48 @@
     private bool ShowBottomNav =>
         !string.IsNullOrWhiteSpace(CurrentPath) &&
         !ExcludedRoutes.Any(route => CurrentPath.StartsWith(route));
+} *@
+
+@inherits LayoutComponentBase
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+<div class="theme-toggle">
+    <button class="theme-btn" @onclick="ToggleTheme">
+        @(isDark ? "☀ Light" : "🌙 Dark")
+    </button>
+</div>
+
+<div class="main-content">
+    @Body
+</div>
+
+@if (ShowBottomNav)
+{
+    <BottomNav />
+}
+
+@code {
+    private readonly string[] ExcludedRoutes = new[] { "login", "lapran-pkl/approval" };
+    private bool isDark = false;
+
+    private string CurrentPath =>
+        Navigation.ToBaseRelativePath(Navigation.Uri).Split('?')[0].ToLower();
+
+    private bool ShowBottomNav =>
+        !string.IsNullOrWhiteSpace(CurrentPath) &&
+        !ExcludedRoutes.Any(route => CurrentPath.StartsWith(route));
+
+    protected override async Task OnInitializedAsync()
+    {
+        var saved = await JS.InvokeAsync<string>("themeManager.getTheme");
+        isDark = saved == "dark";
+        await JS.InvokeVoidAsync("themeManager.applyTheme", isDark);
+    }
+
+    private async Task ToggleTheme()
+    {
+        isDark = !isDark;
+        await JS.InvokeVoidAsync("themeManager.applyTheme", isDark);
+    }
 }

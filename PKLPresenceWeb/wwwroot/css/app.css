@@ -1,4 +1,51 @@
-﻿html, body {
+﻿:root {
+    --bg-primary: #e1e1e1;
+    --bg-header: #0476D9;
+    --bg-card: ghostwhite;
+    --border-card: #d1d1d1;
+    --text-primary: #000;
+    --card-bg: #ffffff;
+    --card-text: #000000;
+    --input-bg: #f8f8f8;
+    --input-text: #000000;
+    --place-holder: #6c757d;
+    --student-detail-header-bg: #f1f3f6;
+    --student-detail-input-bg: #e9ecef;
+    --student-detail-input-border: #d1d5db;
+    --section-title-bg: #f3f3f3;
+    --pagination-btn-bg: #fff;
+}
+
+.dark {
+    --bg-primary: #292c2e;
+    --bg-header: #035eae;
+    --bg-card: #1a1c1d;
+    --border-card: #444;
+    --text-primary: #fff;
+    --card-bg: #1e1e1e;
+    --card-text: #ffffff;
+    --input-bg: #2b2b2b;
+    --input-text: #ffffff;
+    --place-holder: #b5b5b5;
+    --student-detail-header-bg: #1e2122;
+    --student-detail-input-bg: #232627;
+    --student-detail-input-border: #4B5563;
+    --section-title-bg: #1f2123;
+}
+
+/* Default Light Mode */
+body {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+/* Dark Mode */
+.dark body {
+    background: #1e1e1e;
+    color: #fff;
+}
+
+html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
@@ -8,6 +55,20 @@ h1:focus {
 
 a, .btn-link {
     color: #0071c1;
+}
+
+.theme-toggle {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    z-index: 999;
+}
+
+.theme-btn {
+    padding: 6px 12px;
+    border-radius: 20px;
+    border: none;
+    cursor: pointer;
 }
 
 .btn-primary {
@@ -332,6 +393,34 @@ body, html {
         margin: 0.25rem;
     }
 
+.dark .pagination .page-link {
+    background: #181a1b;
+    color: #fff;
+    border: 1px solid #444;
+    box-shadow: none;
+    transition: background 0.2s, color 0.2s, border 0.2s;
+}
+
+.dark .pagination .page-item.active .page-link {
+    background: #000;
+    color: #fff;
+    border: 1px solid #837005;
+}
+
+.dark .pagination .page-item.disabled .page-link {
+    color: #b5b5b5;
+    opacity: 0.5;
+    background: #292c2e;
+    border: 1px solid #444;
+}
+
+.dark .pagination .page-link:focus,
+.dark .pagination .page-link:hover:not(.disabled) {
+    background: #232627;
+    color: #fff;
+    border: 1px solid #b5b5b5;
+}
+
 .bottom-nav-custom .nav-item-custom .nav-item-inner .menu-label {
     color: #fff !important;
     transition: color 0.2s;
@@ -385,4 +474,18 @@ body, html {
     margin: 10px;
     max-width: 400px;
     box-sizing: border-box;
+}
+
+.card {
+    background-color: var(--card-bg) !important;
+    color: var(--card-text) !important;
+}
+
+.form-control {
+    background-color: var(--input-bg) !important;
+    color: var(--input-text) !important;
+}
+
+.form-control::placeholder {
+    color: var(--place-holder) !important;
 }

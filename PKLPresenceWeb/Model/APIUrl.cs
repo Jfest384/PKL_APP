@@ -10,6 +10,7 @@
         {
             if (string.IsNullOrWhiteSpace(path)) return Base;
             // Pastikan tidak ada double slash
+
             return Base.TrimEnd('/') + "/" + path.TrimStart('/');
         }
     }
