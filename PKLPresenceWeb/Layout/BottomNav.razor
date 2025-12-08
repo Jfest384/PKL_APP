@@ -5,6 +5,7 @@
 @inject HttpClient Http
 @inject IJSRuntime JS
 @using PKLPresenceWeb.Pages
+@using System.Text.Json
 @inject NavigationManager NavigationManager
 
 <nav class="bottom-nav-custom">
@@ -53,7 +54,7 @@
     private bool isInitialized = false;
 
     private string ParticipantMenuLabel =>
-    isAdminOrKepalaJurusan ? "Management" : "Participant";
+        isAdminOrKepalaJurusan ? "Management" : "Participant";
 
     private string ParticipantMenuIcon =>
         isAdminOrKepalaJurusan ? "bi-gear" : "bi-person";
@@ -67,8 +68,6 @@
     {
         UpdatePath();
         Navigation.LocationChanged += OnLocationChanged;
-
-        // Fetch user role and validate student data
         await CheckUserRoleAndValidateData();
     }
 
@@ -93,60 +92,46 @@
     {
         try
         {
-            var token = await JS.InvokeAsync<string>("localStorage.getItem", "authToken");
-            if (!string.IsNullOrEmpty(token))
+            var meJson = await JS.InvokeAsync<string>("localStorage.getItem", "meResponse");
+            if (string.IsNullOrWhiteSpace(meJson))
             {
-                Http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                isDataComplete = false;
+                isInitialized = true;
+                return;
             }
 
-            var userResponse = await Http.GetFromJsonAsync<UserResponse>(APIUrl.Endpoint("me"));
-            userRole = userResponse?.role ?? "";
+            using var doc = JsonDocument.Parse(meJson);
+            var root = doc.RootElement;
+
+            userRole = root.TryGetProperty("role", out var roleProp) ? roleProp.GetString() ?? "" : "";
             isStudent = userRole == "Student";
 
             if (isStudent)
             {
-                var userId = userResponse?.id;
-                var response = await Http.GetFromJsonAsync<StudentPKLListResponse>(
-                    APIUrl.Endpoint($"students/pkl?userIdFilter={userId}")
-                );
-                var studentResponse = response?.students?.FirstOrDefault();
-
-                // Cek kelengkapan data
-                isDataComplete = studentResponse != null
-                    && !string.IsNullOrWhiteSpace(studentResponse.email)
-                    && !string.IsNullOrWhiteSpace(studentResponse.company_name);
+                if (root.TryGetProperty("data", out var dataProp))
+                {
+                    var email = root.TryGetProperty("email", out var emailProp) ? emailProp.GetString() ?? "" : "";
+                    var companyName = dataProp.TryGetProperty("company", out var companyProp) ? companyProp.GetString() ?? "" : "";
+                    isDataComplete = !string.IsNullOrWhiteSpace(email) && !string.IsNullOrWhiteSpace(companyName);
+                }
+                else isDataComplete = false;
             }
-            else
-            {
-                isDataComplete = true;
-            }
+            else isDataComplete = true;
         }
         catch
         {
             isDataComplete = false;
         }
-
         isInitialized = true;
     }
 
     private void HandleMenuClick(string menu)
     {
-        if (!isInitialized)
-        {
-            return;
-        }
-
+        if (!isInitialized) return;
         if (isStudent && !isDataComplete)
-        {
             showWarningModal = true;
-        }
-        else
-        {
-            Navigation.NavigateTo($"/{menu}");
-        }
+        else Navigation.NavigateTo($"/{menu}");
     }
-
-
 
     private void CloseModal()
     {

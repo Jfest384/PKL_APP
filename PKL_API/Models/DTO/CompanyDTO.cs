@@ -9,10 +9,10 @@ namespace PKL_API.Models.DTO
         public required string name { get; set; }
         [MaxLength]
         public required string address { get; set; }
-        [Column(TypeName = "decimal(10,7)")]
+        [Column(TypeName = "decimal(15,12)")]
         public decimal? Lat { get; set; }
 
-        [Column("long", TypeName = "decimal(10,7)")]
+        [Column("long", TypeName = "decimal(15,12)")]
         public decimal? Long { get; set; }
     }
 
@@ -22,9 +22,9 @@ namespace PKL_API.Models.DTO
         public required string name { get; set; }
         [MaxLength]
         public required string address { get; set; }
-        [Column(TypeName = "decimal(10,7)")]
+        [Column(TypeName = "decimal(15,12)")]
         public decimal? Lat { get; set; }
-        [Column("long", TypeName = "decimal(10,7)")]
+        [Column("long", TypeName = "decimal(15,12)")]
         public decimal? Long { get; set; }
     }
 }

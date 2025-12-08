@@ -26,10 +26,11 @@
 </CascadingAuthenticationState>
 
 @code {
-    private static readonly Type[] PublicPages = new[]
+    public static readonly Type[] PublicPages = new[]
     {
         typeof(PKLPresenceWeb.Pages.Clients.Cover), // pastikan Cover.razor ada @page "/"
-        typeof(PKLPresenceWeb.Pages.Clients.Login)
+        typeof(PKLPresenceWeb.Pages.Clients.Login),
+        typeof(PKLPresenceWeb.Pages.Clients.Approval)
     };
 
     private bool IsPublicPage(Type pageType)

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Pilih Lokasi di Google Maps</title>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    #map {
+      height: 100%;
+      width: 100%;
+    }
+    #searchBox {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 300px;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      z-index: 999;
+    }
+  </style>
+  <!-- Ganti YOUR_API_KEY dengan API Key Google milikmu -->
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA12p8kydwok4GBbluxTO1NijwD2uvj0IY&libraries=places"></script>
+</head>
+<body>
+  <input id="searchBox" type="text" placeholder="Cari nama perusahaan...">
+  <div id="map"></div>
+
+  <script>
+    let map;
+    let marker;
+
+    function initMap() {
+      map = new google.maps.Map(document.getElementById("map"), {
+        center: { lat: 1.0371331, lng: 103.9956383 },
+        zoom: 14,
+      });
+
+      const input = document.getElementById("searchBox");
+      const searchBox = new google.maps.places.SearchBox(input);
+      map.controls[google.maps.ControlPosition.TOP_CENTER].push(input);
+
+      // Update bounds untuk pencarian
+      map.addListener("bounds_changed", () => {
+        searchBox.setBounds(map.getBounds());
+      });
+
+      // Ketika user klik di peta
+      map.addListener("click", (e) => {
+        placeMarker(e.latLng);
+      });
+
+      // Ketika user memilih hasil pencarian
+      searchBox.addListener("places_changed", () => {
+        const places = searchBox.getPlaces();
+        if (places.length === 0) return;
+        const place = places[0];
+        if (!place.geometry) return;
+
+        const location = place.geometry.location;
+        placeMarker(location);
+        map.panTo(location);
+      });
+    }
+
+    function placeMarker(location) {
+      if (marker) marker.setMap(null);
+      marker = new google.maps.Marker({
+        position: location,
+        map: map,
+      });
+
+      // Kirim data ke parent window
+      window.opener.postMessage(
+        { lat: location.lat(), lng: location.lng() },
+        "*"
+      );
+
+      // Tutup popup otomatis setelah memilih
+      setTimeout(() => window.close(), 500);
+    }
+
+    window.onload = initMap;
+  </script>
+</body>
+</html>

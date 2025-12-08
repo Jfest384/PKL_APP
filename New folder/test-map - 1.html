@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MapTiler + Photon Uji Coba</title>
+<link href="https://api.maptiler.com/maps/streets/style.css?key=V2NKLc84EZrQT0sfWuu5" rel="stylesheet">
+<style>
+  #modal { width: 500px; margin: 50px auto; padding: 20px; border: 1px solid #ccc; border-radius: 8px; }
+  #map { height: 400px; width: 100%; margin-bottom: 10px; }
+  #locationField, #searchInput { width: 100%; padding: 5px; margin-bottom: 10px; }
+  #coords { font-weight: bold; }
+</style>
+</head>
+<body>
+
+<div id="modal">
+  <h2>Tambah Perusahaan</h2>
+  <input type="text" id="companyName" placeholder="Nama PT">
+  <input type="text" id="locationField" placeholder="Lokasi" readonly>
+  <input type="text" id="searchInput" placeholder="Cari lokasi PT...">
+  <div id="map"></div>
+  <div>Koordinat: <span id="coords"></span></div>
+</div>
+
+<!-- MapTiler JS -->
+<script src="https://api.maptiler.com/maps/streets/maplibre-gl.js"></script>
+<link href="https://api.maptiler.com/maps/streets/maplibre-gl.css" rel="stylesheet">
+
+<script>
+  // 1. Inisialisasi MapTiler Map
+  const map = new maplibregl.Map({
+    container: 'map',
+    style: 'https://api.maptiler.com/maps/streets/style.json?key=V2NKLc84EZrQT0sfWuu5', // bisa diganti: streets, satellite, topo
+    center: [118.0149, -2.5489], // tengah Indonesia [lng, lat]
+    zoom: 5
+  });
+
+  let marker;
+
+  function setMarker(lng, lat, name) {
+    if(marker) marker.remove();
+    marker = new maplibregl.Marker().setLngLat([lng, lat]).addTo(map);
+    map.flyTo({ center: [lng, lat], zoom: 16 });
+    document.getElementById('locationField').value = name;
+    document.getElementById('coords').innerText = `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`;
+  }
+
+  async function searchLocation(query) {
+    if(!query) return;
+    const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=5`);
+    const data = await res.json();
+    if(data.features.length === 0) {
+      alert('Lokasi tidak ditemukan');
+      return;
+    }
+    return data.features;
+  }
+
+  // 2. Event input search (Enter)
+  document.getElementById('searchInput').addEventListener('keypress', async function(e) {
+    if(e.key === 'Enter') {
+      const results = await searchLocation(this.value);
+      if(!results) return;
+      const place = results[0];
+      const [lng, lat] = place.geometry.coordinates;
+      const name = place.properties.name || place.properties.street || this.value;
+      setMarker(lng, lat, name);
+    }
+  });
+
+  // 3. Optional: klik map untuk set lokasi langsung
+  map.on('click', function(e) {
+    const lng = e.lngLat.lng;
+    const lat = e.lngLat.lat;
+    setMarker(lng, lat, 'Lokasi baru');
+  });
+
+</script>
+</body>
+</html>

@@ -46,7 +46,6 @@ namespace PKL_API.Helpers
                 return Challenge(http);
 
             var sessionKey = encoded;
-
             if (ActiveSessions.TryGetValue(sessionKey, out var expiresAt))
             {
                 if (expiresAt > DateTime.UtcNow)
@@ -87,7 +86,7 @@ namespace PKL_API.Helpers
         public async Task InvokeAsync(HttpContext context)
         {
             // Lindungi semua endpoint swagger
-            if (context.Request.Path.StartsWithSegments("/api/swagger", StringComparison.OrdinalIgnoreCase))
+            if (context.Request.Path.StartsWithSegments("/swagger", StringComparison.OrdinalIgnoreCase))
             {
                 string authHeader = context.Request.Headers["Authorization"];
 
@@ -119,5 +118,4 @@ namespace PKL_API.Helpers
             await _next(context);
         }
     }
-
 }

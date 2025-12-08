@@ -9,6 +9,7 @@
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Authorization
 @using PKLPresenceWeb.Model
+@using System.Text.Json
 
 <div class="class-wrapper">
     <div class="header-section d-flex justify-content-between align-items-center">
@@ -502,22 +503,29 @@
             return;
         }
 
-        var token = await JS.InvokeAsync<string>("localStorage.getItem", "authToken");
-        if (!string.IsNullOrEmpty(token))
-            Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+        var meJson = await JS.InvokeAsync<string>("localStorage.getItem", "meResponse");
+        if (string.IsNullOrWhiteSpace(meJson))
+            return;
+
+        var doc = JsonDocument.Parse(meJson);
+        var root = doc.RootElement;
 
         StudentDetail = await Http.GetFromJsonAsync<StudentDetail>(PKLPresenceWeb.Model.APIUrl.Endpoint($"students/{studentId}"));
 
         // Ambil foto profile
-        var photoRequest = new HttpRequestMessage(HttpMethod.Get, PKLPresenceWeb.Model.APIUrl.Endpoint("me/photo"));
-        photoRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-        var photoResponse = await Http.SendAsync(photoRequest);
-        if (photoResponse.IsSuccessStatusCode)
+        if (root.TryGetProperty("profile", out var profileProp) &&
+            profileProp.ValueKind != JsonValueKind.Null)
         {
-            var bytes = await photoResponse.Content.ReadAsByteArrayAsync();
-            var contentType = photoResponse.Content.Headers.ContentType?.MediaType ?? "image/jpeg";
-            var base64 = Convert.ToBase64String(bytes);
-            photoUrl = $"data:{contentType};base64,{base64}";
+            var request = new HttpRequestMessage(HttpMethod.Get, APIUrl.Endpoint("me/photo"));
+            var response = await Http.SendAsync(request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var bytes = await response.Content.ReadAsByteArrayAsync();
+                var contentType = response.Content.Headers.ContentType?.MediaType ?? "image/jpeg";
+                var base64 = Convert.ToBase64String(bytes);
+                photoUrl = $"data:{contentType};base64,{base64}";
+            }
         }
 
         await LoadPresenceTypes();
@@ -735,7 +743,7 @@
                 foreach (var field in PreviewPresenceFields)
                 {
                     var photo = photos.FirstOrDefault(p => MapPhotoTypeToField(p.type) == field.Field);
-                    var apiBase = "https://presensi.smksabdev.my.id/";
+                    var apiBase = "https://presensi.smksabdev.my.id";
                     if (photo != null)
                     {
                         var base64 = await GetPhotoBase64Async($"{apiBase}{photo.url}");

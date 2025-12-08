@@ -224,6 +224,10 @@ namespace PKL_API.Controllers
             if (dto.Long.HasValue)
                 detail.longitude = Math.Round(dto.Long.Value, 7, MidpointRounding.AwayFromZero);
 
+            if (dto.PresenceTypeid == 4)
+                detail.iscomplate = true;
+            else detail.iscomplate = false;
+
             _db.PresenceDetails.Add(detail);
             await _db.SaveChangesAsync();
 
@@ -417,6 +421,7 @@ namespace PKL_API.Controllers
             {
                 presence.Detail.daily_report = dto.daily_report;
                 presence.Detail.update_at = DateOnly.FromDateTime(DateTime.Now);
+                presence.Detail.iscomplate = true;
             }
 
             if (presence.date == DateOnly.FromDateTime(DateTime.Now))

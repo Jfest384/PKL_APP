@@ -171,7 +171,24 @@ namespace PKLPresenceWeb.Model
         public int id { get; set; }
         public string name { get; set; }
         public string address { get; set; }
+    }
+
+    public class CompanyDetail
+    {
+        public int id { get; set; }
+        public string name { get; set; }
+        public string? address { get; set; }
         public string phone { get; set; }
+        public double? lat { get; set; }
+        public double? lon { get; set; }
+    }
+
+    public class CompanyModel
+    {
+        public string Name { get; set; } = "";
+        public string Address { get; set; } = "";
+        public string Lat { get; set; }
+        public string Long { get; set; }
     }
 
     public class TeacherItem
@@ -241,11 +258,22 @@ namespace PKLPresenceWeb.Model
 
     public class DefaultChatDetail
     {
-        public int contactId { get; set; }
-        public string chat_name { get; set; }
-        public string id_chat { get; set; }
-        public int serviceId { get; set; }
-        public string service_name { get; set; }
+        [JsonPropertyName("contactId")]
+        public int ContactId { get; set; }
+
+        [JsonPropertyName("chat_name")]
+        public string ChatName { get; set; } = string.Empty;
+
+        [JsonPropertyName("id_chat")]
+        public string IdChat { get; set; } = string.Empty;
+
+        [JsonPropertyName("serviceId")]
+        public int ServiceId { get; set; }
+
+        [JsonPropertyName("service_name")]
+        public string ServiceName { get; set; } = string.Empty;
+
+        [JsonPropertyName("template")]
         public ChatTemplate Template { get; set; } = new();
     }
 
@@ -275,5 +303,10 @@ namespace PKLPresenceWeb.Model
         public int id { get; set; }
         public string id_chat { get; set; }
         public string chat_name { get; set; }
+    }
+
+    public class NominatimResult
+    {
+        public string display_name { get; set; }
     }
 }

@@ -14,10 +14,10 @@ namespace PKL_API.Models
         [StringLength(20)]
         public string? phone { get; set; }
 
-        [Column(TypeName = "decimal(10,7)")]
+        [Column(TypeName = "decimal(15,12)")]
         public decimal? lat { get; set; }
 
-        [Column("long", TypeName = "decimal(10,7)")]
+        [Column("long", TypeName = "decimal(15,12)")]
         public decimal? longitude { get; set; }
 
         public ICollection<Student>? Students { get; set; }

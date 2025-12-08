@@ -1,0 +1,32 @@
+﻿@using Microsoft.JSInterop
+@inject IJSRuntime JS
+
+<div id="leaflet-map" style="height: 250px; width: 100%;"></div>
+
+@code {
+    [Parameter] public double? Latitude { get; set; }
+    [Parameter] public double? Longitude { get; set; }
+    [Parameter] public EventCallback<(double, double)> OnMapClick { get; set; }
+
+    private DotNetObjectReference<LeafletMap>? objRef;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            objRef = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("initLeafletMap", Latitude, Longitude, objRef);
+        }
+        else
+        {
+            await JS.InvokeVoidAsync("updateLeafletMarker", Latitude, Longitude);
+        }
+    }
+
+    [JSInvokable]
+    public async Task MapClicked(double lat, double lng)
+    {
+        if (OnMapClick.HasDelegate)
+            await OnMapClick.InvokeAsync((lat, lng));
+    }
+}

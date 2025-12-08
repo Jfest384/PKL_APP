@@ -1,8 +1,13 @@
 ﻿using PKL_API.Controllers;
 using PKL_API.Models;
+using QRCoder;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.Drawing.Drawing2D;
+using SdColor = System.Drawing.Color;
 
 namespace PKL_API.Helpers
 {
@@ -496,6 +501,63 @@ namespace PKL_API.Helpers
                     });
                 });
             }).GeneratePdf();
+        }
+
+        public static byte[] GenerateQrWithLogoAndFrame(string qrUrl, string logoPath)
+        {
+            using var logoStream = File.OpenRead(logoPath);
+            using var logoBitmap = new Bitmap(logoStream);
+
+            byte[] qrBytesFinal;
+
+            using (var qrGenerator = new QRCodeGenerator())
+            {
+                var qrData = qrGenerator.CreateQrCode(qrUrl, QRCodeGenerator.ECCLevel.Q);
+                using var qrCode = new QRCode(qrData);
+
+                using Bitmap qrWithLogo = qrCode.GetGraphic(
+                    pixelsPerModule: 12,
+                    darkColor: SdColor.Black,
+                    lightColor: SdColor.White,
+                    icon: logoBitmap,
+                    iconSizePercent: 15,
+                    iconBorderWidth: 6,
+                    iconBackgroundColor: SdColor.White
+                );
+
+                int framePadding = 25;
+                int frameBorderThickness = 6;
+                SdColor frameColor = SdColor.DarkBlue;
+
+                int framedWidth = qrWithLogo.Width + framePadding * 2;
+                int framedHeight = qrWithLogo.Height + framePadding * 2;
+
+                using var framed = new Bitmap(framedWidth, framedHeight);
+                using (Graphics g = Graphics.FromImage(framed))
+                {
+                    g.SmoothingMode = SmoothingMode.AntiAlias;
+                    g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                    g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+
+                    g.Clear(SdColor.White);
+                    g.DrawImage(qrWithLogo, framePadding, framePadding, qrWithLogo.Width, qrWithLogo.Height);
+
+                    using var pen = new Pen(frameColor, frameBorderThickness);
+                    var rect = new Rectangle(
+                        frameBorderThickness / 2,
+                        frameBorderThickness / 2,
+                        framed.Width - frameBorderThickness,
+                        framed.Height - frameBorderThickness
+                    );
+                    g.DrawRectangle(pen, rect);
+                }
+
+                using var ms = new MemoryStream();
+                framed.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
+                qrBytesFinal = ms.ToArray();
+            }
+
+            return qrBytesFinal;
         }
     }
 }

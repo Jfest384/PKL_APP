@@ -10,6 +10,7 @@
 @using System.Globalization
 @using Microsoft.AspNetCore.Authorization
 @using PKLPresenceWeb.Model
+@using System.Text.Json
 
 <div class="report-wrapper">
     <div class="header-section d-flex justify-content-between align-items-center">
@@ -219,19 +220,6 @@
                                 <i class="bi bi-arrow-repeat"></i>
                             </button> *@
                         </div>
-                    </div>
-                </Modal>
-            }
-
-            @if (ShowReportSuccess)
-            {
-                <Modal IsVisible="true">
-                    <div class="text-center">
-                        <span class="checkmark-report-animate">
-                            <i class="bi bi-check-circle-fill" style="font-size:3rem; color:limegreen;"></i>
-                        </span>
-                        <p class="mt-2 fw-bold" style="font-size:20px">Success</p>
-                        <p class="mt-1">Report berhasil disubmit!</p>
                     </div>
                 </Modal>
             }
@@ -549,19 +537,6 @@
                     </ul>
                 </nav>
             }
-
-            @if (ShowFeedbackSuccess)
-            {
-                <Modal IsVisible="true">
-                    <div class="text-center">
-                        <span class="checkmark-report-animate">
-                            <i class="bi bi-check-circle-fill" style="font-size:3rem; color:limegreen;"></i>
-                        </span>
-                        <p class="mt-2 fw-bold" style="font-size:20px">Success</p>
-                        <p class="mt-1">Feedback berhasil ditambahkan!</p>
-                    </div>
-                </Modal>
-            }
         }
 
         @if ((ShowReportDetailModal || ShowFeedbackModal) && SelectedReportDetail != null)
@@ -678,19 +653,6 @@
                             Close
                         </button>
                     }
-                </div>
-            </Modal>
-        }
-
-        @if (ShowDownloadSuccessModal)
-        {
-            <Modal IsVisible="true">
-                <div class="text-center">
-                    <span class="checkmark-presence-animate">
-                        <i class="bi bi-check-circle-fill" style="font-size:3rem; color:limegreen;"></i>
-                    </span>
-                    <p class="mt-2 fw-bold" style="font-size:20px">Success!</p>
-                    <p class="mt-1">Rekap data Bimbingan Laporan berhasil diunduh.</p>
                 </div>
             </Modal>
         }
@@ -848,7 +810,7 @@
     private CancellationTokenSource? searchDebounceCts;
     private bool showDatePicker = false;
     private string selectedDate = DateTime.Today.ToString("yyyy-MM-dd");
-    private string MinDate => DateTime.Today.AddYears(-1).ToString("yyyy-MM-dd"); // Optional: set min date
+    private string MinDate => DateTime.Today.AddYears(-1).ToString("yyyy-MM-dd");
     private string MaxDate => DateTime.Today.ToString("yyyy-MM-dd");
 
     bool ShowReportModal = false;
@@ -865,8 +827,21 @@
     string ContentInput = "";
     bool IsSubmittingFeedback = false;
     bool IsSubmittingReport = false;
-    private bool ShowReportSuccess = false;
-    private bool ShowFeedbackSuccess = false;
+
+    private string SuccessModalText = "";
+    private async void ShowSuccessAlert()
+    {
+        await JS.InvokeVoidAsync("Swal.fire", new
+        {
+            title = "Success!",
+            text = SuccessModalText,
+            icon = "success",
+            timer = 3000,
+            showConfirmButton = false,
+            width = "90%",
+            customClass = new { popup = "my-swal-popup" }
+        });
+    }
 
     private bool HasReportToday =>
     Reports.Any(p =>
@@ -901,40 +876,44 @@
         if (!authState.User.Identity.IsAuthenticated)
         {
             Navigation.NavigateTo("/login", true);
+            return;
         }
 
-        var token = await JS.InvokeAsync<string>("localStorage.getItem", "authToken");
-        if (!string.IsNullOrEmpty(token))
+        var meJson = await JS.InvokeAsync<string>("localStorage.getItem", "meResponse");
+        using var doc = JsonDocument.Parse(meJson);
+        var root = doc.RootElement;
+
+        UserRole = root.TryGetProperty("role", out var roleProp) ? roleProp.GetString() ?? "" : "";
+        CurrentUserId = root.TryGetProperty("id", out var idProp) ? idProp.GetInt32() : 0;
+
+        if (root.TryGetProperty("data", out var dataProp) && dataProp.ValueKind == JsonValueKind.Object)
         {
-            Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            if (UserRole.Contains("Mentor") && dataProp.TryGetProperty("mentorId", out var mentorIdProp))
+                CurrentMentorId = mentorIdProp.GetInt32();
+            if (UserRole.Contains("Wali Kelas") && dataProp.TryGetProperty("classId", out var classIdProp))
+                CurrentClassId = classIdProp.GetInt32();
         }
 
-        var user = await Http.GetFromJsonAsync<UserResponse>(APIUrl.Endpoint("me"));
-        UserRole = user?.role ?? "";
-
-        // ===== Ambil foto profile =====
-        var photoRequest = new HttpRequestMessage(HttpMethod.Get, APIUrl.Endpoint("me/photo"));
-        photoRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-        var photoResponse = await Http.SendAsync(photoRequest);
-
-        if (photoResponse.IsSuccessStatusCode)
+        // Ambil foto profile jika ada
+        if (root.TryGetProperty("profile", out var profileProp) && profileProp.ValueKind != JsonValueKind.Null)
         {
-            var bytes = await photoResponse.Content.ReadAsByteArrayAsync();
-            var contentType = photoResponse.Content.Headers.ContentType?.MediaType ?? "image/jpeg";
-            var base64 = Convert.ToBase64String(bytes);
-            photoUrl = $"data:{contentType};base64,{base64}";
+            var photoResponse = await Http.GetAsync(APIUrl.Endpoint("me/photo"));
+            if (photoResponse.IsSuccessStatusCode)
+            {
+                var bytes = await photoResponse.Content.ReadAsByteArrayAsync();
+                var contentType = photoResponse.Content.Headers.ContentType?.MediaType ?? "image/jpeg";
+                var base64 = Convert.ToBase64String(bytes);
+                photoUrl = $"data:{contentType};base64,{base64}";
+            }
         }
 
         if (UserRole != "Student")
         {
             await LoadClasses();
             await LoadReports();
-        }
-        else
-        {
-            await LoadStudentReports();
             await LoadMentors();
         }
+        else await LoadStudentReports();
     }
 
     private void ShowAddReport()
@@ -1016,7 +995,7 @@
 
     async Task ConfirmReport()
     {
-		if (IsSubmittingReport) return;
+        if (IsSubmittingReport) return;
         if (string.IsNullOrWhiteSpace(ContentInput))
         {
             CloseDetailModal();
@@ -1027,14 +1006,11 @@
         var formData = new MultipartFormDataContent();
         formData.Add(new StringContent(ContentInput), "description");
 
-        // Foto bimbingan dari WebRTC
         if (WebRTCPhotoDataUrl != null)
         {
-            // Ambil base64 dari dataUrl
             var base64 = WebRTCPhotoDataUrl.Substring(WebRTCPhotoDataUrl.IndexOf(",") + 1);
             var bytes = Convert.FromBase64String(base64);
 
-            // Tentukan mimeType dan ekstensi
             var mimeType = WebRTCPhotoDataUrl.Substring(5, WebRTCPhotoDataUrl.IndexOf(";") - 5);
             var ext = mimeType switch
             {
@@ -1049,10 +1025,9 @@
             formData.Add(fileContent, "guidancePhoto", $"guidance{ext}");
         }
 
-        // File laporan (upload)
         if (UploadedReportFile != null)
         {
-            var stream = UploadedReportFile.OpenReadStream(10 * 1024 * 1024); // max 10MB
+            var stream = UploadedReportFile.OpenReadStream(10 * 1024 * 1024);
             var fileContent = new StreamContent(stream);
             fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(UploadedReportFile.ContentType);
             formData.Add(fileContent, "reportFile", UploadedReportFile.Name);
@@ -1064,10 +1039,8 @@
         if (response.IsSuccessStatusCode)
         {
             CloseDetailModal();
-            ShowReportSuccess = true;
-            StateHasChanged();
-            await Task.Delay(2000);
-            ShowReportSuccess = false;
+            SuccessModalText = "Report berhasil disubmit.";
+            ShowSuccessAlert();
             await LoadReports();
         }
         else await JS.InvokeVoidAsync("alert", "Gagal submit report.");
@@ -1080,9 +1053,7 @@
             CloseDetailModal();
             return;
         }
-
-        if (SelectedReportDetail == null)
-            return;
+        if (SelectedReportDetail == null) return;
 
         IsSubmittingFeedback = true;
         var feedbackObj = new { feedback = FeedbackInput };
@@ -1097,10 +1068,8 @@
         if (response.IsSuccessStatusCode)
         {
             CloseDetailModal();
-            ShowFeedbackSuccess = true;
-            StateHasChanged();
-            await Task.Delay(2000);
-            ShowFeedbackSuccess = false;
+            SuccessModalText = "Feedback berhasil ditambahkan.";
+            ShowSuccessAlert();
             await LoadReports();
         }
         else await JS.InvokeVoidAsync("alert", "Gagal submit feedback.");
@@ -1142,7 +1111,7 @@
     [JSInvokable]
     public async Task OnWebRTCCapture(string elementId, string dataUrl)
     {
-        var mimeType = dataUrl.Substring(5, dataUrl.IndexOf(";") - 5); // e.g. image/png
+        var mimeType = dataUrl.Substring(5, dataUrl.IndexOf(";") - 5);
         var ext = mimeType switch
         {
             "image/png" => ".png",
@@ -1343,8 +1312,7 @@
     async Task OnDateSelected(ChangeEventArgs e)
     {
         var dateValue = e.Value?.ToString();
-        if (string.IsNullOrWhiteSpace(dateValue))
-            return;
+        if (string.IsNullOrWhiteSpace(dateValue)) return;
 
         showDatePicker = false;
         selectedDate = dateValue;
@@ -1421,6 +1389,7 @@
     private int? SelectedMentorId = null;
     private string PrintStartDate = "";
     private string PrintEndDate = "";
+    private string MessagePrintSuccess = "Rekap data Bimbingan Laporan berhasil diunduh.";
     private bool CanPrint =>
         (SelectedMentorId.HasValue || SelectedClassPrintId.HasValue || CurrentUserId != 0) &&
         !string.IsNullOrWhiteSpace(PrintStartDate) &&
@@ -1488,10 +1457,8 @@
             await JS.InvokeVoidAsync("downloadFileFromBytes", fileName, "application/pdf", bytes);
 
             CancelPrintMentorModal();
-            ShowDownloadSuccessModal = true;
-            StateHasChanged();
-            await Task.Delay(2500);
-            ShowDownloadSuccessModal = false;
+            SuccessModalText = MessagePrintSuccess;
+            ShowSuccessAlert();
             StateHasChanged();
         }
     }
@@ -1501,7 +1468,6 @@
     private bool ShowPrintClassModal = false;
     private int? SelectedClassPrintId = null;
     private bool ShowPrintCombinedModal = false;
-    private bool ShowDownloadSuccessModal = false;
 
     private void PrintPerClass()
     {
@@ -1555,14 +1521,11 @@
             await JS.InvokeVoidAsync("downloadFileFromBytes", fileName, "application/pdf", bytes);
 
             CancelPrintClassModal();
-            ShowDownloadSuccessModal = true;
-            StateHasChanged();
-            await Task.Delay(2500);
-            ShowDownloadSuccessModal = false;
+            SuccessModalText = MessagePrintSuccess;
+            ShowSuccessAlert();
             StateHasChanged();
         }
     }
-
 
     private void Print()
     {
@@ -1620,10 +1583,8 @@
             await JS.InvokeVoidAsync("downloadFileFromBytes", fileName, "application/pdf", bytes);
 
             CancelPrintCombinedModal();
-            ShowDownloadSuccessModal = true;
-            StateHasChanged();
-            await Task.Delay(2500);
-            ShowDownloadSuccessModal = false;
+            SuccessModalText = MessagePrintSuccess;
+            ShowSuccessAlert();
             StateHasChanged();
         }
     }
@@ -1645,10 +1606,8 @@
             var fileName = FileHelper.GetFileNameFromContentDisposition(response);
             await JS.InvokeVoidAsync("downloadFileFromBytes", fileName, "application/pdf", bytes);
 
-            ShowDownloadSuccessModal = true;
-            StateHasChanged();
-            await Task.Delay(2500);
-            ShowDownloadSuccessModal = false;
+            SuccessModalText = MessagePrintSuccess;
+            ShowSuccessAlert();
             StateHasChanged();
         }
         else await JS.InvokeVoidAsync("alert", "Gagal mengunduh file presensi.");

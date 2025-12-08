@@ -780,3 +780,9 @@ input:checked + .slider {
         background: none !important;
         color: blue;
     }
+
+.my-swal-popup {
+    margin: 10px; /* beri jarak dari tepi layar */
+    max-width: 400px; /* maksimal lebar */
+    box-sizing: border-box;
+}

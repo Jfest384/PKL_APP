@@ -11,6 +11,7 @@
 @using PKLPresenceWeb.Model
 @using System.Net.Http.Headers
 @using System.Text.Json
+@using System.Globalization
 
 <div class="participant-wrapper">
     <div class="header-section d-flex justify-content-between align-items-center">
@@ -131,7 +132,7 @@
                                 <button class="btn btn-danger flex-grow-1 flex-md-grow-0" style="min-width:120px;" @onclick="OnDeleteStudentPKLClicked">
                                     <i class="bi bi-trash"></i> Delete
                                 </button>
-                                <button class="btn btn-warning flex-grow-1 flex-md-grow-0" style="min-width:120px;">
+                                <button class="btn btn-warning flex-grow-1 flex-md-grow-0" style="min-width:120px;" @onclick="OnPublishRecapClicked">
                                     <i class="bi bi-upload"></i> Publish
                                 </button>
                             </div>
@@ -162,7 +163,7 @@
                     <input class="form-control search-class-input" placeholder="Nama PT..." @bind="SearchText" @oninput="OnSearchChanged" />
                 </div>
                 <div class="col-auto ms-auto">
-                    <button class="btn btn-primary w-200">
+                    <button class="btn btn-primary w-200" @onclick="ShowAddCompanyModal">
                         <i class="bi bi-plus-lg me-1"></i> Company
                     </button>
                 </div>
@@ -197,9 +198,9 @@
             </div>
             <div class="student-detail-card mb-4">
                 <div class="student-detail-header">WAHA Session</div>
-                @if (WahaSession == null)
+                @if (WahaSession?.me == null || WahaSession?.engine == null)
                 {
-                    <p class="text-muted">WAHA session belum tersedia.</p>
+                    <p class="text-center text-muted mt-2">Loading session data...</p>
                 }
                 else
                 {
@@ -291,8 +292,8 @@
                                             </td>
                                             <td class="text-center">
                                                 <button class="btn btn-sm btn-success me-1"
-                                                        @onclick="() => SendTestTemplateAsync()"
-                                                        disabled="@IsSendingReminder">
+                                                        @onclick="() => SendTestTemplateAsync(chat)"
+                                                        disabled="@(SendingTestDefaultChatId == chat.Id)">
                                                     <i class="bi bi-info-circle"></i>
                                                     <span class="message-action-btn-text ms-1">Test</span>
                                                 </button>
@@ -536,13 +537,13 @@
                                                     <i class="bi bi-trash"></i>
                                                     <span class="btn-text-sm-hide ms-1">Delete</span>
                                                 </button>
-                                                <button class="btn btn-sm btn-warning">
+                                                <button class="btn btn-sm btn-warning" @onclick="() => OnEditCompanyClicked(item)">
                                                     <i class="bi bi-pencil"></i>
                                                     <span class="btn-text-sm-hide ms-1">Edit</span>
                                                 </button>
                                             </div>
                                         </td>
-									})
+                                    }
                                 </tr>
                             }
                         }
@@ -690,19 +691,6 @@
             </Modal>
         }
 
-        @if (ShowAddStudentToMentorSuccessModal)
-        {
-            <Modal IsVisible="true">
-                <div class="text-center">
-                    <span class="checkmark-animate">
-                        <i class="bi bi-check-circle-fill" style="font-size:3rem; color:limegreen;"></i>
-                    </span>
-                    <p class="mt-2 fw-bold" style="font-size:20px">Success!</p>
-                    <p class="mt-1">Siswa telah berhasil di-assign ke pembimbing PKL yang dipilih.</p>
-                </div>
-            </Modal>
-        }
-
         @if (ShowPilihPTModal)
         {
             <Modal IsVisible="true">
@@ -752,19 +740,6 @@
                 <div class="d-flex justify-content-center gap-3 mt-3">
                     <button class="btn btn-danger px-4" @onclick="ClosePilihPTModal">Cancel</button>
                     <button class="btn btn-success px-4" @onclick="ConfirmPilihPT" disabled="@(SelectedCompanyId == null)">Confirm</button>
-                </div>
-            </Modal>
-        }
-
-        @if (ShowPilihPTSuccessModal)
-        {
-            <Modal IsVisible="true">
-                <div class="text-center">
-                    <span class="checkmark-animate">
-                        <i class="bi bi-check-circle-fill" style="font-size:3rem; color:limegreen;"></i>
-                    </span>
-                    <p class="mt-2 fw-bold" style="font-size:20px">Success!</p>
-                    <p class="mt-1">Data Lokasi PKL berhasil diupdate.</p>
                 </div>
             </Modal>
         }
@@ -819,54 +794,6 @@
             </Modal>
         }
 
-        @if (ShowAddClassSuccessModal)
-        {
-            <Modal IsVisible="true">
-                <div class="text-center">
-                    <span class="checkmark-animate">
-                        <i class="bi bi-check-circle-fill" style="font-size:3rem; color:limegreen;"></i>
-                    </span>
-                    <p class="mt-2 fw-bold" style="font-size:20px">Success!</p>
-                    <p class="mt-1">@AddClassSuccessText</p>
-                </div>
-            </Modal>
-        }
-
-        @if (ShowAssignModal)
-        {
-            <Modal IsVisible="true">
-                @if (AssignModalState == "empty")
-                {
-                    <div class="text-center">
-                        <i class="bi bi-exclamation-triangle fs-1 mb-4 text-danger"></i>
-                        <p class="fw-semibold mb-4">Silakan pilih minimal satu siswa terlebih dahulu sebelum melanjutkan.</p>
-                        <button class="btn btn-primary px-4" @onclick="CloseAssignModal">Return to List</button>
-                    </div>
-                }
-                else if (AssignModalState == "confirm")
-                {
-                    <div class="text-center">
-                        <i class="bi bi-person-plus fs-1 text-success"></i>
-                        <p class="fw-bold">Tambahkan Siswa</p>
-                        <p>@AssignModalText</p>
-                        <div class="d-flex justify-content-center gap-3 mt-4">
-                            <button class="btn btn-danger px-4" @onclick="CloseAssignModal">Cancel</button>
-                            <button class="btn btn-success px-4" @onclick="ConfirmAssignStudent">Confirm</button>
-                        </div>
-                    </div>
-                }
-                else if (AssignModalState == "done")
-                {
-                    <div class="text-center">
-                        <i class="bi bi-person-plus fs-1 text-success"></i>
-                        <p class="fw-bold">Tambahkan Siswa</p>
-                        <p>Siswa berhasil ditambahkan ke kelas!</p>
-                        <button class="btn btn-primary px-4" @onclick="CloseAssignModal">Done</button>
-                    </div>
-                }
-            </Modal>
-        }
-
         @if (ShowAddMentorModal)
         {
             <Modal IsVisible="true">
@@ -913,67 +840,42 @@
             </Modal>
         }
 
-        @if (ShowAddMentorModalSuccess)
-        {
-            <Modal IsVisible="true">
-                <div class="text-center">
-                    <span class="checkmark-animate">
-                        <i class="bi bi-check-circle-fill" style="font-size:3rem; color:limegreen;"></i>
-                    </span>
-                    <p class="mt-2 fw-bold" style="font-size:20px">Success!</p>
-                    <p class="mt-1">Pembimbing PKL berhasil ditambahkan.</p>
-                </div>
-            </Modal>
-        }
-
         @if (ShowAssignPKLModal)
         {
             <Modal IsVisible="true">
-                <div class="text-center">
-                    <i class="bi bi-person-plus fs-1 @(IsAssignPKLMode ? "text-warning" : "text-danger")"></i>
-                    <p class="fw-bold">
-                        @(IsAssignPKLMode ? "Assign Siswa PKL" : "Delete Siswa PKL")
-                    </p>
-                    <p>
-                        @(IsAssignPKLMode
-                            ? $"Apakah Anda yakin ingin memasukkan {AssignBatchData.Count} siswa ke data Siswa PKL?"
-                            : $"Apakah Anda yakin ingin menghapus {AssignBatchData.Count} siswa dari data Siswa PKL?")
-                    </p>
-                    <div class="d-flex justify-content-center gap-3 mt-4">
-                        <button class="btn btn-danger px-4" @onclick="CancelAssignPKL">No</button>
-                        <button class="btn btn-success px-4" @onclick="ConfirmAssignOrDeletePKL">Yes</button>
+                @if (AssignPKLModalMode == "assign" || AssignPKLModalMode == "delete")
+                {
+                    <div class="text-center">
+                        <i class="bi bi-person-plus fs-1 @(AssignPKLModalMode == "assign" ? "text-warning" : "text-danger")"></i>
+                        <p class="fw-bold">
+                            @(AssignPKLModalMode == "assign" ? "Assign Siswa PKL" : "Delete Siswa PKL")
+                        </p>
+                        <p>
+                            @(AssignPKLModalMode == "assign"
+                                                ? $"Apakah Anda yakin ingin memasukkan {AssignBatchData.Count} siswa ke data Siswa PKL?"
+                                                : $"Apakah Anda yakin ingin menghapus {AssignBatchData.Count} siswa dari data Siswa PKL?")
+                        </p>
+                        <div class="d-flex justify-content-center gap-3 mt-4">
+                            <button class="btn btn-danger px-4" @onclick="CancelAssignPKL">No</button>
+                            <button class="btn btn-success px-4" @onclick="ConfirmAssignOrDeletePKL">Yes</button>
+                        </div>
                     </div>
-                </div>
+                }
+                else if (AssignPKLModalMode == "publish")
+                {
+                    <div class="text-center">
+                        <i class="bi bi-upload fs-1 text-warning"></i>
+                        <p class="fw-bold">Publish Rekap</p>
+                        <p>Apakah Anda yakin ingin menerbitkan Rekap Presensi dan Bimbingan Laporan untuk @SelectedSiswaPKLIds.Count siswa yang Anda pilih?</p>
+                        <div class="d-flex justify-content-center gap-3 mt-4">
+                            <button class="btn btn-danger px-4" @onclick="CancelAssignPKL">No</button>
+                            <button class="btn btn-success px-4" @onclick="ConfirmPublishRecap">Yes</button>
+                        </div>
+                    </div>
+                }
             </Modal>
         }
-        @if (ShowAssignPKLError)
-        {
-            <Modal IsVisible="true">
-                <div class="text-center">
-                    <i class="bi bi-exclamation-triangle fs-1 text-danger"></i>
-                    <p class="fw-bold">Error</p>
-                    <p>Silakan pilih minimal satu siswa terlebih dahulu sebelum @(IsAssignPKLMode ? "assign" : "delete").</p>
-                    <button class="btn btn-primary px-4" @onclick="CloseAssignPKLError">OK</button>
-                </div>
-            </Modal>
-        }
-        @if (ShowAssignPKLSuccess)
-        {
-            <Modal IsVisible="true">
-                <div class="text-center">
-                    <span class="checkmark-animate">
-                        <i class="bi bi-check-circle-fill" style="font-size:3rem; color:limegreen;"></i>
-                    </span>
-                    <p class="mt-2 fw-bold" style="font-size:20px">Success!</p>
-                    <p class="mt-1">
-                        @(IsAssignPKLMode
-                            ? "Siswa berhasil ditambahkan ke data Siswa PKL."
-                            : "Siswa berhasil dihapus dari data Siswa PKL.")
-                    </p>
-                </div>
-            </Modal>
-        }
-
+        
         @if (ShowStudentDetailModal && SelectedStudentDetail != null)
         {
             <Modal IsVisible="true" Title="Student Detail">
@@ -1026,31 +928,6 @@
             </Modal>
         }
 
-        @if (ShowAssignClassFailedModal)
-        {
-            <Modal IsVisible="true">
-                <div class="text-center">
-                    <i class="bi bi-exclamation-triangle fs-1 text-danger"></i>
-                    <p class="fw-bold">Failed</p>
-                    <p>@AssignClassFailedText</p>
-                    <button class="btn btn-primary px-4 mt-3" @onclick="ReturnToTKJTab">Return to List</button>
-                </div>
-            </Modal>
-        }
-
-        @if (ShowAssignClassSuccessModal)
-        {
-            <Modal IsVisible="true">
-                <div class="text-center">
-                    <span class="checkmark-animate">
-                        <i class="bi bi-check-circle-fill" style="font-size:3rem; color:limegreen;"></i>
-                    </span>
-                    <p class="mt-2 fw-bold" style="font-size:20px">Success!</p>
-                    <p class="mt-1">@AssignClassSuccessText</p>
-                </div>
-            </Modal>
-        }
-
         @if (ShowAddStudentModal)
         {
             <Modal IsVisible="true" Title="Tambah Siswa">
@@ -1081,19 +958,6 @@
             </Modal>
         }
 
-        @if (ShowAddStudentSuccessModal)
-        {
-            <Modal IsVisible="true">
-                <div class="text-center">
-                    <span class="checkmark-animate">
-                        <i class="bi bi-check-circle-fill" style="font-size:3rem; color:limegreen;"></i>
-                    </span>
-                    <p class="mt-2 fw-bold" style="font-size:20px">Success!</p>
-                    <p class="mt-1">Siswa baru berhasil ditambahkan.</p>
-                </div>
-            </Modal>
-        }
-
         @if (ShowDeleteStudentTKJModal)
         {
             <Modal IsVisible="true">
@@ -1105,31 +969,6 @@
                         <button class="btn btn-danger px-4" @onclick="CancelDeleteStudentTKJ">No</button>
                         <button class="btn btn-success px-4" @onclick="ConfirmDeleteStudentTKJ">Yes</button>
                     </div>
-                </div>
-            </Modal>
-        }
-
-        @if (ShowDeleteStudentTKJSuccessModal)
-        {
-            <Modal IsVisible="true">
-                <div class="text-center">
-                    <span class="checkmark-animate">
-                        <i class="bi bi-check-circle-fill" style="font-size:3rem; color:limegreen;"></i>
-                    </span>
-                    <p class="mt-2 fw-bold" style="font-size:20px">Success!</p>
-                    <p class="mt-1">Siswa berhasil dihapus dari data Siswa TKJ.</p>
-                </div>
-            </Modal>
-        }
-
-        @if (ShowDeleteStudentTKJError)
-        {
-            <Modal IsVisible="true">
-                <div class="text-center">
-                    <i class="bi bi-exclamation-triangle fs-1 text-danger"></i>
-                    <p class="fw-bold">Error!</p>
-                    <p class="mt-1">Silakan pilih minimal satu siswa terlebih dahulu sebelum delete.</p>
-                    <button class="btn btn-primary px-4" @onclick="CloseDeleteStudentTKJError">OK</button>
                 </div>
             </Modal>
         }
@@ -1155,23 +994,6 @@
             </Modal>
         }
 
-        @if (ShowDeleteMentorSuccessModal)
-        {
-            <Modal IsVisible="true">
-                <div class="text-center">
-                    <span class="checkmark-animate">
-                        <i class="bi bi-check-circle-fill" style="font-size:3rem; color:limegreen;"></i>
-                    </span>
-                    <p class="mt-2 fw-bold" style="font-size:20px">Success!</p>
-                    <p class="mt-1">
-                        @(DeleteMentorModalMode == "deleteMentor"
-                                            ? "Pembimbing PKL berhasil dihapus."
-                                            : "Pengaturan Default Chat berhasil direset.")
-                    </p>
-                </div>
-            </Modal>
-        }
-
         @if (ShowDeleteClassModal)
         {
             <Modal IsVisible="true">
@@ -1189,36 +1011,6 @@
                         <button class="btn btn-danger px-4" @onclick="CancelDeleteClass">No</button>
                         <button class="btn btn-success px-4" @onclick="ConfirmDeleteClass">Yes</button>
                     </div>
-                </div>
-            </Modal>
-        }
-
-        @if (ShowDeleteClassSuccessModal)
-        {
-            <Modal IsVisible="true">
-                <div class="text-center">
-                    <span class="checkmark-animate">
-                        <i class="bi bi-check-circle-fill" style="font-size:3rem; color:limegreen;"></i>
-                    </span>
-                    <p class="mt-2 fw-bold" style="font-size:20px">Success!</p>
-                    <p class="mt-1">
-                        @(DeleteMode == "company"
-                                            ? "Company berhasil dihapus."
-                                            : "Kelas berhasil dihapus.")
-                </p>
-            </div>
-        </Modal>
-                }
-
-        @if (ShowLockLocationSuccess)
-        {
-            <Modal IsVisible="true">
-                <div class="text-center">
-                    <span class="checkmark-animate">
-                        <i class="bi bi-check-circle-fill" style="font-size:3rem; color:limegreen;"></i>
-                    </span>
-                    <p class="mt-2 fw-bold" style="font-size:20px">Success!</p>
-                    <p class="mt-1">@LockLocationSuccessMessage</p>
                 </div>
             </Modal>
         }
@@ -1287,29 +1079,26 @@
             </Modal>
         }
 
-        @if (ShowDefaultChatSuccessModal)
-        {
-            <Modal IsVisible="true">
-                <div class="text-center">
-                    <span class="checkmark-animate">
-                        <i class="bi bi-check-circle-fill" style="font-size:3rem; color:limegreen;"></i>
-                    </span>
-                    <p class="mt-2 fw-bold" style="font-size:20px">Success!</p>
-                    <p class="mt-1">@DefaultChatSuccessText</p>
-                </div>
-            </Modal>
-        }
-
         @if (ShowSendReminderModal)
         {
             <Modal IsVisible="true" Title="">
                 <div class="modal-scrollable-content px-1">
-                    <div class="d-flex flex-column align-items-center justify-content-center mb-4">
+                    <div class="d-flex flex-column align-items-center justify-content-center mb-2">
                         <i class="bi bi-whatsapp" style="font-size:32px;color:#25D366;"></i>
                         <span class="fw-bold mt-2" style="font-size:22px;">Send Reminder</span>
                     </div>
-                    <div class="text-start fw-bold mb-2">Default Chat</div>
-                    <div class="d-flex align-items-center justify-content-center mb-4">
+                    <div class="text-start fw-bold mb-1">Service</div>
+                    <select class="form-select mb-3"
+                            @bind="SelectedReminderServiceName"
+                            @bind:after="OnReminderServiceChanged">
+                        <option value="">Pilih Service</option>
+                        @foreach (var service in ReminderServiceNames)
+                        {
+                            <option value="@service">@service</option>
+                        }
+                    </select>
+                    <div class="text-start fw-bold mb-1">Contact</div>
+                    <div class="d-flex align-items-center justify-content-center mb-3">
                         <button class="btn btn-light" style="height:38px;width:38px;" @onclick="PrevReminderChat" disabled="@(CurrentReminderIndex == 0)">
                             <i class="bi bi-chevron-left"></i>
                         </button>
@@ -1318,17 +1107,17 @@
                             <i class="bi bi-chevron-right"></i>
                         </button>
                     </div>
-                    <div class="text-start fw-bold mb-2">Message</div>
-                    <textarea class="form-control mb-1" rows="6"
+                    <div class="text-start fw-bold mb-1">Message</div>
+                    <textarea class="form-control mb-1" rows="5"
                               @bind="ReminderMessageRaw"
                               @bind:event="oninput"
                               @onchange="OnReminderMessageChanged"></textarea>
                     <span class="text-danger">*Jangan menghapus kurung siku!</span>
                 </div>
-                <div class="d-flex justify-content-center gap-3 mt-4">
+                <div class="d-flex justify-content-center gap-3 mt-3">
                     <button class="btn btn-danger px-4" @onclick="CancelSendReminder">Cancel</button>
                     <button class="btn btn-success px-4 d-flex align-items-center" @onclick="SendReminderAsync" disabled="@IsSendingReminder">
-                        <i class="bi bi-whatsapp me-2"></i> Send Reminder
+                        <i class="bi bi-whatsapp me-2"></i> Send
                     </button>
                 </div>
                 @if (IsSendingReminder)
@@ -1340,40 +1129,55 @@
             </Modal>
         }
 
-        @if (ShowSendMessageSuccessModal)
+        @if (ShowCompanyModal)
         {
-            <Modal IsVisible="true">
-                <div class="text-center">
-                    <span class="checkmark-animate">
-                        <i class="bi bi-check-circle-fill" style="font-size:3rem; color:limegreen;"></i>
-                    </span>
-                    <p class="mt-2 fw-bold" style="font-size:20px">Success!</p>
-                    <p class="mt-1">Pesan berhasil terkirim.</p>
+            <Modal IsVisible="true" Title="@(ShowCompanyModalMode == "add" ? "Tambah Perusahaan" : "Edit Perusahaan")">
+                <div class="modal-scrollable-content">
+                    <div class="mx-1">
+                        <div class="mb-3">
+                            <label class="form-label text-start d-block">Perusahaan</label>
+                            <textarea class="form-control" placeholder="Nama Perusahaan..."
+                                      @bind="NewCompany.Name" rows="1"></textarea>
+                        </div>
+                        <div class="mb-2 d-flex justify-content-between align-items-center">
+                            <label class="form-label mb-0">Lokasi Perusahaan</label>
+                            <button class="btn btn-outline-primary btn-sm" @onclick="OpenGoogleMaps">
+                                <i class="bi bi-geo-alt-fill me-1"></i> Google Maps
+                            </button>
+                        </div>
+                        <div id="companyMap" style="height: 150px; border-radius: 8px; border: 1px solid #ccc;"></div>
+                        <div class="text-start text-muted mt-2" style="font-size: 14px;">
+                            <div>* Lihat Koordinat Perusahaan melalui Google Maps</div>
+                        </div>
+                        <div class="mb-3 mt-3">
+                            <label class="form-label d-block text-start">Koordinat</label>
+                            <textarea id="company-coord"
+                                      class="form-control"
+                                      placeholder="-6.2000000, 106.8166660"
+                                      @bind-value="CoordinateInput"
+                                      @bind-value:event="oninput"
+                                      @onchange="OnCoordinateChanged"
+                                      rows="1">
+                                </textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label d-block text-start">Alamat</label>
+                            <textarea id="company-address"
+                                      class="form-control"
+                                      rows="2"
+                                      @bind="NewCompany.Address"
+                                      @onfocus="OnAddressClicked"
+                                      @onclick="OnAddressClicked">
+                            </textarea>
+                        </div>
+                    </div>
                 </div>
-            </Modal>
-        }
 
-        @if (ShowVpnWarningModal)
-        {
-            <Modal IsVisible="true" Title="">
-                <div class="text-center">
-                    <i class="bi bi-exclamation-triangle fs-1 text-warning"></i>
-                    <p class="mt-2 fw-bold" style="font-size:20px">Connection</p>
-                    <p class="mt-1">Anda Harus terhubung dengan VPN TKJ untuk mendapatkan data.</p>
-                </div>
-                <div class="d-flex justify-content-center mt-4">
-                    <button class="btn btn-primary px-4" @onclick="CloseVpnWarningModal">Close</button>
-                </div>
-            </Modal>
-        }
-
-        @if (ShowWahaStoppedModal)
-        {
-            <Modal IsVisible="true" Title="">
-                <div class="text-center">
-                    <i class="bi bi-info-circle fs-1 text-primary"></i>
-                    <p class="mt-2 fw-bold" style="font-size:20px">Message</p>
-                    <p class="mt-1">Status Message sedang tidak aktif.</p>
+                <div class="d-flex justify-content-around">
+                    <button class="btn btn-danger px-4" @onclick="CancelAddCompany">Cancel</button>
+                    <button class="btn btn-success px-4" @onclick="ConfirmAddCompany" disabled="@(!IsCompanyValid)">
+                        Confirm
+                    </button>
                 </div>
             </Modal>
         }
@@ -1401,7 +1205,6 @@
     private string AddStudentSearchText = "";
     private string CompanySearchText = "";
 
-    bool ShowAddStudentToMentorSuccessModal = false;
     bool ShowAddStudentToMentorModal = false;
     int? SelectedMentorId;
     string? SelectedMentorName;
@@ -1410,7 +1213,6 @@
     bool IsLoadingStudents = false;
 
     // Modal Pilih PT
-    bool ShowPilihPTSuccessModal = false;
     bool ShowPilihPTModal = false;
     int? SelectedStudentIdForPT = null;
     int? SelectedCompanyId = null;
@@ -1419,8 +1221,6 @@
 
     private WahaSession? WahaSession;
 
-    private bool ShowAddClassSuccessModal = false;
-    private string AddClassSuccessText = "";
     private bool ShowAddModal = false;
     private string AddEditClassMode = "add"; // "add" atau "edit"
     private int? EditClassId = null;
@@ -1441,6 +1241,137 @@
         && SelectedWalasId.HasValue
         && NewClass.year > 0
         && !string.IsNullOrWhiteSpace(NewClass.description);
+
+    // 1. ShowAssignPKLError → Swal alert error
+    private async void ShowAssignPKLErrorAlert()
+    {
+        await JS.InvokeVoidAsync("Swal.fire", new
+        {
+            title = "Error!",
+            text = AssignPKLModalMode == "publish"
+                ? "Silakan pilih minimal satu siswa terlebih dahulu sebelum menerbitkan rekap."
+                : $"Silakan pilih minimal satu siswa terlebih dahulu sebelum {(AssignPKLModalMode == "assign" ? "assign" : "delete")}.",
+            icon = "error",
+            timer = 3000,
+            showConfirmButton = false,
+            width = "90%",
+            customClass = new { popup = "my-swal-popup" }
+        });
+    }
+
+    // 2. ShowAssignClassFailedModal → Swal alert error + button
+    private async void ShowAssignClassFailedAlert()
+    {
+        await JS.InvokeVoidAsync("Swal.fire", new
+        {
+            title = "Gagal",
+            text = AssignClassFailedText,
+            icon = "error",
+            showConfirmButton = true,
+            confirmButtonText = "Return to List",
+            width = "90%",
+            customClass = new { popup = "my-swal-popup" }
+        });
+        ReturnToTKJTab();
+    }
+
+    // 6. ShowDeleteMentorSuccessModal → Swal alert success
+    private async void ShowDeleteMentorSuccessAlert(string mode)
+    {
+        await JS.InvokeVoidAsync("Swal.fire", new
+        {
+            title = "Success!",
+            text = mode == "deleteMentor"
+                ? "Pembimbing PKL berhasil dihapus."
+                : "Pengaturan Default Chat berhasil diperbarui.",
+            icon = "success",
+            timer = 3000,
+            showConfirmButton = false,
+            width = "90%",
+            customClass = new { popup = "my-swal-popup" }
+        });
+    }
+
+    // 7. ShowDeleteClassSuccessModal → Swal alert success
+    private async void ShowDeleteClassSuccessAlert(string mode)
+    {
+        await JS.InvokeVoidAsync("Swal.fire", new
+        {
+            title = "Success!",
+            text = mode == "company"
+                ? "Company berhasil dihapus."
+                : "Kelas berhasil dihapus.",
+            icon = "success",
+            timer = 3000,
+            showConfirmButton = false,
+            width = "90%",
+            customClass = new { popup = "my-swal-popup" }
+        });
+    }
+
+    // 10. ShowSuccessModal → Swal alert success
+    private async void ShowSuccessAlert()
+    {
+        await JS.InvokeVoidAsync("Swal.fire", new
+        {
+            title = "Success!",
+            text = SuccessModalText,
+            icon = "success",
+            timer = 3000,
+            showConfirmButton = false,
+            width = "90%",
+            customClass = new { popup = "my-swal-popup" }
+        });
+        await LoadData();
+    }
+
+    // 11. ShowVpnWarningModal → Swal alert warning + button
+    private async void ShowVpnWarningAlert()
+    {
+        await JS.InvokeVoidAsync("Swal.fire", new
+        {
+            title = "Koneksi",
+            text = "Anda Harus terhubung dengan VPN TKJ untuk mendapatkan data.",
+            icon = "warning",
+            showConfirmButton = true,
+            confirmButtonText = "Close",
+            width = "90%",
+            customClass = new { popup = "my-swal-popup" }
+        });
+        CloseVpnWarningModal();
+    }
+
+    // 12. ShowWahaStoppedModal → Swal alert info/warning + button (jika perlu)
+    private async void ShowWahaStoppedAlert()
+    {
+        if (WahaStoppedModalMode == "Waha")
+        {
+            await JS.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "Pesan",
+                text = "Status Message sedang tidak aktif.",
+                icon = "info",
+                showConfirmButton = true,
+                confirmButtonText = "Activate",
+                width = "90%",
+                customClass = new { popup = "my-swal-popup" }
+            });
+            ActivateMessageTab();
+        }
+        else if (WahaStoppedModalMode == "DefaultChat")
+        {
+            await JS.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "Service",
+                text = $"Default Chat dengan Service {DefaultChatServiceName} sudah ada dalam data.",
+                icon = "warning",
+                timer = 3000,
+                showConfirmButton = false,
+                width = "90%",
+                customClass = new { popup = "my-swal-popup" }
+            });
+        }
+    }
 
     private void OnAddClassClicked()
     {
@@ -1477,6 +1408,7 @@
     {
         if (SelectedWalasId.HasValue)
         {
+            ShowAddModal = false;
             NewClass.WaliKelasid = SelectedWalasId.Value;
             HttpResponseMessage res;
             if (AddEditClassMode == "add")
@@ -1494,7 +1426,6 @@
             }
             if (res.IsSuccessStatusCode)
             {
-                ShowAddModal = false;
                 NewClass = new()
                 {
                     name = string.Empty,
@@ -1503,17 +1434,14 @@
                     year = DateTime.Now.Year,
                     description = string.Empty
                 };
+
                 SelectedWalasId = null;
                 EditClassId = null;
+                SuccessModalText = AddEditClassMode == "add"
+                        ? "Kelas baru berhasil ditambahkan."
+                        : "Data Kelas terkait berhasil diupdate.";
 
-                AddClassSuccessText = AddEditClassMode == "add"
-                    ? "Kelas baru berhasil ditambahkan."
-                    : "Data Kelas terkait berhasil diupdate.";
-                ShowAddClassSuccessModal = true;
-                StateHasChanged();
-                await Task.Delay(2500);
-                ShowAddClassSuccessModal = false;
-                await LoadData();
+                ShowSuccessAlert();
             }
         }
     }
@@ -1541,7 +1469,7 @@
     }
 
     private bool ShowAddStudentModal = false;
-    private bool ShowAddStudentSuccessModal = false;
+    private string SuccessModalText = "";
     private NewStudent NewStudent = new()
     {
         nis = string.Empty,
@@ -1559,29 +1487,21 @@
     {
         if (SelectedClassIdForAdd.HasValue)
         {
+            ShowAddStudentModal = false;
             NewStudent.Classid = SelectedClassIdForAdd.Value;
             var res = await Http.PostAsJsonAsync(APIUrl.Endpoint("students/add"), NewStudent);
             if (res.IsSuccessStatusCode)
             {
-                ShowAddStudentModal = false;
-                NewStudent = new()
-                {
-                    nis = string.Empty,
-                    name = string.Empty,
-                    Classid = 0
-                };
-                SelectedClassIdForAdd = null;
-                ShowAddStudentSuccessModal = true;
-                StateHasChanged();
-                await Task.Delay(2500);
-                ShowAddStudentSuccessModal = false;
-                Navigation.NavigateTo("/participant", forceLoad: true);
+                CancelAddStudent();
+                SuccessModalText = "Siswa baru berhasil ditambahkan.";
+                ShowSuccessAlert();
             }
         }
     }
 
     private void CancelAddStudent()
     {
+        ShowAddStudentModal = false;
         NewStudent = new()
         {
             nis = string.Empty,
@@ -1589,54 +1509,9 @@
             Classid = 0
         };
         SelectedClassIdForAdd = null;
-        ShowAddStudentModal = false;
     }
-
-    private bool ShowAssignModal = false;
-    private string AssignModalState = "";
-    private string AssignModalText = "";
-    private int? SelectedClassIdForAssign;
-    private string? SelectedStudentStatus;
 
     private Dictionary<int, int> StudentCountPerClass = new();
-
-    void OnAssignStudent(int classId, string className)
-    {
-        SelectedClassIdForAssign = classId;
-
-        if (SelectedStudentId == null || string.IsNullOrEmpty(SelectedStudentStatus))
-        {
-            AssignModalState = "empty";
-            AssignModalText = "Silakan pilih minimal satu siswa terlebih dahulu sebelum melanjutkan.";
-        }
-        else
-        {
-            AssignModalState = "confirm";
-            AssignModalText = $"Apakah Anda yakin ingin menambahkan Siswa ini ke Kelas {className}?";
-        }
-        ShowAssignModal = true;
-    }
-
-    async Task ConfirmAssignStudent()
-    {
-        if (AssignModalState == "confirm" && SelectedStudentId.HasValue && SelectedClassIdForAssign.HasValue)
-        {
-            var payload = new { isPKL = SelectedStudentStatus == "True", idClass = SelectedClassIdForAssign.Value };
-            var response = await Http.PutAsJsonAsync(APIUrl.Endpoint($"assign/{SelectedStudentId}"), payload);
-
-            if (response.IsSuccessStatusCode)
-            {
-                AssignModalState = "done";
-                AssignModalText = $"Siswa berhasil ditambahkan ke kelas!";
-            }
-        }
-    }
-
-    void CloseAssignModal()
-    {
-        ShowAssignModal = false;
-        Navigation.NavigateTo("/participant", forceLoad: true);
-    }
 
     void CloseDetailModal()
     {
@@ -1648,22 +1523,20 @@
         WalasList = await Http.GetFromJsonAsync<List<WalasItem>>(APIUrl.Endpoint("data/walas"));
     }
 
-    private bool ShowWahaStoppedModal = false;
     private bool IsMessageTabDisabled = false;
+    private void ActivateMessageTab()
+    {
+        Navigation.NavigateTo("/home/profile", forceLoad: true);
+    }
 
     private async Task ShowWahaStoppedInfoModalAsync()
     {
-        ShowWahaStoppedModal = true;
-        StateHasChanged();
-        await Task.Delay(2500);
-        ShowWahaStoppedModal = false;
+        ShowWahaStoppedAlert();
         StateHasChanged();
     }
 
-    private bool ShowVpnWarningModal = false;
     private void CloseVpnWarningModal()
     {
-        ShowVpnWarningModal = false;
         Navigation.NavigateTo("/home", forceLoad: true);
     }
 
@@ -1673,24 +1546,28 @@
         if (!authState.User.Identity.IsAuthenticated)
             Navigation.NavigateTo("/login", true);
 
-        var token = await JS.InvokeAsync<string>("localStorage.getItem", "authToken");
-        if (!string.IsNullOrEmpty(token))
-            Http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        var meJson = await JS.InvokeAsync<string>("localStorage.getItem", "meResponse");
+        if (string.IsNullOrWhiteSpace(meJson))
+            return;
 
-        var user = await Http.GetFromJsonAsync<UserResponse>(APIUrl.Endpoint("me"));
-        UserRole = user?.role ?? "";
-
+        var doc = JsonDocument.Parse(meJson);
+        var root = doc.RootElement;
+        UserRole = root.TryGetProperty("role", out var roleProp) ? roleProp.GetString() ?? "" : "";
+        
         // ===== Ambil foto profile =====
-        var photoRequest = new HttpRequestMessage(HttpMethod.Get, APIUrl.Endpoint("me/photo"));
-        photoRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-        var photoResponse = await Http.SendAsync(photoRequest);
-
-        if (photoResponse.IsSuccessStatusCode)
+        if (root.TryGetProperty("profile", out var profileProp) &&
+            profileProp.ValueKind != JsonValueKind.Null)
         {
-            var bytes = await photoResponse.Content.ReadAsByteArrayAsync();
-            var contentType = photoResponse.Content.Headers.ContentType?.MediaType ?? "image/jpeg";
-            var base64 = Convert.ToBase64String(bytes);
-            photoUrl = $"data:{contentType};base64,{base64}";
+            var request = new HttpRequestMessage(HttpMethod.Get, APIUrl.Endpoint("me/photo"));
+            var response = await Http.SendAsync(request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var bytes = await response.Content.ReadAsByteArrayAsync();
+                var contentType = response.Content.Headers.ContentType?.MediaType ?? "image/jpeg";
+                var base64 = Convert.ToBase64String(bytes);
+                photoUrl = $"data:{contentType};base64,{base64}";
+            }
         }
 
         if (UserRole == "Admin" || UserRole == "Kepala Jurusan")
@@ -1708,13 +1585,13 @@
             }
             catch (HttpRequestException)
             {
-                ShowVpnWarningModal = true;
+                ShowVpnWarningAlert();
                 StateHasChanged();
                 return;
             }
             catch (Exception)
             {
-                ShowVpnWarningModal = true;
+                ShowVpnWarningAlert();
                 StateHasChanged();
                 return;
             }
@@ -1839,8 +1716,33 @@
 
         if (tab == "Message")
         {
+            WahaSession = await Http.GetFromJsonAsync<WahaSession>(APIUrl.Endpoint("waha/sessions/default"));
+            if (WahaSession?.status == "STARTING")
+            {
+                await PollWahaSessionStatus();
+                return;
+            }
+
             await LoadDefaultChats();
             await LoadDefaultChatDetails();
+        }
+    }
+
+    private async Task PollWahaSessionStatus()
+    {
+        int maxTries = 3;
+        int tryCount = 0;
+        while (tryCount < maxTries)
+        {
+            await Task.Delay(2000); 
+            WahaSession = await Http.GetFromJsonAsync<WahaSession>(APIUrl.Endpoint("waha/sessions/default"));
+            tryCount++;
+            if (WahaSession?.status == "WORKING")
+            {
+                Navigation.NavigateTo("/participant", forceLoad: true);
+                return;
+            }
+
         }
     }
 
@@ -1971,11 +1873,9 @@
             if (response.IsSuccessStatusCode)
             {
                 CancelAddStudentToMentor();
-                ShowAddStudentToMentorSuccessModal = true;
-                StateHasChanged();
-                await Task.Delay(2500);
-                ShowAddStudentToMentorSuccessModal = false;
-                await LoadData();
+                ShowAddStudentToMentorModal = false;
+                SuccessModalText = "Siswa telah berhasil di-assign ke pembimbing PKL yang dipilih.";
+                ShowSuccessAlert();
             }
         }
     }
@@ -2028,11 +1928,9 @@
             if (response.IsSuccessStatusCode)
             {
                 ClosePilihPTModal();
-                ShowPilihPTSuccessModal = true;
-                StateHasChanged();
-                await Task.Delay(2500);
-                ShowPilihPTSuccessModal = false;
-                await LoadData();
+                ShowPilihPTModal = false;
+                SuccessModalText = "Data Lokasi PKL berhasil diupdate.";
+                ShowSuccessAlert();
             }
             else await JS.InvokeVoidAsync("alert", "Gagal assign tempat PKL. Coba lagi setelah beberapa saat.");
         }
@@ -2116,12 +2014,8 @@
 
         if (CurrentTab == "Siswa TKJ")
         {
-            // Cek cache
             if (CachedAllStudents.Count > 0 && LastStudentSearchText == SearchText && LastStudentClassId == SelectedClassId)
-            {
-                // Data sudah di-cache, tidak perlu fetch ulang
                 Students = CachedAllStudents;
-            }
             else
             {
                 var url = APIUrl.Endpoint($"students?page=1&pageSize=1000");
@@ -2137,9 +2031,7 @@
         else if (CurrentTab == "Siswa PKL")
         {
             if (CachedAllStudentPKLs.Count > 0 && LastStudentSearchText == SearchText && LastStudentClassId == SelectedClassId)
-            {
                 StudentPKLs = CachedAllStudentPKLs;
-            }
             else
             {
                 var url = APIUrl.Endpoint($"students/pkl?page=1&pageSize=1000");
@@ -2155,9 +2047,7 @@
         else if (CurrentTab == "Manajemen Kelas")
         {
             if (CachedAllClassrooms.Count > 0 && LastStudentSearchText == SearchText)
-            {
                 Classrooms = CachedAllClassrooms;
-            }
             else
             {
                 var url = APIUrl.Endpoint($"classes?page=1&pageSize=1000");
@@ -2171,9 +2061,7 @@
         else if (CurrentTab == "Pembimbing PKL")
         {
             if (CachedAllMentors.Count > 0)
-            {
                 Mentors = CachedAllMentors;
-            }
             else
             {
                 var res = await Http.GetFromJsonAsync<MentorListResponse>(
@@ -2185,9 +2073,7 @@
         else if (CurrentTab == "Daftar PT")
         {
             if (CachedAllCompanies.Count > 0 && LastStudentSearchText == SearchText)
-            {
                 Companies = CachedAllCompanies;
-            }
             else
             {
                 var url = APIUrl.Endpoint($"data/companies?page=1&pageSize=1000");
@@ -2345,7 +2231,6 @@
         return CachedAllClassrooms;
     }
 
-    private bool ShowAddMentorModalSuccess = false;
     private bool ShowAddMentorModal = false;
     private string MentorSearchText = "";
     private string TeacherSearchText = "";
@@ -2388,9 +2273,7 @@
         {
             await Task.Delay(350, token);
             if (!token.IsCancellationRequested)
-            {
                 await LoadTeachers();
-            }
         }
         catch (TaskCanceledException) { }
     }
@@ -2405,9 +2288,7 @@
         {
             await Task.Delay(350, token);
             if (!token.IsCancellationRequested)
-            {
                 await LoadData();
-            }
         }
         catch (TaskCanceledException) { }
     }
@@ -2445,29 +2326,24 @@
             id_user = SelectedTeacherUserIds[id]
         }).ToList();
 
-        // var url = APIUrl.Endpoint("students?page=1&pageSize=1000");
+        ShowAddMentorModal = false;
         var response = await Http.PostAsJsonAsync(APIUrl.Endpoint("mentors"), payload);
         if (response.IsSuccessStatusCode)
         {
-            ShowAddMentorModal = false;
             MentorSearchText = "";
             TeacherList.Clear();
             SelectedTeacherIds.Clear();
             SelectedTeacherUserIds.Clear();
-            ShowAddMentorModalSuccess = true;
-            StateHasChanged();
-            await Task.Delay(2500);
-            ShowAddMentorModalSuccess = false;
-            await LoadData();
+            SuccessModalText = "Pembimbing PKL berhasil ditambahkan.";
+            ShowSuccessAlert();
         }
         else await JS.InvokeVoidAsync("alert", "Gagal menambah mentor. Silakan coba lagi.");
     }
 
+    private string AssignPKLModalMode = "assign";
     private HashSet<int> SelectedSiswaPKLIds = new();
     private bool ShowAssignPKLModal = false;
-    private bool ShowAssignPKLError = false;
     private List<EditStudentBatchDTO> AssignBatchData = new();
-    private bool ShowAssignPKLSuccess = false;
 
     private void OnRowCheckboxChanged(ChangeEventArgs e, string[] item)
     {
@@ -2507,10 +2383,11 @@
     private bool IsAssignPKLMode = true;
     private void OnAssignStudentPKLClicked()
     {
+        AssignPKLModalMode = "assign";
         IsAssignPKLMode = true;
         if (SelectedSiswaPKLIds.Count == 0)
         {
-            ShowAssignPKLError = true;
+            ShowAssignPKLErrorAlert();
             StateHasChanged();
             return;
         }
@@ -2528,10 +2405,11 @@
 
     private void OnDeleteStudentPKLClicked()
     {
+        AssignPKLModalMode = "delete";
         IsAssignPKLMode = false;
         if (SelectedSiswaPKLIds.Count == 0)
         {
-            ShowAssignPKLError = true;
+            ShowAssignPKLErrorAlert();
             StateHasChanged();
             return;
         }
@@ -2547,19 +2425,50 @@
         StateHasChanged();
     }
 
+    private async void OnPublishRecapClicked()
+    {
+        AssignPKLModalMode = "publish";
+        if (SelectedSiswaPKLIds.Count == 0)
+        {
+            ShowAssignPKLErrorAlert();
+            StateHasChanged();
+            return;
+        }
+        ShowAssignPKLModal = true;
+        StateHasChanged();
+    }
+
     private async Task ConfirmAssignOrDeletePKL()
     {
         var response = await Http.PutAsJsonAsync(APIUrl.Endpoint("assign/batch"), AssignBatchData);
         if (response.IsSuccessStatusCode)
         {
-            ShowAssignPKLModal = false;
             AssignBatchData.Clear();
             SelectedSiswaPKLIds.Clear();
-            ShowAssignPKLSuccess = true;
-            StateHasChanged();
-            await Task.Delay(2000);
-            ShowAssignPKLSuccess = false;
-            await LoadData();
+            ShowAssignPKLModal = false;
+            SuccessModalText = IsAssignPKLMode
+                ? "Siswa berhasil ditambahkan ke data Siswa PKL."
+                : "Siswa berhasil dihapus dari data Siswa PKL.";
+            ShowSuccessAlert();
+        }
+    }
+
+    private async Task ConfirmPublishRecap()
+    {
+        var payload = new
+        {
+            studentIds = SelectedSiswaPKLIds.ToList(),
+            date = DateTime.UtcNow
+        };
+        var response = await Http.PostAsJsonAsync(APIUrl.Endpoint("recap/publish"), payload);
+        ShowAssignPKLModal = false;
+        AssignBatchData.Clear();
+        SelectedSiswaPKLIds.Clear();
+        StateHasChanged();
+        if (response.IsSuccessStatusCode)
+        {
+            SuccessModalText = "Rekap berhasil diterbitkan.";
+            ShowSuccessAlert();
         }
     }
 
@@ -2567,12 +2476,7 @@
     {
         ShowAssignPKLModal = false;
         AssignBatchData.Clear();
-        StateHasChanged();
-    }
-
-    private void CloseAssignPKLError()
-    {
-        ShowAssignPKLError = false;
+        SelectedSiswaPKLIds.Clear();
         StateHasChanged();
     }
 
@@ -2600,11 +2504,7 @@
             var base64 = Convert.ToBase64String(bytes);
             SelectedStudentPhotoUrl = $"data:{contentType};base64,{base64}";
         }
-        else
-        {
-            SelectedStudentPhotoUrl = "/images/default_profile.jpg";
-        }
-
+        else SelectedStudentPhotoUrl = "/images/default_profile.jpg";
         StateHasChanged();
     }
 
@@ -2651,18 +2551,15 @@
 
     private List<(int studentId, bool isPKL)> AssignedStudents = new();
     private bool ShowAssignClassModal = false;
-    private bool ShowAssignClassFailedModal = false;
     private string AssignClassModalText = "";
     private string AssignClassFailedText = "";
     private string AssignClassName = "";
     private int AssignClassId = 0;
     private List<EditStudentBatchDTO> AssignClassBatchData = new();
-    private bool ShowAssignClassSuccessModal = false;
     private string AssignClassSuccessText = "";
 
     private void OnAssignClassClicked()
     {
-        // Ambil data siswa yang dipilih dari halaman Siswa TKJ
         AssignedStudents = GetPagedSortedData()
             .Where(item => SelectedSiswaPKLIds.Contains(int.Parse(item[0])))
             .Select(item => (
@@ -2671,7 +2568,6 @@
             ))
             .ToList();
 
-        // Navigasi ke tab "Manajemen Kelas"
         CurrentTab = "Manajemen Kelas";
         CurrentPage = 1;
         SearchText = string.Empty;
@@ -2682,19 +2578,16 @@
 
     private void OnAssignClassToStudents(int classId, string className)
     {
-        // Ambil data siswa yang dipilih sebelumnya
         if (AssignedStudents == null || AssignedStudents.Count == 0)
         {
-            ShowAssignClassFailedModal = true;
             AssignClassFailedText = "Silakan pilih minimal satu siswa terlebih dahulu sebelum melanjutkan.";
+            ShowAssignClassFailedAlert();
             StateHasChanged();
             return;
         }
 
         AssignClassId = classId;
         AssignClassName = className;
-
-        // Siapkan batch data untuk API
         AssignClassBatchData = AssignedStudents
             .Select(s => new EditStudentBatchDTO
             {
@@ -2721,27 +2614,24 @@
 
     private async Task ConfirmAssignClass()
     {
+        ShowAssignClassModal = false;
         var response = await Http.PutAsJsonAsync(APIUrl.Endpoint("assign/batch"), AssignClassBatchData);
         if (response.IsSuccessStatusCode)
         {
-            ShowAssignClassModal = false;
             AssignClassBatchData.Clear();
             AssignedStudents.Clear();
             AssignClassId = 0;
             AssignClassName = "";
 
-            AssignClassSuccessText = $"Siswa berhasil ditambahkan ke Kelas.";
-            ShowAssignClassSuccessModal = true;
-            StateHasChanged();
-            await Task.Delay(2500);
-            ShowAssignClassSuccessModal = false;
+            SuccessModalText = "Siswa berhasil ditambahkan ke Kelas.";
+            ShowSuccessAlert();
+            await Task.Delay(3000);
             Navigation.NavigateTo("/participant", forceLoad: true);
         }
     }
 
     private void ReturnToTKJTab()
     {
-        ShowAssignClassFailedModal = false;
         CurrentTab = "Siswa TKJ";
         CurrentPage = 1;
         SearchText = string.Empty;
@@ -2752,21 +2642,17 @@
     }
 
     private bool ShowDeleteStudentTKJModal = false;
-    private bool ShowDeleteStudentTKJSuccessModal = false;
     private List<int> DeleteStudentTKJIds = new();
-    private bool ShowDeleteStudentTKJError = false;
     private string DeleteStudentTKJErrorText = "";
 
     // State untuk delete mentor
     private bool ShowDeleteMentorModal = false;
-    private bool ShowDeleteMentorSuccessModal = false;
     private int? DeleteMentorId = null;
     private int? DeleteDefaultChatId = null;
     private string DeleteMentorName = "";
     private string DeleteMentorModalMode = "deleteMentor";
 
     private bool ShowDeleteClassModal = false;
-    private bool ShowDeleteClassSuccessModal = false;
     private int? DeleteClassId = null;
     private string DeleteClassName = "";
 
@@ -2776,6 +2662,7 @@
 
     private void OnDeleteStudentTKJClicked()
     {
+        AssignPKLModalMode = "delete";
         DeleteStudentTKJIds = GetPagedSortedData()
             .Where(item => SelectedSiswaPKLIds.Contains(int.Parse(item[0])))
             .Select(item => int.Parse(item[0]))
@@ -2783,8 +2670,7 @@
 
         if (DeleteStudentTKJIds.Count == 0)
         {
-            DeleteStudentTKJErrorText = "Silakan pilih minimal satu siswa terlebih dahulu sebelum delete.";
-            ShowDeleteStudentTKJError = true;
+            ShowAssignPKLErrorAlert();
             StateHasChanged();
             return;
         }
@@ -2815,22 +2701,12 @@
 
         if (response.IsSuccessStatusCode)
         {
-            ShowDeleteStudentTKJSuccessModal = true;
             DeleteStudentTKJIds.Clear();
             SelectedSiswaPKLIds.Clear();
-            StateHasChanged();
-            await Task.Delay(2500);
-            ShowDeleteStudentTKJSuccessModal = false;
-            await LoadData();
+            SuccessModalText = "Siswa berhasil dihapus dari data Siswa TKJ.";
+            ShowSuccessAlert();
         }
         else await JS.InvokeVoidAsync("alert", "Gagal menghapus siswa. Silakan coba lagi.");
-    }
-
-    private void CloseDeleteStudentTKJError()
-    {
-        ShowDeleteStudentTKJError = false;
-        DeleteStudentTKJErrorText = "";
-        StateHasChanged();
     }
 
     private void OnDeleteMentorClicked(string[] mentorRow)
@@ -2882,11 +2758,8 @@
 
             if (response.IsSuccessStatusCode)
             {
-                ShowDeleteMentorSuccessModal = true;
                 CancelDeleteMentor();
-                StateHasChanged();
-                await Task.Delay(2500);
-                ShowDeleteMentorSuccessModal = false;
+                ShowDeleteMentorSuccessAlert(DeleteMentorModalMode);
                 await LoadData();
             }
             else await JS.InvokeVoidAsync("alert", "Gagal menghapus mentor. Silakan coba lagi.");
@@ -2895,7 +2768,7 @@
         {
             if (!DeleteDefaultChatId.HasValue)
                 return;
-            var request = new HttpRequestMessage(HttpMethod.Delete, APIUrl.Endpoint("data/default-chats/delete"))
+            var request = new HttpRequestMessage(HttpMethod.Delete, APIUrl.Endpoint("chat/default-chats/delete"))
             {
                 Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(DeleteDefaultChatId.Value), System.Text.Encoding.UTF8, "application/json")
 			};
@@ -2903,20 +2776,15 @@
 
             if (response.IsSuccessStatusCode)
             {
-                ShowDeleteMentorSuccessModal = true;
                 CancelDeleteMentor();
-                StateHasChanged();
-                await Task.Delay(2500);
-                ShowDeleteMentorSuccessModal = false;
+                ShowDeleteMentorSuccessAlert(DeleteMentorModalMode);
                 await LoadDefaultChats();
             }
             else await JS.InvokeVoidAsync("alert", "Gagal menghapus Default Chat. Silakan coba lagi.");
         }
     }
 
-    private bool ShowLockLocationSuccess = false;
     private string LockLocationSuccessMessage = "";
-
     private bool GetStudentLockStatus(int studentId)
     {
         var student = StudentPKLs.FirstOrDefault(s => s.id == studentId);
@@ -2943,10 +2811,8 @@
             var json = await response.Content.ReadAsStringAsync();
             using var doc = JsonDocument.Parse(json);
             LockLocationSuccessMessage = doc.RootElement.GetProperty("message").GetString() ?? "";
-            ShowLockLocationSuccess = true;
-            StateHasChanged();
-            await Task.Delay(2500);
-            ShowLockLocationSuccess = false;
+            SuccessModalText = LockLocationSuccessMessage;
+            ShowSuccessAlert();
             StateHasChanged();
         }
         else await JS.InvokeVoidAsync("alert", "Gagal mengubah status lock siswa.");
@@ -2998,12 +2864,9 @@
 
             if (response.IsSuccessStatusCode)
             {
-                ShowDeleteClassSuccessModal = true;
                 DeleteCompanyId = null;
                 DeleteCompanyName = "";
-                StateHasChanged();
-                await Task.Delay(2500);
-                ShowDeleteClassSuccessModal = false;
+                ShowDeleteClassSuccessAlert(DeleteMode);
                 await LoadData();
             }
             else await JS.InvokeVoidAsync("alert", "Gagal menghapus company. Silakan coba lagi.");
@@ -3018,12 +2881,9 @@
 
             if (response.IsSuccessStatusCode)
             {
-                ShowDeleteClassSuccessModal = true;
                 DeleteClassId = null;
                 DeleteClassName = "";
-                StateHasChanged();
-                await Task.Delay(2500);
-                ShowDeleteClassSuccessModal = false;
+                ShowDeleteClassSuccessAlert(DeleteMode);
                 await LoadData();
             }
             else await JS.InvokeVoidAsync("alert", "Gagal menghapus kelas. Silakan coba lagi.");
@@ -3042,7 +2902,7 @@
     private async Task LoadDefaultChats()
     {
         IsLoadingDefaultChats = true;
-        DefaultChats = await Http.GetFromJsonAsync<List<DefaultChatItem>>(APIUrl.Endpoint("data/default-chats")) ?? new();
+        DefaultChats = await Http.GetFromJsonAsync<List<DefaultChatItem>>(APIUrl.Endpoint("chat/default-chats")) ?? new();
         IsLoadingDefaultChats = false;
         StateHasChanged();
     }
@@ -3064,29 +2924,24 @@
                 .Distinct()
                 .ToList();
 
-            var tasks = new List<Task<DefaultChatDetail>>();
+            var tasks = new List<Task<List<DefaultChatDetail>?>>();
 
             // Jalankan request paralel (lebih cepat)
             foreach (var contactId in contactIds)
             {
-                var task = Http.GetFromJsonAsync<DefaultChatDetail>(
-                    APIUrl.Endpoint($"data/detail-default-chat?contactId={contactId}")
+                var task = Http.GetFromJsonAsync<List<DefaultChatDetail>>(
+                    APIUrl.Endpoint($"chat/detail-default-chat?contactId={contactId}")
                 );
                 tasks.Add(task!);
             }
 
-            // Tunggu semua request selesai
             var results = await Task.WhenAll(tasks);
-
-            // Simpan hasil yang tidak null
             DefaultChatDetails = results
-                .Where(r => r != null)
-                .ToList()!;
+            .Where(r => r != null)
+            .SelectMany(r => r!)
+            .ToList();
         }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"[ERROR] LoadDefaultChatDetails: {ex.Message}");
-        }
+        catch (Exception ex) {  }
         finally
         {
             IsLoadingDefaultChats = false;
@@ -3102,14 +2957,13 @@
         SelectedServiceId = chat.ServiceId;
         ContactSearchText = "";
 
-        ChatServices = await Http.GetFromJsonAsync<List<ChatServiceItem>>(APIUrl.Endpoint("data/chat-services")) ?? new();
-        ChatContacts = await Http.GetFromJsonAsync<List<ChatContactItem>>(APIUrl.Endpoint("data/chat-contacts")) ?? new();
+        ChatServices = await Http.GetFromJsonAsync<List<ChatServiceItem>>(APIUrl.Endpoint("chat/chat-services")) ?? new();
+        ChatContacts = await Http.GetFromJsonAsync<List<ChatContactItem>>(APIUrl.Endpoint("chat/chat-contacts")) ?? new();
         SelectedContacts = ChatContacts.Where(c => chat.ContactId.Contains(c.id)).ToList();
         StateHasChanged();
     }
 
     private bool ShowDefaultChatSettingsModal = false;
-    private bool ShowDefaultChatSuccessModal = false;
     private List<ChatServiceItem> ChatServices = new();
     private int? SelectedServiceId = null;
     private List<ChatContactItem> ChatContacts = new();
@@ -3118,6 +2972,8 @@
     private string DefaultChatModalMode = "add";
     private DefaultChatItem? EditingDefaultChat = null;
     private string DefaultChatSuccessText = "Default Chat berhasil dibuat";
+    private string WahaStoppedModalMode = "Waha";
+    private string? DefaultChatServiceName = null;
 
     private async void OpenDefaultChatSettingsModal()
     {
@@ -3128,8 +2984,8 @@
         SelectedContacts.Clear();
         ContactSearchText = "";
 
-        ChatServices = await Http.GetFromJsonAsync<List<ChatServiceItem>>(APIUrl.Endpoint("data/chat-services")) ?? new();
-        ChatContacts = await Http.GetFromJsonAsync<List<ChatContactItem>>(APIUrl.Endpoint("data/chat-contacts")) ?? new();
+        ChatServices = await Http.GetFromJsonAsync<List<ChatServiceItem>>(APIUrl.Endpoint("chat/chat-services")) ?? new();
+        ChatContacts = await Http.GetFromJsonAsync<List<ChatContactItem>>(APIUrl.Endpoint("chat/chat-contacts")) ?? new();
         StateHasChanged();
     }
 
@@ -3154,29 +3010,40 @@
             HttpResponseMessage res;
             if (DefaultChatModalMode == "add")
             {
-                res = await Http.PostAsJsonAsync(APIUrl.Endpoint("data/default-chats/add"), payload);
+                res = await Http.PostAsJsonAsync(APIUrl.Endpoint("chat/default-chats/add"), payload);
                 DefaultChatSuccessText = "Default Chat berhasil dibuat.";
             }
             else // edit
             {
-                res = await Http.PutAsJsonAsync(APIUrl.Endpoint($"data/default-chats/{EditingDefaultChat?.Id}"), payload);
+                res = await Http.PutAsJsonAsync(APIUrl.Endpoint($"chat/default-chats/{EditingDefaultChat?.Id}"), payload);
                 DefaultChatSuccessText = "Default Chat berhasil diubah.";
             }
 
             if (res.IsSuccessStatusCode)
             {
                 ShowDefaultChatSettingsModal = false;
-                ShowDefaultChatSuccessModal = true;
                 SelectedServiceId = null;
                 SelectedContacts.Clear();
                 ContactSearchText = "";
-                StateHasChanged();
-                await Task.Delay(2500);
-                ShowDefaultChatSuccessModal = false;
+                SuccessModalText = DefaultChatSuccessText;
+                ShowSuccessAlert();
                 await LoadDefaultChats();
                 await LoadDefaultChatDetails();
             }
-            else await JS.InvokeVoidAsync("alert", "Gagal menyimpan Default Chat. Silakan coba lagi.");
+            else if (res.StatusCode == System.Net.HttpStatusCode.BadRequest)
+            {
+                var errorText = await res.Content.ReadAsStringAsync();
+                if (errorText.Contains("DefaultChat dengan service yang sama sudah ada.", StringComparison.OrdinalIgnoreCase))
+                {
+                    ShowDefaultChatSettingsModal = false;
+                    WahaStoppedModalMode = "DefaultChat";
+                    DefaultChatServiceName = ChatServices.FirstOrDefault(s => s.id == SelectedServiceId)?.service_name ?? "";
+                    ShowWahaStoppedAlert();
+                    StateHasChanged();
+                    return;
+                }
+                await JS.InvokeVoidAsync("alert", "Gagal menyimpan Default Chat. Silakan coba lagi.");
+            }
         }
     }
 
@@ -3214,14 +3081,6 @@
         StateHasChanged();
     }
 
-    // Tutup dropdown jika klik di luar
-    [Inject] private IJSRuntime JSRuntime { get; set; }
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (ShowContactDropdown)
-            await JSRuntime.InvokeVoidAsync("window.addEventListener", "click", DotNetObjectReference.Create(this), "CloseContactDropdown");
-    }
-
     [JSInvokable]
     public void CloseContactDropdown()
     {
@@ -3230,7 +3089,6 @@
     }
 
     private bool ShowSendReminderModal = false;
-    private bool ShowSendMessageSuccessModal = false;
     private List<string> ReminderChatNamesList = new();
     private List<string> ReminderChatIdsList = new();
     private int CurrentReminderIndex = 0;
@@ -3238,37 +3096,45 @@
     private string CurrentReminderChatName => ReminderChatNamesList.ElementAtOrDefault(CurrentReminderIndex) ?? "";
     private string CurrentReminderChatId => ReminderChatIdsList.ElementAtOrDefault(CurrentReminderIndex) ?? "";
     private Dictionary<string, string> ReminderMessageCache = new();
+    private int? SendingTestDefaultChatId = null;
+    private string? SelectedReminderServiceName = null;
+    private List<string> ReminderServiceNames = new();
 
     private async void OnSendReminderClicked()
     {
         ShowSendReminderModal = true;
+        ReminderServiceNames = DefaultChats.Select(x => x.ServiceName).Distinct().ToList();
+        SelectedReminderServiceName = ReminderServiceNames.FirstOrDefault();
+        await UpdateReminderContactsAndMessages();
+    }
+
+    private async Task UpdateReminderContactsAndMessages()
+    {
         ReminderChatNamesList.Clear();
         ReminderChatIdsList.Clear();
         ReminderMessageCache.Clear();
         CurrentReminderIndex = 0;
 
-        var response = DefaultChats;
-        if (response != null && response.Count > 0)
+        if (string.IsNullOrEmpty(SelectedReminderServiceName))
+            return;
+
+        var selectedChats = DefaultChats.Where(x => x.ServiceName == SelectedReminderServiceName).ToList();
+        ReminderChatNamesList = selectedChats.SelectMany(x => x.ChatName).Distinct().ToList();
+        ReminderChatIdsList = selectedChats.SelectMany(x => x.IdChat).Distinct().ToList();
+
+        foreach (var chatId in ReminderChatIdsList)
         {
-            ReminderChatNamesList = response
-                .SelectMany(x => x.ChatName)
-                .Distinct()
-                .ToList();
-
-            ReminderChatIdsList = response
-                .SelectMany(x => x.IdChat)
-                .Distinct()
-                .ToList();
-
-            foreach (var chatId in ReminderChatIdsList)
-            {
-                var fullMsg = GetDefaultMessage(chatId);
-                var commonInner = ExtractCommonInner(fullMsg);
-
-                ReminderMessageCache[chatId] = commonInner ?? "";
-            }
-            UpdateReminderMessage();
+            var fullMsg = GetDefaultMessage(chatId, SelectedReminderServiceName);
+            var commonInner = ExtractCommonInner(fullMsg);
+            ReminderMessageCache[chatId] = commonInner ?? "";
         }
+        UpdateReminderMessage();
+        StateHasChanged();
+    }
+
+    private async Task OnReminderServiceChanged()
+    {
+        await UpdateReminderContactsAndMessages();
     }
 
     private void PrevReminderChat()
@@ -3301,7 +3167,7 @@
 
     private async void SendReminderAsync()
     {
-        if (ReminderChatIdsList.Count == 0)
+        if (ReminderChatIdsList.Count == 0 || string.IsNullOrEmpty(SelectedReminderServiceName))
             return;
 
         IsSendingReminder = true;
@@ -3309,7 +3175,7 @@
         {
             var tasks = ReminderChatIdsList.Select(async chatId =>
             {
-                var fullMsg = GetDefaultMessage(chatId);
+                var fullMsg = GetDefaultMessage(chatId, SelectedReminderServiceName);
                 if (ReminderMessageCache.TryGetValue(chatId, out var cachedCommon))
                     fullMsg = ReplaceCommonInner(fullMsg, cachedCommon);
 
@@ -3327,10 +3193,8 @@
             });
 
             await Task.WhenAll(tasks);
-            ShowSendMessageSuccessModal = true;
-            StateHasChanged();
-            await Task.Delay(2500);
-            ShowSendMessageSuccessModal = false;
+            SuccessModalText = "Pesan berhasil terkirim.";
+            ShowSuccessAlert();
             StateHasChanged();
         }
         catch (Exception ex)
@@ -3350,33 +3214,30 @@
         }
     }
 
-    private async Task SendTestTemplateAsync()
+    private async Task SendTestTemplateAsync(DefaultChatItem chat)
     {
-        var allChatIds = DefaultChats?
-            .SelectMany(x => x.IdChat)
-            .Distinct()
-            .ToList() ?? new List<string>();
+        var chatIds = chat?.IdChat?.Distinct().ToList() ?? new List<string>();
 
-        if (allChatIds.Count == 0)
+        if (chatIds.Count == 0)
         {
             await JS.InvokeVoidAsync("alert", "Tidak ada chat ID yang ditemukan!");
             return;
         }
 
-        IsSendingReminder = true;
+        SendingTestDefaultChatId = chat.Id;
+        StateHasChanged();
+
         try
         {
-            var tasks = allChatIds.Select(async chatId =>
+            var tasks = chatIds.Select(async chatId =>
             {
                 var payload = new { ChatId = chatId };
-                await Http.PostAsJsonAsync(APIUrl.Endpoint("data/default-chats/test-send"), payload);
+                await Http.PostAsJsonAsync(APIUrl.Endpoint("chat/default-chats/test-send"), payload);
             });
 
             await Task.WhenAll(tasks);
-            ShowSendMessageSuccessModal = true;
-            StateHasChanged();
-            await Task.Delay(2500);
-            ShowSendMessageSuccessModal = false;
+            SuccessModalText = "Pesan berhasil terkirim.";
+            ShowSuccessAlert();
             StateHasChanged();
         }
         catch (Exception ex)
@@ -3385,7 +3246,8 @@
         }
         finally
         {
-            IsSendingReminder = false;
+            SendingTestDefaultChatId = null;
+            StateHasChanged();
         }
     }
 
@@ -3447,9 +3309,10 @@
         return $"{startTag}{newInner}{endTag}\n{message}";
     }
 
-    private string GetDefaultMessage(string chatId)
+    private string GetDefaultMessage(string chatId, string? serviceName = null)
     {
-        var detail = DefaultChatDetails.FirstOrDefault(d => d.id_chat == chatId);
+        var detail = DefaultChatDetails
+            .FirstOrDefault(d => d.IdChat == chatId && (serviceName == null || d.ServiceName == serviceName));
         return detail?.Template?.Content ?? "";
     }
 
@@ -3491,10 +3354,304 @@
     private void UpdateReminderMessage()
     {
         var chatId = CurrentReminderChatId;
-        var fullMsg = GetDefaultMessage(chatId);
+        var fullMsg = GetDefaultMessage(chatId, SelectedReminderServiceName);
 
         if (ReminderMessageCache.TryGetValue(chatId, out var cachedCommon))
             fullMsg = ReplaceCommonInner(fullMsg, cachedCommon);
         ReminderMessageRaw = fullMsg;
+    }
+
+    private bool ShowCompanyModal = false;
+    private string ShowCompanyModalMode = "add";
+    private int? EditCompanyId = null;
+
+    private string CoordinateInput = "";
+    private bool IsCompanyValid =>
+        !string.IsNullOrWhiteSpace(NewCompany?.Name) &&
+        !string.IsNullOrWhiteSpace(NewCompany?.Address) &&
+        !string.IsNullOrWhiteSpace(NewCompany?.Lat) &&
+        !string.IsNullOrWhiteSpace(NewCompany?.Long);
+
+    private CompanyModel NewCompany = new();
+    private const string LocationIQKey = "pk.e2145fd6b15e111a0fddb4586b415ed0";
+
+    [Inject] private IJSRuntime JSRuntime { get; set; }
+    private DotNetObjectReference<Participant>? _dotNetRef;
+    double CurrentLat = 0;
+    double CurrentLng = 0;
+
+    private async Task ShowAddCompanyModal()
+    {
+        ShowCompanyModalMode = "add";
+        EditCompanyId = null;
+        ShowCompanyModal = true;
+
+        await Task.Delay(100);
+        var pos = await JS.InvokeAsync<GeolocationPosition>("getCurrentPosition");
+        await UpdateMapAndAddress(pos.coords.latitude, pos.coords.longitude);
+    }
+
+    private async Task WaitForElementAsync(string elementId, int timeoutMs = 2000, int pollIntervalMs = 50)
+    {
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        while (sw.ElapsedMilliseconds < timeoutMs)
+        {
+            try
+            {
+                var exists = await JSRuntime.InvokeAsync<bool>("eval", $"document.getElementById('{elementId}') !== null");
+                if (exists) return;
+            }
+            catch {  }
+            await Task.Delay(pollIntervalMs);
+        }
+    }
+
+    private async Task OnEditCompanyClicked(string[] companyRow)
+    {
+        if (companyRow == null || companyRow.Length == 0) return;
+        if (!int.TryParse(companyRow[0], out var companyId)) return;
+
+        try
+        {
+            var response = await Http.PostAsJsonAsync(APIUrl.Endpoint("data/companies/details"), companyId);
+            if (!response.IsSuccessStatusCode)
+            {
+                await JS.InvokeVoidAsync("alert", "Gagal mengambil data perusahaan.");
+                return;
+            }
+
+            var company = await response.Content.ReadFromJsonAsync<CompanyDetail>();
+            if (company == null)
+            {
+                await JS.InvokeVoidAsync("alert", "Response perusahaan tidak valid.");
+                return;
+            }
+
+            NewCompany = new CompanyModel
+            {
+                Name = company.name ?? string.Empty,
+                Address = company.address ?? string.Empty,
+                Lat = company.lat?.ToString("F12", CultureInfo.InvariantCulture) ?? string.Empty,
+                Long = company.lon?.ToString("F12", CultureInfo.InvariantCulture) ?? string.Empty
+            };
+
+            CoordinateInput = string.IsNullOrWhiteSpace(NewCompany.Lat) || string.IsNullOrWhiteSpace(NewCompany.Long)
+                ? string.Empty
+                : $"{NewCompany.Lat}, {NewCompany.Long}";
+
+            ShowCompanyModalMode = "edit";
+            EditCompanyId = company.id;
+            ShowCompanyModal = true;
+
+            StateHasChanged();
+            await Task.Yield();
+            await WaitForElementAsync("companyMap", timeoutMs: 3000);
+
+            double lat = 0, lon = 0;
+            bool hasCoords =
+                double.TryParse(NewCompany.Lat, NumberStyles.Any, CultureInfo.InvariantCulture, out lat) &&
+                double.TryParse(NewCompany.Long, NumberStyles.Any, CultureInfo.InvariantCulture, out lon);
+
+            if (!hasCoords)
+            {
+                try
+                {
+                    var pos = await JS.InvokeAsync<GeolocationPosition>("getCurrentPosition");
+                    lat = pos.coords.latitude;
+                    lon = pos.coords.longitude;
+
+                    NewCompany.Lat = lat.ToString("F12", CultureInfo.InvariantCulture);
+                    NewCompany.Long = lon.ToString("F12", CultureInfo.InvariantCulture);
+                    CoordinateInput = $"{NewCompany.Lat}, {NewCompany.Long}";
+                }
+                catch
+                {
+                    lat = 0;
+                    lon = 0;
+                }
+            }
+
+            try
+            {
+                await UpdateMapAndAddress(lat, lon);
+            }
+            catch
+            {
+                await Task.Delay(120);
+                await UpdateMapAndAddress(lat, lon);
+            }
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", $"Error: {ex.Message}");
+        }
+    }
+
+    private void CancelAddCompany()
+    {
+        ShowCompanyModal = false;
+        NewCompany = new();
+        CoordinateInput = "";
+        ShowCompanyModalMode = "add";
+        EditCompanyId = null;
+
+        _dotNetRef?.Dispose();
+        _dotNetRef = null;
+    }
+
+    private async Task ConfirmAddCompany()
+    {
+        if (ShowCompanyModalMode == "add")
+        {
+            var payload = new
+            {
+                name = NewCompany.Name,
+                address = NewCompany.Address,
+                lat = NewCompany.Lat,
+                @long = NewCompany.Long
+            };
+            var response = await Http.PostAsJsonAsync(APIUrl.Endpoint("data/companies/add"), payload);
+
+            if (response.IsSuccessStatusCode)
+            {
+                ShowCompanyModal = false;
+                SuccessModalText = "Perusahaan baru berhasil ditambahkan.";
+                ShowSuccessAlert();
+            }
+        }
+        else
+        {
+            if (!EditCompanyId.HasValue)
+            {
+                await JS.InvokeVoidAsync("alert", "Company id tidak ditemukan.");
+                return;
+            }
+
+            if (!double.TryParse(NewCompany.Lat, NumberStyles.Any, CultureInfo.InvariantCulture, out var lat))
+            {
+                await JS.InvokeVoidAsync("alert", "Koordinat lat tidak valid.");
+                return;
+            }
+            if (!double.TryParse(NewCompany.Long, NumberStyles.Any, CultureInfo.InvariantCulture, out var lon))
+            {
+                await JS.InvokeVoidAsync("alert", "Koordinat long tidak valid.");
+                return;
+            }
+
+            var payload = new
+            {
+                name = NewCompany.Name,
+                address = NewCompany.Address,
+                lat = lat,
+                @long = lon
+            };
+
+            var response = await Http.PutAsJsonAsync(APIUrl.Endpoint($"data/companies/{EditCompanyId}"), payload);
+            if (response.IsSuccessStatusCode)
+            {
+                ShowCompanyModal = false;
+                SuccessModalText = "Data perusahaan berhasil diubah.";
+                ShowSuccessAlert();
+                EditCompanyId = null;
+                ShowCompanyModalMode = "add";
+            }
+            else await JS.InvokeVoidAsync("alert", "Gagal mengupdate perusahaan!");
+        }
+    }
+
+    private void OpenGoogleMaps()
+    {
+        if (!string.IsNullOrWhiteSpace(NewCompany.Lat) &&
+            !string.IsNullOrWhiteSpace(NewCompany.Long))
+        {
+            string url =
+                $"https://www.google.com/maps/search/?api=1&query={NewCompany.Lat},{NewCompany.Long}";
+            JS.InvokeVoidAsync("open", url, "_blank");
+        }
+    }
+
+    private async Task OnCoordinateChanged(ChangeEventArgs e)
+    {
+        CoordinateInput = e.Value?.ToString() ?? "";
+        var parts = CoordinateInput.Split(',');
+        if (parts.Length != 2) return;
+
+        if (double.TryParse(parts[0], NumberStyles.Any, CultureInfo.InvariantCulture, out double lat) &&
+            double.TryParse(parts[1], NumberStyles.Any, CultureInfo.InvariantCulture, out double lon))
+        {
+            await UpdateMapAndAddress(lat, lon);
+        }
+    }
+
+    [JSInvokable]
+    public Task NotifyAddressFromJs(string address)
+    {
+        NewCompany.Address = address ?? string.Empty;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private async Task OnAddressClicked()
+    {
+        try
+        {
+            var value = await JS.InvokeAsync<string>("eval", "document.getElementById('company-address')?.value || ''");
+            if (value is not null)
+            {
+                NewCompany.Address = value;
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("console.error", $"OnAddressClicked error: {ex.Message}");
+        }
+    }
+
+    [JSInvokable]
+    public async Task OnMapClicked(double lat, double lng)
+    {
+        NewCompany.Lat = lat.ToString("F12", CultureInfo.InvariantCulture);
+        NewCompany.Long = lng.ToString("F12", CultureInfo.InvariantCulture);
+        CoordinateInput = $"{NewCompany.Lat}, {NewCompany.Long}";
+
+        await GetAddressFromCoordinates(lat, lng);
+        StateHasChanged();
+    }
+
+    private async Task GetAddressFromCoordinates(double lat, double lon)
+    {
+        var url =
+            $"https://us1.locationiq.com/v1/reverse?key={LocationIQKey}&lat={lat}&lon={lon}&format=json";
+
+        try
+        {
+            var json = await Http.GetFromJsonAsync<JsonElement>(url);
+            if (json.TryGetProperty("display_name", out var addr))
+            {
+                NewCompany.Address = addr.GetString() ?? "";
+                StateHasChanged();
+            }
+        }
+        catch { }
+    }
+
+    private async Task UpdateMapAndAddress(double lat, double lon)
+    {
+        NewCompany.Lat = lat.ToString("F12", CultureInfo.InvariantCulture);
+        NewCompany.Long = lon.ToString("F12", CultureInfo.InvariantCulture);
+
+        if (_dotNetRef == null)
+            _dotNetRef = DotNetObjectReference.Create(this);
+
+        await JS.InvokeVoidAsync(
+            "renderCompanyMap",
+            "companyMap",
+            lat, lon,
+            LocationIQKey,
+            _dotNetRef
+        );
+        await GetAddressFromCoordinates(lat, lon);
     }
 }

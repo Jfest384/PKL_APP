@@ -105,7 +105,6 @@
 </div>
 
 @code {
-    // State
     private string profilePhotoPreview = "/images/default_profile.jpg";
     private IBrowserFile? profilePhotoFile;
     private bool isPhotoChanged = false;
@@ -136,15 +135,13 @@
     {
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
         if (!authState.User.Identity.IsAuthenticated)
+        {
             Navigation.NavigateTo("/login", true);
+            return;
+        }
 
         try
         {
-            var token = await JS.InvokeAsync<string>("localStorage.getItem", "authToken");
-            if (string.IsNullOrWhiteSpace(token)) return;
-            var authHeader = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-
-            // Ambil data user dengan model terbaru
             var userResponse = await Http.GetFromJsonAsync<UserResponse>(APIUrl.Endpoint("me"));
             if (userResponse == null) return;
 
@@ -180,7 +177,6 @@
 
             // Ambil foto profil seperti sebelumnya
             var photoReq = new HttpRequestMessage(HttpMethod.Get, APIUrl.Endpoint("me/photo"));
-            photoReq.Headers.Authorization = authHeader;
             var photoResp = await Http.SendAsync(photoReq);
             if (photoResp.IsSuccessStatusCode)
             {
@@ -190,9 +186,7 @@
                 profilePhotoPreview = $"data:{contentType};base64,{base64}";
             }
         }
-        catch (Exception ex)
-        {
-        }
+        catch (Exception) {  }
     }
 
     private void TriggerPhotoInput()
@@ -208,7 +202,16 @@
             const long maxFileSize = 2 * 1024 * 1024; // 2 MB
             if (e.File.Size > maxFileSize)
             {
-                await JS.InvokeVoidAsync("alert", "Ukuran file maksimal 2 MB");
+                await JS.InvokeVoidAsync("Swal.fire", new
+                {
+                    title = "Error!",
+                    text = "Ukuran file maksimal 2 MB.",
+                    icon = "error",
+                    timer = 3000,
+                    showConfirmButton = false,
+                    width = "90%",
+                    customClass = new { popup = "my-swal-popup" }
+                });
                 return;
             }
 
@@ -236,16 +239,11 @@
         var parts = nisnipFullname.Split('-', 2, StringSplitOptions.TrimEntries);
         if (parts.Length == 2)
         {
-            if (role == "Student")
-                nis = parts[0];
-            else
-                nip = parts[0];
+            if (role == "Student") nis = parts[0];
+            else nip = parts[0];   
             fullname = parts[1];
         }
-        else
-        {
-            showNisNipFullnameError = true;
-        }
+        else showNisNipFullnameError = true;
     }
 
     private void ValidateEmail(ChangeEventArgs e)
@@ -253,13 +251,9 @@
         email = e.Value?.ToString() ?? "";
         emailError = "";
         if (string.IsNullOrWhiteSpace(email))
-        {
             emailError = "Email tidak boleh kosong";
-        }
         else if (!System.Text.RegularExpressions.Regex.IsMatch(email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
-        {
-            emailError = "Format email tidak valid";
-        }
+        emailError = "Format email tidak valid";
     }
 
     private void SetGender(bool isMale)
@@ -280,10 +274,7 @@
     private async Task SaveProfile()
     {
         if (!IsFormValid) return;
-
-        var token = await JS.InvokeAsync<string>("localStorage.getItem", "authToken");
-        if (string.IsNullOrWhiteSpace(token)) return;
-        var authHeader = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+        bool success = false;
 
         // 1. Update profile photo (if changed)
         if (isPhotoChanged && profilePhotoFile != null)
@@ -295,14 +286,10 @@
             content.Add(fileContent, "image", profilePhotoFile.Name);
 
             var req = new HttpRequestMessage(HttpMethod.Put, APIUrl.Endpoint("me/photo"));
-            req.Headers.Authorization = authHeader;
             req.Content = content;
             var resp = await Http.SendAsync(req);
-            if (!resp.IsSuccessStatusCode)
-            {
-                await JS.InvokeVoidAsync("alert", "Gagal update foto profil.");
-                return;
-            }
+            if (resp.IsSuccessStatusCode)
+                success = true;
         }
 
         // 2. Update profile data
@@ -319,16 +306,27 @@
 
         var json = JsonSerializer.Serialize(data);
         var req2 = new HttpRequestMessage(HttpMethod.Put, APIUrl.Endpoint("me"));
-        req2.Headers.Authorization = authHeader;
         req2.Content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
         var resp2 = await Http.SendAsync(req2);
         if (resp2.IsSuccessStatusCode)
+        success = true;
+
+        if (success)
         {
-            Navigation.NavigateTo("/home/profile/me", true);
-        }
-        else
-        {
-            await JS.InvokeVoidAsync("alert", "Gagal update data profil.");
+            await JS.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "Success!",
+                text = "Data Profile berhasil diubah.",
+                icon = "success",
+                timer = 3000,
+                showConfirmButton = false,
+                width = "90%",
+                customClass = new
+                {
+                    popup = "my-swal-popup"
+                }
+            });
+            StateHasChanged();
         }
     }
 
@@ -343,6 +341,4 @@
     }
 
     private void GoBack() => Navigation.NavigateTo("/home/profile");
-
-
 }

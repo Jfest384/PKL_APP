@@ -146,7 +146,6 @@ namespace PKL_API.Controllers
                 id = selectedUser.id,
                 username = selectedUser.username,
                 fullname = selectedUser.fullname,
-                password = selectedUser.password,
                 role = rolesText,
                 email = string.IsNullOrEmpty(selectedUser.email) ? "-" : selectedUser.email,
                 profile = selectedUser.Photoid,

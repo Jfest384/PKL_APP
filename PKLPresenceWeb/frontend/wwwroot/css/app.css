@@ -380,3 +380,9 @@ body, html {
         display: none !important;
     }
 }
+
+.my-swal-popup {
+    margin: 10px;
+    max-width: 400px;
+    box-sizing: border-box;
+}

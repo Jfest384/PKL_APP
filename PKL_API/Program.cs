@@ -1,4 +1,5 @@
 ﻿using Hangfire;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -6,6 +7,7 @@ using PKL_API;
 using PKL_API.Helpers;
 using Syncfusion.Licensing;
 using System.Globalization;
+using System.Net;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -20,19 +22,30 @@ builder.Services.AddHangfire(config =>
 {
     config.UseSqlServerStorage("Data Source=localhost\\SQLEXPRESS;Initial Catalog=PKL_APP;Integrated Security=True;Trust Server Certificate=True");
 });
-builder.Services.AddHangfireServer();
 
-builder.Services.AddAuthentication("Bearer").AddJwtBearer(opt =>
-{
-    opt.TokenValidationParameters = new TokenValidationParameters
+builder.Services.AddAuthentication("Bearer")
+    .AddJwtBearer("Bearer", opt =>
     {
-        ValidateIssuer = false,
-        ValidateAudience = false,
-        ValidateIssuerSigningKey = true,
-        IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes("70158f9055af67cb94c0175b73624a1b198135aeab541cc06c05da81452009a8"))
-    };
-});
+        opt.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = false,
+            ValidateAudience = false,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes("70158f9055af67cb94c0175b73624a1b198135aeab541cc06c05da81452009a8"))
+        };
+
+        opt.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                if (context.Request.Cookies.ContainsKey("access_token"))
+                    context.Token = context.Request.Cookies["access_token"];
+                return Task.CompletedTask;
+            }
+        };
+    });
+builder.Services.AddAuthorization();
 
 builder.Services.AddSwaggerGen(opt =>
 {
@@ -92,10 +105,18 @@ builder.Services.AddScoped<UserAccessHelper>();
 builder.Services.AddScoped<ChatTemplateService>();
 builder.Services.AddScoped<WhatsAppJobService>();
 
+var cookieContainer = new CookieContainer();
 builder.Services.AddHttpClient();
+builder.Services.AddSingleton(cookieContainer);
+
 builder.Services.AddHttpClient("waha", client =>
 {
     client.BaseAddress = new Uri("http://138.138.138.193:3000/api/");
+})
+.ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+{
+    UseCookies = true,
+    CookieContainer = cookieContainer
 });
 
 var cultureInfo = new CultureInfo("en-US");
@@ -104,6 +125,7 @@ CultureInfo.DefaultThreadCurrentUICulture = cultureInfo;
 
 SyncfusionLicenseProvider.RegisterLicense("Ngo9BigBOggjHTQxAR8/V1JEaF1cWWhBYVJzWmFZfVtgdVVMZVxbRHJPIiBoS35Rc0VrWXdccnFVRmRUVkx+VEFd");
 QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+builder.Services.AddSingleton<IIdEncryptionService, IdEncryptionService>();
 
 var app = builder.Build();
 
@@ -121,7 +143,7 @@ if (app.Environment.IsDevelopment() || app.Environment.IsProduction())
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
-        c.SwaggerEndpoint("/api/swagger/v1/swagger.json", "PKL API V1");
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "PKL API V1");
         c.RoutePrefix = "swagger";
     });
 }

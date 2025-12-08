@@ -477,34 +477,6 @@
                     </div>
                 </Modal>
             }
-
-            @if (ShowPresenceSuccess)
-            {
-                <Modal IsVisible="true">
-                    <div class="text-center">
-                        <span class="checkmark-presence-animate">
-                            <i class="bi bi-check-circle-fill" style="font-size:3rem; color:limegreen;"></i>
-                        </span>
-                        <p class="mt-2 fw-bold" style="font-size:20px">Success</p>
-                        <p class="mt-1">
-                            @(LastSuccessType == "report" ? "Daily Report berhasil disubmit!" : "Presensi berhasil dilakukan!")
-                        </p>
-                    </div>
-                </Modal>
-            }
-
-            @if (ShowPresenceError)
-            {
-                <Modal IsVisible="true">
-                    <div class="text-center">
-                        <span class="checkmark-presence-animate">
-                            <i class="bi bi-x-circle-fill" style="font-size:3rem; color:#dc3545;"></i>
-                        </span>
-                        <p class="mt-2 fw-bold" style="font-size:20px">Failed!</p>
-                        <p class="mt-1">@PresenceErrorMessage</p>
-                    </div>
-                </Modal>
-            }
         }
         else
         {
@@ -840,19 +812,6 @@
                     </ul>
                 </nav>
             }
-
-            @if (ShowFeedbackSuccess)
-            {
-                <Modal IsVisible="true">
-                    <div class="text-center">
-                        <span class="checkmark-presence-animate">
-                            <i class="bi bi-check-circle-fill" style="font-size:3rem; color:limegreen;"></i>
-                        </span>
-                        <p class="mt-2 fw-bold" style="font-size:20px">Success!</p>
-                        <p class="mt-1">Feedback berhasil ditambahkan.</p>
-                    </div>
-                </Modal>
-            }
         }
 
         @if ((ShowDetailModal || ShowFeedbackModal) && SelectedPresenceDetail != null)
@@ -1048,19 +1007,6 @@
             </Modal>
         }
 
-        @if (ShowLockLocationSuccess)
-        {
-            <Modal IsVisible="true">
-                <div class="text-center">
-                    <span class="checkmark-presence-animate">
-                        <i class="bi bi-check-circle-fill" style="font-size:3rem; color:limegreen;"></i>
-                    </span>
-                    <p class="mt-2 fw-bold" style="font-size:20px">Success!</p>
-                    <p class="mt-1">@LockLocationSuccessMessage</p>
-                </div>
-            </Modal>
-        }
-
         @if (ShowDeletePresenceModal)
         {
             <Modal IsVisible="true">
@@ -1074,32 +1020,6 @@
                         <button class="btn btn-danger px-4" @onclick="CancelDeletePresence">No</button>
                         <button class="btn btn-success px-4" @onclick="ConfirmDeletePresenceAsync">Yes</button>
                     </div>
-                </div>
-            </Modal>
-        }
-
-        @if (ShowDeletePresenceSuccessModal)
-        {
-            <Modal IsVisible="true">
-                <div class="text-center">
-                    <span class="checkmark-presence-animate">
-                        <i class="bi bi-check-circle-fill" style="font-size:3rem; color:limegreen;"></i>
-                    </span>
-                    <p class="mt-2 fw-bold" style="font-size:20px">Success!</p>
-                    <p class="mt-1">Data presensi siswa berhasil dihapus.</p>
-                </div>
-            </Modal>
-        }
-
-        @if (ShowDownloadSuccessModal)
-        {
-            <Modal IsVisible="true">
-                <div class="text-center">
-                    <span class="checkmark-presence-animate">
-                        <i class="bi bi-check-circle-fill" style="font-size:3rem; color:limegreen;"></i>
-                    </span>
-                    <p class="mt-2 fw-bold" style="font-size:20px">Success!</p>
-                    <p class="mt-1">Rekap data Presensi berhasil diunduh.</p>
                 </div>
             </Modal>
         }
@@ -1243,6 +1163,7 @@
     private List<PresenceItem> AllPresences = new();
     private int SelectedPresenceIndex = -1;
 
+    bool IsCompressing = false;
     private string UserRole = "";
     private int CurrentUserId = 0;
     private int CurrentClassId = 0;
@@ -1301,12 +1222,9 @@
 
     private string? ActiveWebRTCField = null;
     private DotNetObjectReference<Presence>? dotNetRef;
-    private bool ShowPresenceSuccess = false;
-    private bool ShowFeedbackSuccess = false;
 
     private bool IsLockLocationOn = true;
     private string SliderColor => IsLockLocationOn ? "#14BD2D" : "#ccc";
-    private bool ShowLockLocationSuccess = false;
     private string LockLocationSuccessMessage = "";
 
     private string PreviewPresenceReport = "";
@@ -1320,6 +1238,36 @@
         5 => !string.IsNullOrWhiteSpace(ReportTextInput),
         _ => false
     };
+
+    private string SuccessModalText = "";
+    private string ErrorModalText = "";
+    private async void ShowSuccessAlert()
+    {
+        await JS.InvokeVoidAsync("Swal.fire", new
+        {
+            title = "Success!",
+            text = SuccessModalText,
+            icon = "success",
+            timer = 3000,
+            showConfirmButton = false,
+            width = "90%",
+            customClass = new { popup = "my-swal-popup" }
+        });
+    }
+
+    private async void ShowErrorAlert()
+    {
+        await JS.InvokeVoidAsync("Swal.fire", new
+        {
+            title = "Error!",
+            text = ErrorModalText,
+            icon = "error",
+            timer = 3000,
+            showConfirmButton = false,
+            width = "90%",
+            customClass = new { popup = "my-swal-popup" }
+        });
+    }
 
     [JSInvokable]
     public async Task OnWebRTCCapture(string elementId, string dataUrl)
@@ -1345,6 +1293,56 @@
         IsReportWebRTC = false;
         StateHasChanged();
     }
+
+    // [JSInvokable]
+    // public async Task OnWebRTCCapture(string elementId, string dataUrl)
+    // {
+    //     var field = elementId.Replace("webrtc_", "");
+
+    //     var base64 = dataUrl.Substring(dataUrl.IndexOf(",") + 1);
+    //     var originalBytes = Convert.FromBase64String(base64);
+
+    //     Preview original (instan)
+    //     if (IsReportWebRTC)
+    //     {
+    //         ReportPhotoPreviews[field] = dataUrl;
+    //     }
+    //     else
+    //     {
+    //         PresencePhotoPreviews[field] = dataUrl;
+    //     }
+
+    //     IsCompressing = true;
+    //     2️⃣ Compress background
+    //     _ = InvokeAsync(async () =>
+    //     {
+    //         var base64Original = Convert.ToBase64String(originalBytes);
+    //         var compressed = await JS.InvokeAsync<string>(
+    //             "photoCompressor.compressImage",
+    //             base64Original,
+    //             0.25
+    //         );
+
+    //         var compressedBase64 = compressed.Substring(compressed.IndexOf(",") + 1);
+    //         var bytes = Convert.FromBase64String(compressedBase64);
+
+    //         var file = new BlazorInputFileStreamFile($"{field}.jpg", "image/jpeg", bytes);
+
+    //         if (IsReportWebRTC)
+    //             ReportPhotos[field] = file;
+    //         else
+    //             PresencePhotos[field] = file;
+
+    //         IsCompressing = false;
+    //         StateHasChanged();
+    //     });
+
+    //     ShowWebRTCModal = false;
+    //     WebRTCField = null;
+    //     IsReportWebRTC = false;
+    //     StateHasChanged();
+    // }
+
 
     private bool IsReportWebRTC = false;
     private void OnPhotoBoxClick(string field, bool isReport = false)
@@ -1477,45 +1475,33 @@
         if (!authState.User.Identity.IsAuthenticated)
             Navigation.NavigateTo("/login", true);
 
-        var token = await JS.InvokeAsync<string>("localStorage.getItem", "authToken");
-        if (!string.IsNullOrEmpty(token))
-            Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+        var meJson = await JS.InvokeAsync<string>("localStorage.getItem", "meResponse");
+        using var doc = JsonDocument.Parse(meJson);
+        var root = doc.RootElement;
 
-        var user = await Http.GetFromJsonAsync<UserResponse>(APIUrl.Endpoint("me"));
-        UserRole = user?.role ?? "";
-        CurrentUserId = user?.id ?? 0;
+        UserRole = root.TryGetProperty("role", out var roleProp) ? roleProp.GetString() ?? "" : "";
+        CurrentUserId = root.TryGetProperty("id", out var idProp) ? idProp.GetInt32() : 0;
 
-        // Ambil mentorId dan classId dari data response
-        if (user?.data != null)
+        if (root.TryGetProperty("data", out var dataProp) && dataProp.ValueKind == JsonValueKind.Object)
         {
-            var dataJson = JsonSerializer.Serialize(user.data);
-            using var doc = JsonDocument.Parse(dataJson);
-
-            if (UserRole.Contains("Mentor"))
-            {
-                if (doc.RootElement.TryGetProperty("mentorId", out var mentorIdProp))
-                    CurrentMentorId = mentorIdProp.GetInt32();
-            }
-            else if (UserRole.Contains("Wali Kelas"))
-            {
-                if (doc.RootElement.TryGetProperty("classId", out var classIdProp))
-                    CurrentClassId = classIdProp.GetInt32();
-            }
+            if (UserRole.Contains("Mentor") && dataProp.TryGetProperty("mentorId", out var mentorIdProp))
+                CurrentMentorId = mentorIdProp.GetInt32();
+            if (UserRole.Contains("Wali Kelas") && dataProp.TryGetProperty("classId", out var classIdProp))
+                CurrentClassId = classIdProp.GetInt32();
         }
 
-        // ===== Ambil foto profile =====
-        var photoRequest = new HttpRequestMessage(HttpMethod.Get, APIUrl.Endpoint("me/photo"));
-        photoRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-        var photoResponse = await Http.SendAsync(photoRequest);
-
-        if (photoResponse.IsSuccessStatusCode)
+        // Ambil foto profile jika ada
+        if (root.TryGetProperty("profile", out var profileProp) && profileProp.ValueKind != JsonValueKind.Null)
         {
-            var bytes = await photoResponse.Content.ReadAsByteArrayAsync();
-            var contentType = photoResponse.Content.Headers.ContentType?.MediaType ?? "image/jpeg";
-            var base64 = Convert.ToBase64String(bytes);
-            photoUrl = $"data:{contentType};base64,{base64}";
+            var photoResponse = await Http.GetAsync(APIUrl.Endpoint("me/photo"));
+            if (photoResponse.IsSuccessStatusCode)
+            {
+                var bytes = await photoResponse.Content.ReadAsByteArrayAsync();
+                var contentType = photoResponse.Content.Headers.ContentType?.MediaType ?? "image/jpeg";
+                var base64 = Convert.ToBase64String(bytes);
+                photoUrl = $"data:{contentType};base64,{base64}";
+            }
         }
-
 
         if (UserRole == "Student")
         {
@@ -1558,11 +1544,6 @@
 
     private async void OnPresenceTypeChanged(int typeId)
     {
-        if (HasPresenceTodayGlobal)
-        {
-            await JS.InvokeVoidAsync("alert", "Kamu sudah melakukan presensi hari ini.");
-            return;
-        }
         SelectedPresenceTypeId = typeId;
         SelectedPresenceTypeName = PresenceTypes.FirstOrDefault(x => x.id == typeId)?.name ?? "";
         PresencePhotos.Clear();
@@ -1717,26 +1698,70 @@
         JS.InvokeVoidAsync("triggerFileInput", $"fileInput_{field}");
     }
 
+    // async Task OnPhotoChanged(InputFileChangeEventArgs e, string field)
+    // {
+    //     var file = e.File;
+    //     if (file != null)
+    //     {
+    //         PresencePhotos[field] = file;
+    //         using var stream = file.OpenReadStream(long.MaxValue);
+    //         using var ms = new MemoryStream();
+    //         await stream.CopyToAsync(ms);
+    //         var bytes = ms.ToArray();
+    //         PresencePhotoPreviews[field] = $"data:{file.ContentType};base64,{Convert.ToBase64String(bytes)}";
+    //     }
+    //     else PresencePhotoPreviews[field] = null;
+    //     ReportModalError = "";
+
+    //     if (inputFileRefs.TryGetValue(field, out var inputRef) && inputRef != null)
+    //         await JS.InvokeVoidAsync("resetInputFile", $"fileInput_{field}");
+    //     StateHasChanged();
+    // }
+
     async Task OnPhotoChanged(InputFileChangeEventArgs e, string field)
     {
         var file = e.File;
         if (file != null)
         {
             PresencePhotos[field] = file;
+
+            // 1️⃣ Baca original untuk preview instan
             using var stream = file.OpenReadStream(long.MaxValue);
             using var ms = new MemoryStream();
             await stream.CopyToAsync(ms);
-            var bytes = ms.ToArray();
-            PresencePhotoPreviews[field] = $"data:{file.ContentType};base64,{Convert.ToBase64String(bytes)}";
+            var originalBytes = ms.ToArray();
+
+            // Preview langsung original (tanpa delay)
+            PresencePhotoPreviews[field] = $"data:{file.ContentType};base64,{Convert.ToBase64String(originalBytes)}";
+
+            IsCompressing = true;
+            // 2️⃣ KOMPres berjalan di background (tidak mengganggu UI)
+            _ = InvokeAsync(async () =>
+            {
+                var base64Original = Convert.ToBase64String(originalBytes);
+
+                var compressed = await JS.InvokeAsync<string>(
+                    "photoCompressor.compressImageBase64",
+                    base64Original,
+                    0.25
+                );
+
+                var base64 = compressed.Substring(compressed.IndexOf(",") + 1);
+                var bytes = Convert.FromBase64String(base64);
+
+                PresencePhotos[field] = new BlazorInputFileStreamFile($"{field}.jpg", "image/jpeg", bytes);
+                IsCompressing = false;
+            });
         }
         else PresencePhotoPreviews[field] = null;
-        ReportModalError = "";
 
-        // Reset input file agar bisa pilih file yang sama dua kali
+        ReportModalError = "";
         if (inputFileRefs.TryGetValue(field, out var inputRef) && inputRef != null)
             await JS.InvokeVoidAsync("resetInputFile", $"fileInput_{field}");
+
         StateHasChanged();
     }
+
 
     void CancelPresenceModal()
     {
@@ -1755,11 +1780,17 @@
     }
 
     string PresenceErrorMessage = "";
-    private bool ShowPresenceError = false;
     async Task ConfirmPresenceModal()
     {
         try
         {
+            if (IsCompressing)
+            {
+                ErrorModalText = "Tunggu sebentar, sedang memproses foto...";
+                ShowErrorAlert();
+                return;
+            }
+
             IsSubmittingPresence = true;
             ReportModalError = "";
             PresenceErrorMessage = "";
@@ -1804,21 +1835,20 @@
                 content.Add(new StringContent(CurrentLat.ToString(System.Globalization.CultureInfo.InvariantCulture)), "Lat");
             }
 
+            ShowPresenceModal = false;
             var response = await Http.PostAsync(APIUrl.Endpoint("presence"), content);
             IsSubmittingPresence = false;
 
             if (response.IsSuccessStatusCode)
             {
                 LastSuccessType = "presence";
-                ShowPresenceModal = false;
                 PresencePhotos.Clear();
                 SelectedPresenceTypeId = 0;
                 SelectedPresenceTypeName = "";
                 LocationInput = "";
-                ShowPresenceSuccess = true;
-                StateHasChanged();
-                await Task.Delay(2000);
-                ShowPresenceSuccess = false;
+                SuccessModalText = LastSuccessType == "report" ? "Daily Report berhasil disubmit!" : "Presensi berhasil dilakukan!";
+                ShowSuccessAlert();
+                await Task.Delay(3000);
                 Navigation.NavigateTo(Navigation.Uri, forceLoad: true);
             }
             else
@@ -1833,11 +1863,9 @@
                         PresenceErrorMessage = "Anda berada terlalu jauh dari tempat PKL!";
 
                     else PresenceErrorMessage = "Gagal submit presensi.";
-                    
-                    ShowPresenceError = true;
-                    StateHasChanged();
-                    await Task.Delay(3000);
-                    ShowPresenceError = false;
+
+                    ErrorModalText = PresenceErrorMessage;
+                    ShowErrorAlert();
                     StateHasChanged();
                 }
                 else ReportModalError = "Gagal submit presensi.";
@@ -1880,10 +1908,8 @@
         if (response.IsSuccessStatusCode)
         {
             CloseDetailModal();
-            ShowFeedbackSuccess = true;
-            StateHasChanged();
-            await Task.Delay(2500);
-            ShowFeedbackSuccess = false;
+            SuccessModalText = "Feedback berhasil ditambahkan.";
+            ShowSuccessAlert();
             await LoadPresence();
         }
         else await JS.InvokeVoidAsync("alert", "Gagal submit feedback.");
@@ -1936,19 +1962,59 @@
         ShowReportModalFlag = true;
     }
 
+    // private async Task OnReportPhotoChanged(InputFileChangeEventArgs e, string field)
+    // {
+    //     var file = e.File;
+    //     if (file != null)
+    //     {
+    //         ReportPhotos[field] = file;
+    //         using var stream = file.OpenReadStream(long.MaxValue);
+    //         using var ms = new MemoryStream();
+    //         await stream.CopyToAsync(ms);
+    //         var bytes = ms.ToArray();
+    //         ReportPhotoPreviews[field] = $"data:{file.ContentType};base64,{Convert.ToBase64String(bytes)}";
+    //     }
+    //     else ReportPhotoPreviews[field] = null;
+    //     ReportModalError = "";
+    //     StateHasChanged();
+    // }
+
     private async Task OnReportPhotoChanged(InputFileChangeEventArgs e, string field)
     {
         var file = e.File;
         if (file != null)
         {
             ReportPhotos[field] = file;
+
             using var stream = file.OpenReadStream(long.MaxValue);
             using var ms = new MemoryStream();
             await stream.CopyToAsync(ms);
-            var bytes = ms.ToArray();
-            ReportPhotoPreviews[field] = $"data:{file.ContentType};base64,{Convert.ToBase64String(bytes)}";
+            var originalBytes = ms.ToArray();
+
+            // Preview original (instan)
+            ReportPhotoPreviews[field] = $"data:{file.ContentType};base64,{Convert.ToBase64String(originalBytes)}";
+
+            IsCompressing = true;
+            // KOMpres background
+            _ = InvokeAsync(async () =>
+            {
+                var base64Original = Convert.ToBase64String(originalBytes);
+
+                var compressed = await JS.InvokeAsync<string>(
+                    "photoCompressor.compressImageBase64",
+                    base64Original,
+                    0.25
+                );
+
+                var base64 = compressed.Substring(compressed.IndexOf(",") + 1);
+                var bytes = Convert.FromBase64String(base64);
+
+                ReportPhotos[field] = new BlazorInputFileStreamFile($"{field}.jpg", "image/jpeg", bytes);
+                IsCompressing = false;
+            });
         }
         else ReportPhotoPreviews[field] = null;
+
         ReportModalError = "";
         StateHasChanged();
     }
@@ -1963,7 +2029,7 @@
                 foreach (var photo in photos)
                 {
                     var field = MapPhotoTypeToField(photo.type);
-                    var apiBase = "https://presensi.smksabdev.my.id/";
+                    var apiBase = "https://presensi.smksabdev.my.id";
                     var base64 = await GetPhotoBase64Async($"{apiBase}{photo.url}");
                     if (!string.IsNullOrEmpty(field) && !string.IsNullOrEmpty(base64))
                         ReportPhotoPreviews[field] = base64;
@@ -1991,6 +2057,13 @@
     {
         try
         {
+            if (IsCompressing)
+            {
+                ErrorModalText = "Tunggu sebentar, sedang memproses foto...";
+                ShowErrorAlert();
+                return;
+            }
+
             ReportModalError = "";
             var content = new MultipartFormDataContent();
             if (ReportPresenceTypeId == 1 || ReportPresenceTypeId == 5)
@@ -2022,15 +2095,15 @@
                 else content.Add(new StringContent(""), "Activity");
             }
 
+            ShowReportModalFlag = false;
             var response = await Http.PutAsync(APIUrl.Endpoint($"presence/{ReportPresenceId}/edit"), content);
             if (response.IsSuccessStatusCode)
             {
                 LastSuccessType = "report";
                 CancelReportModal();
-                ShowPresenceSuccess = true;
-                StateHasChanged();
-                await Task.Delay(2500);
-                ShowPresenceSuccess = false;
+                SuccessModalText = LastSuccessType == "report" ? "Daily Report berhasil disubmit!" : "Presensi berhasil dilakukan!";
+                ShowSuccessAlert();
+                await Task.Delay(3000);
                 Navigation.NavigateTo(Navigation.Uri, forceLoad: true);
             }
             else
@@ -2039,10 +2112,8 @@
                 if (response.StatusCode == System.Net.HttpStatusCode.BadRequest &&
                     errorText.Contains("Ukuran file terlalu besar", StringComparison.OrdinalIgnoreCase))
                 {
-                    ShowPresenceError = true;
-                    StateHasChanged();
-                    await Task.Delay(3000);
-                    ShowPresenceError = false;
+                    ErrorModalText = "Ukuran file terlalu besar. Maksimal ukuran file hanya 5 MB.";
+                    ShowErrorAlert();
                     StateHasChanged();
                 }
                 else ReportModalError = "Gagal submit report.";
@@ -2268,14 +2339,10 @@
         if (response.IsSuccessStatusCode)
         {
             IsLockLocationOn = newStatus;
-            // Parse JSON and get only the message
             var json = await response.Content.ReadAsStringAsync();
             using var doc = JsonDocument.Parse(json);
-            LockLocationSuccessMessage = doc.RootElement.GetProperty("message").GetString() ?? "";
-            ShowLockLocationSuccess = true;
-            StateHasChanged();
-            await Task.Delay(2500);
-            ShowLockLocationSuccess = false;
+            SuccessModalText = LockLocationSuccessMessage = doc.RootElement.GetProperty("message").GetString() ?? "";
+            ShowSuccessAlert();
             StateHasChanged();
         }
         else await JS.InvokeVoidAsync("alert", "Gagal mengubah status Lock Location.");
@@ -2283,7 +2350,6 @@
 
     // State untuk delete Presensi
     private bool ShowDeletePresenceModal = false;
-    private bool ShowDeletePresenceSuccessModal = false;
     private string? DeletePresenceId = null;
     private string DeletePresenceName = "";
     private string DeletePresenceDate = "";
@@ -2317,12 +2383,9 @@
 
         if (response.IsSuccessStatusCode)
         {
-            ShowDeletePresenceSuccessModal = true;
+            SuccessModalText = "Data presensi siswa berhasil dihapus.";
+            ShowSuccessAlert();
             await LoadPresence(selectedDate);
-            StateHasChanged();
-            await Task.Delay(2500);
-            ShowDeletePresenceSuccessModal = false;
-            StateHasChanged();
         }
         else await JS.InvokeVoidAsync("alert", "Gagal menghapus presensi.");
     }
@@ -2408,10 +2471,8 @@
             await JS.InvokeVoidAsync("downloadFileFromBytes", fileName, "application/pdf", bytes);
 
             CancelPrintMentorModal();
-            ShowDownloadSuccessModal = true;
-            StateHasChanged();
-            await Task.Delay(2500);
-            ShowDownloadSuccessModal = false;
+            SuccessModalText = "Rekap data Presensi berhasil diunduh.";
+            ShowSuccessAlert();
             StateHasChanged();
         }
     }
@@ -2420,8 +2481,6 @@
     private bool ShowPrintClassModal = false;
     private int? SelectedClassPrintId = null;
     private bool ShowPrintCombinedModal = false;
-    private bool ShowDownloadSuccessModal = false;
-
     private void PrintPerClass()
     {
         ShowPrintClassModal = true;
@@ -2474,10 +2533,8 @@
             await JS.InvokeVoidAsync("downloadFileFromBytes", fileName, "application/pdf", bytes);
 
             CancelPrintClassModal();
-            ShowDownloadSuccessModal = true;
-            StateHasChanged();
-            await Task.Delay(2500);
-            ShowDownloadSuccessModal = false;
+            SuccessModalText = "Rekap data Presensi berhasil diunduh.";
+            ShowSuccessAlert();
             StateHasChanged();
         }
     }
@@ -2538,10 +2595,8 @@
             await JS.InvokeVoidAsync("downloadFileFromBytes", fileName, "application/pdf", bytes);
 
             CancelPrintCombinedModal();
-            ShowDownloadSuccessModal = true;
-            StateHasChanged();
-            await Task.Delay(2500);
-            ShowDownloadSuccessModal = false;
+            SuccessModalText = "Rekap data Presensi berhasil diunduh.";
+            ShowSuccessAlert();
             StateHasChanged();
         }
     }
@@ -2563,16 +2618,11 @@
             var fileName = FileHelper.GetFileNameFromContentDisposition(response);
             await JS.InvokeVoidAsync("downloadFileFromBytes", fileName, "application/pdf", bytes);
 
-            ShowDownloadSuccessModal = true;
-            StateHasChanged();
-            await Task.Delay(2500);
-            ShowDownloadSuccessModal = false;
+            SuccessModalText = "Rekap data Presensi berhasil diunduh.";
+            ShowSuccessAlert();
             StateHasChanged();
         }
-        else
-        {
-            await JS.InvokeVoidAsync("alert", "Gagal mengunduh file presensi.");
-        }
+        else await JS.InvokeVoidAsync("alert", "Gagal mengunduh file presensi.");
     }
 
     private async Task LoadLockLocationStatusAsync()

@@ -11,7 +11,7 @@
 }
 
 @code {
-    private readonly string[] ExcludedRoutes = new[] { "login" };
+    private readonly string[] ExcludedRoutes = new[] { "login", "lapran-pkl/approval" };
 
     private string CurrentPath =>
         Navigation.ToBaseRelativePath(Navigation.Uri).Split('?')[0].ToLower();

@@ -44,18 +44,18 @@
                     Note:
                 </p>
                 <ul>
-                    <li>Presensi dilakukan setiap hari, dan hanya dapat dilakukan 1x dalam sehari.</li>
+                    <li>Presensi dilakukan setiap hari, dan hanya dapat dilakukan <span class='fw-bold'>1x</span> dalam sehari.</li>
                 </ul>
             </span>
         </div>
 
-        <div class="card-instruction mb-5">
+        <div class="card-instruction mb-3">
             <p class="fw-semibold mb-1">
                 <i class="bi bi-file-earmark-text me-1" style="color: goldenrod"></i> Tatacara Mengisi Laporan PKL
             </p>
             <ol class="mb-1">
                 <li>Masuk ke menu Report.</li>
-                <li>Klik tombol Add Report.</li>
+                <li>Klik tombol "Add Report".</li>
                 <li>
                     Isi data berikut:
                     <ul>
@@ -66,78 +66,72 @@
                 </li>
             </ol>
         </div>
+
+        @if (userRole == "Student")
+        {
+            <div class="card-instruction mb-3">
+                <p class="fw-semibold mb-1">
+					<i class="bi bi-journal-text me-1" style="color: mediumblue"></i> Rekap Presensi dan Bimbingan Laporan
+                </p>
+                <ul class="mb-1" type="circle">
+                    <li>Anda akan diminta untuk menyertakan rekap ini dalam berkas Laporan PKL Anda.</li>
+					<li>Cara melihat dan mendapatkannya:
+						<ol>
+							<li>Masuk ke menu Profile.</li>
+							<li>Klik menu "Recap".</li>
+							<li>Download File Rekap milik Anda, lalu Print dan sertakan dalam berkas Laporan PKL</li>
+                        </ol>
+                    </li>
+                </ul>
+                <span class="text-muted d-block mt-2">
+                    <p class="mb-0" style="color: red">
+                        Note:
+                    </p>
+                    <ul>
+                        <li>Rekap ini hanya bisa Anda dapatkan jika sudah <span class='fw-bold'>diterbitkan</span> oleh Kepala Jurusan.</li>
+                    </ul>
+                </span>
+            </div>
+		}
     </div>
 </div>
 
 @code {
     private string fullName = "";
     private string secondLine = "";
+    private string userRole = "";
     private string photoUrl = "/images/default_profile.jpg";
 
     protected override async Task OnInitializedAsync()
     {
-        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-        if (!authState.User.Identity.IsAuthenticated)
-        {
-            Navigation.NavigateTo("/login", true);
-        }
+        var meJson = await JS.InvokeAsync<string>("localStorage.getItem", "meResponse");
+        if (string.IsNullOrWhiteSpace(meJson))
+            return;
 
-        var token = await JS.InvokeAsync<string>("localStorage.getItem", "authToken");
-        if (string.IsNullOrWhiteSpace(token)) return;
+        var root = JsonDocument.Parse(meJson).RootElement;
+        fullName = root.TryGetProperty("fullname", out var fnProp) ? fnProp.GetString() ?? "" : "";
+        userRole = root.TryGetProperty("role", out var roleProp) ? roleProp.GetString() ?? "" : "";
 
-        var authHeader = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-
-        // ===== Ambil data user =====
-        var request = new HttpRequestMessage(HttpMethod.Get, APIUrl.Endpoint("me"));
-        request.Headers.Authorization = authHeader;
-        var response = await Http.SendAsync(request);
-
-        if (!response.IsSuccessStatusCode) return;
-
-        var json = await response.Content.ReadAsStringAsync();
-        var doc = JsonDocument.Parse(json);
-        var root = doc.RootElement;
-
-        fullName = root.GetProperty("fullname").GetString() ?? "";
-        string role = "";
-        if (root.TryGetProperty("role", out var roleProp))
-            role = roleProp.GetString() ?? "";
-
-        else if (root.TryGetProperty("roles", out var rolesProp) && rolesProp.ValueKind == JsonValueKind.String)
-            role = rolesProp.GetString() ?? "";
-
-        // Jika student, tampilkan nama kelas
-        if (role.Trim().ToLower() == "student" && root.TryGetProperty("data", out var dataProp) && dataProp.ValueKind == JsonValueKind.Object)
+        // Data Student
+        if (userRole.ToLower() == "student" &&
+            root.TryGetProperty("data", out var dataProp))
         {
             if (dataProp.TryGetProperty("classroom", out var classroomProp))
                 secondLine = classroomProp.GetString() ?? "";
-            else secondLine = "Student";
         }
-        else if (role.Trim().ToLower() == "student" && root.TryGetProperty("data", out var dataArrProp) && dataArrProp.ValueKind == JsonValueKind.Array)
-        {
-            if (dataArrProp.GetArrayLength() > 0)
-            {
-                var first = dataArrProp[0];
-                if (first.TryGetProperty("classroom", out var classroomProp))
-                    secondLine = classroomProp.GetString() ?? "";
-                else secondLine = "Student";
-            }
-            else secondLine = "Student";
-        }
-        else secondLine = string.IsNullOrWhiteSpace(role) ? "-" : role;
-
-        // ===== Ambil foto profile =====
+        else secondLine = userRole;
+        
+        // Foto (juga tanpa header Authorization)
         if (root.TryGetProperty("profile", out var profileProp) &&
             profileProp.ValueKind != JsonValueKind.Null)
         {
-            var photoRequest = new HttpRequestMessage(HttpMethod.Get, APIUrl.Endpoint("me/photo"));
-            photoRequest.Headers.Authorization = authHeader;
-            var photoResponse = await Http.SendAsync(photoRequest);
+            var request = new HttpRequestMessage(HttpMethod.Get, APIUrl.Endpoint("me/photo"));
+            var response = await Http.SendAsync(request);
 
-            if (photoResponse.IsSuccessStatusCode)
+            if (response.IsSuccessStatusCode)
             {
-                var bytes = await photoResponse.Content.ReadAsByteArrayAsync();
-                var contentType = photoResponse.Content.Headers.ContentType?.MediaType ?? "image/jpeg";
+                var bytes = await response.Content.ReadAsByteArrayAsync();
+                var contentType = response.Content.Headers.ContentType?.MediaType ?? "image/jpeg";
                 var base64 = Convert.ToBase64String(bytes);
                 photoUrl = $"data:{contentType};base64,{base64}";
             }

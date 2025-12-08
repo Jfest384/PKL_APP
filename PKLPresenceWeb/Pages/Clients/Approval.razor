@@ -1,0 +1,186 @@
+﻿@page "/lapran-pkl/approval/{id}"
+@using PKLPresenceWeb.Model
+@inject HttpClient Http
+
+<div class="change-pass-wrapper">
+    <div class="header-section d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center">
+            <h5 class="mb-0 fw-bold text-white">Detail Approval</h5>
+        </div>
+        <a class="me-3" href="/login" style="cursor:pointer; color:white; text-decoration:underline; font-size: 18px">
+            Login
+        </a>
+    </div>
+
+    <div class="content-section">
+        @if (IsLoading)
+        {
+            <div class="text-center mt-5">
+                <div class="spinner-border text-primary" role="status"></div>
+            </div>
+        }
+        else if (PresenceRecap != null && ReportRecap != null)
+        {
+            <!-- Student Detail Card -->
+            <div class="student-detail-card mb-4">
+                <div class="student-detail-header">Student Detail</div>
+                <div class="student-detail-body">
+                    <div class="student-detail-col student-detail-col-left">
+                        <div class="student-detail-row">
+                            <label class="student-detail-label">Nama</label>
+                            <input class="student-detail-input" value="@PresenceRecap.studentName" readonly />
+                        </div>
+                        <div class="student-detail-row">
+                            <label class="student-detail-label">NIS</label>
+                            <input class="student-detail-input" value="@PresenceRecap.nis" readonly />
+                        </div>
+                        <div class="student-detail-row">
+                            <label class="student-detail-label">Kelas</label>
+                            <input class="student-detail-input" value="@PresenceRecap.kelas" readonly />
+                        </div>
+                    </div>
+                    <div class="student-detail-col student-detail-col-right">
+                        <div class="student-detail-row">
+                            <label class="student-detail-label">Walas</label>
+                            <input class="student-detail-input" value="@PresenceRecap.walasName" readonly />
+                        </div>
+                        <div class="student-detail-row">
+                            <label class="student-detail-label">Mentor</label>
+                            <input class="student-detail-input" value="@PresenceRecap.mentorName" readonly />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Presence Recap Card -->
+            <div class="student-detail-card mb-4">
+                <div class="student-detail-header">Presence Recap</div>
+                <div class="student-detail-body">
+                    <div class="student-detail-col student-detail-col-left">
+                        <div class="student-detail-row">
+                            <label class="student-detail-label">Total Hari PKL</label>
+                            <input class="student-detail-input" value="@PresenceRecap.pkl_days" readonly />
+                        </div>
+                        <div class="student-detail-row">
+                            <label class="student-detail-label">Jumlah Presensi</label>
+                            <input class="student-detail-input" value="@PresenceRecap.presence_total" readonly />
+                        </div>
+                        <div class="student-detail-row">
+                            <label class="student-detail-label">Jumlah Tidak Presensi</label>
+                            <input class="student-detail-input" value="@PresenceRecap.absen_total" readonly />
+                        </div>
+                    </div>
+                    <div class="student-detail-col student-detail-col-right">
+                        <div class="student-detail-row">
+                            <label class="student-detail-label">Laporan Lengkap</label>
+                            <input class="student-detail-input" value="@PresenceRecap.send_total" readonly />
+                        </div>
+                        <div class="student-detail-row">
+                            <label class="student-detail-label">Laporan Tidak Lengkap</label>
+                            <input class="student-detail-input" value="@PresenceRecap.not_send_total" readonly />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="student-detail-card mb-4">
+                <div class="student-detail-header">Kehadiran</div>
+                <div class="student-detail-body">
+                    <div class="student-detail-col student-detail-col-left">
+                        <div class="student-detail-row">
+                            <label class="student-detail-label">Hadir</label>
+                            <input class="student-detail-input" value="@PresenceRecap.hadir" readonly />
+                        </div>
+                        <div class="student-detail-row">
+                            <label class="student-detail-label">Sakit</label>
+                            <input class="student-detail-input" value="@PresenceRecap.sakit" readonly />
+                        </div>
+                        <div class="student-detail-row">
+                            <label class="student-detail-label">Izin</label>
+                            <input class="student-detail-input" value="@PresenceRecap.izin" readonly />
+                        </div>
+                    </div>
+                    <div class="student-detail-col student-detail-col-right">
+                        <div class="student-detail-row">
+                            <label class="student-detail-label">WFH</label>
+                            <input class="student-detail-input" value="@PresenceRecap.wfh" readonly />
+                        </div>
+                        <div class="student-detail-row">
+                            <label class="student-detail-label">Libur</label>
+                            <input class="student-detail-input" value="@PresenceRecap.libur" readonly />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Report Recap Card -->
+            <div class="student-detail-card mb-4">
+                <div class="student-detail-header">Report Recap</div>
+                <div class="student-detail-body">
+                    <div class="student-detail-col student-detail-col-left">
+                        <div class="student-detail-row">
+                            <label class="student-detail-label">Total Minggu</label>
+                            <input class="student-detail-input" value="@ReportRecap.total_weeks" readonly />
+                        </div>
+                    </div>
+                    <div class="student-detail-col student-detail-col-right">
+                        <div class="student-detail-row">
+                            <label class="student-detail-label">Total Bimbingan</label>
+                            <input class="student-detail-input" value="@ReportRecap.report_total" readonly />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-warning">Data recap tidak ditemukan.</div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public string? Id { get; set; }
+
+    private PresenceRecap? PresenceRecap;
+    private ReportRecap? ReportRecap;
+    private bool IsLoading = true;
+    private string? ErrorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (string.IsNullOrWhiteSpace(Id))
+        {
+            ErrorMessage = "Invalid request: missing ID.";
+            IsLoading = false;
+            return;
+        }
+
+        try
+        {
+            var presenceResponse = await Http.GetAsync(APIUrl.Endpoint($"recap/presence?id={Id}"));
+            if (presenceResponse.IsSuccessStatusCode)
+                PresenceRecap = await presenceResponse.Content.ReadFromJsonAsync<PresenceRecap>();
+            else
+                ErrorMessage = await presenceResponse.Content.ReadAsStringAsync();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
+        }
+
+        try
+        {
+            var reportResponse = await Http.GetAsync(APIUrl.Endpoint($"recap/report?id={Id}"));
+            if (reportResponse.IsSuccessStatusCode)
+                ReportRecap = await reportResponse.Content.ReadFromJsonAsync<ReportRecap>();
+            else
+                ErrorMessage = await reportResponse.Content.ReadAsStringAsync();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
+        }
+        IsLoading = false;
+    }
+}

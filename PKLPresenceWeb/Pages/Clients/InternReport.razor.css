@@ -673,3 +673,9 @@ input[type="radio"].presence-radio-input {
         background: none !important;
         color: blue;
     }
+
+.my-swal-popup {
+    margin: 10px;
+    max-width: 400px;
+    box-sizing: border-box;
+}

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Uji Coba Leaflet + Google Maps Picker</title>
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #111;
+      color: #eee;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    #map {
+      height: 350px;
+      width: 500px;
+      border-radius: 10px;
+      margin-bottom: 10px;
+    }
+    button {
+      padding: 10px 20px;
+      margin: 5px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    #openGoogleMaps {
+      background-color: #2196f3;
+      color: white;
+    }
+    #openGoogleMaps:hover {
+      background-color: #1e88e5;
+    }
+  </style>
+</head>
+<body>
+  <h2>🗺️ Uji Coba Pilih Lokasi Perusahaan</h2>
+
+  <div id="map"></div>
+  <p>
+    Latitude: <span id="lat">-</span><br />
+    Longitude: <span id="lng">-</span>
+  </p>
+  <button id="openGoogleMaps">Cari di Google Maps</button>
+
+  <script>
+    // Inisialisasi Leaflet
+    const map = L.map("map").setView([1.0371331, 103.9956383], 15);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "&copy; OpenStreetMap contributors",
+    }).addTo(map);
+
+    let marker;
+
+    // Fungsi untuk update posisi marker di Leaflet
+    function updateLocation(lat, lng) {
+      if (marker) map.removeLayer(marker);
+      marker = L.marker([lat, lng]).addTo(map);
+      document.getElementById("lat").textContent = lat.toFixed(6);
+      document.getElementById("lng").textContent = lng.toFixed(6);
+      map.setView([lat, lng], 16);
+    }
+
+    // Tangkap pesan dari window popup
+    window.addEventListener("message", (event) => {
+      if (event.data && event.data.lat && event.data.lng) {
+        updateLocation(event.data.lat, event.data.lng);
+      }
+    });
+
+    // Tombol buka popup Google Maps
+    document.getElementById("openGoogleMaps").addEventListener("click", () => {
+      window.open(
+        "google-map-picker.html",
+        "PickLocation",
+        "width=800,height=600"
+      );
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pilih Lokasi PT</title>
+
+  <!-- Leaflet CSS & JS -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Styling dasar -->
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f3f4f6;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .modal {
+      background: white;
+      width: 90%;
+      max-width: 800px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      padding: 20px;
+    }
+
+    #map {
+      height: 400px;
+      border-radius: 10px;
+    }
+
+    label {
+      display: block;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+    }
+
+    button {
+      margin-top: 15px;
+      padding: 10px 20px;
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #1e40af;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="modal">
+    <h2>Tambah / Edit Data PT</h2>
+
+    <div id="map"></div>
+
+    <label>Latitude</label>
+    <input type="text" id="lat" placeholder="Masukkan latitude" />
+
+    <label>Longitude</label>
+    <input type="text" id="lon" placeholder="Masukkan longitude" />
+
+    <label>Alamat (otomatis)</label>
+    <textarea id="address" readonly placeholder="Alamat akan muncul otomatis..."></textarea>
+
+    <button id="saveBtn">Simpan</button>
+  </div>
+
+  <script>
+    // 🔑 Ganti dengan API Key LocationIQ milikmu
+    const API_KEY = "pk.e2145fd6b15e111a0fddb4586b415ed0";
+
+    // 🌍 Inisialisasi map (default Jakarta)
+    const map = L.map("map").setView([-6.2, 106.816666], 13);
+
+    // 🗺️ Gunakan tile OpenStreetMap agar selalu tampil
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    // 📍 Tambahkan marker default
+    let marker = L.marker([-6.2, 106.816666], { draggable: true }).addTo(map);
+
+    // Ambil elemen input
+    const latInput = document.getElementById("lat");
+    const lonInput = document.getElementById("lon");
+    const addressTextarea = document.getElementById("address");
+    const saveBtn = document.getElementById("saveBtn");
+
+    // Fungsi untuk update alamat berdasarkan koordinat
+    async function updateAddress(lat, lon) {
+      try {
+        const res = await fetch(`https://us1.locationiq.com/v1/reverse?key=${API_KEY}&lat=${lat}&lon=${lon}&format=json`);
+        const data = await res.json();
+        if (data.display_name) {
+          addressTextarea.value = data.display_name;
+        } else {
+          addressTextarea.value = "Alamat tidak ditemukan.";
+        }
+      } catch {
+        addressTextarea.value = "Gagal memuat alamat.";
+      }
+    }
+
+    // Event: klik di peta
+    map.on("click", (e) => {
+      const { lat, lng } = e.latlng;
+      marker.setLatLng([lat, lng]);
+      latInput.value = lat.toFixed(6);
+      lonInput.value = lng.toFixed(6);
+      updateAddress(lat, lng);
+    });
+
+    // Event: marker digeser
+    marker.on("dragend", () => {
+      const { lat, lng } = marker.getLatLng();
+      latInput.value = lat.toFixed(6);
+      lonInput.value = lng.toFixed(6);
+      updateAddress(lat, lng);
+    });
+
+    // Event: ubah manual input lat/lon
+    latInput.addEventListener("change", () => {
+      const lat = parseFloat(latInput.value);
+      const lon = parseFloat(lonInput.value);
+      if (!isNaN(lat) && !isNaN(lon)) {
+        marker.setLatLng([lat, lon]);
+        map.setView([lat, lon], 15);
+        updateAddress(lat, lon);
+      }
+    });
+
+    lonInput.addEventListener("change", () => {
+      const lat = parseFloat(latInput.value);
+      const lon = parseFloat(lonInput.value);
+      if (!isNaN(lat) && !isNaN(lon)) {
+        marker.setLatLng([lat, lon]);
+        map.setView([lat, lon], 15);
+        updateAddress(lat, lon);
+      }
+    });
+
+    // Tombol simpan (contoh)
+    saveBtn.addEventListener("click", () => {
+      alert(
+        `Data PT disimpan!\n\nLatitude: ${latInput.value}\nLongitude: ${lonInput.value}\nAlamat:\n${addressTextarea.value}`
+      );
+    });
+  </script>
+
+</body>
+</html>

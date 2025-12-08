@@ -160,6 +160,147 @@ main[b-is5qsu19lu] {
         overflow-y: auto;
     }
 }
+/* /Pages/Clients/Approval.razor.rz.scp.css */
+.change-pass-wrapper[b-o0k8r1gfjc] {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    background-color: #e1e1e1;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.header-section[b-o0k8r1gfjc] {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: #0476D9;
+    padding: 1.5rem;
+    height: calc(120px - 20px);
+    box-sizing: border-box;
+}
+
+.content-section[b-o0k8r1gfjc] {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 2rem;
+    max-height: calc(100vh - calc(120px - 20px));
+}
+
+.checkmark-presence-animate[b-o0k8r1gfjc] {
+    display: inline-block;
+    animation: pop-check-b-o0k8r1gfjc 0.5s cubic-bezier(.17,.67,.83,.67);
+}
+
+@keyframes pop-check-b-o0k8r1gfjc {
+    0% {
+        transform: scale(0.2);
+        opacity: 0;
+    }
+
+    60% {
+        transform: scale(1.2);
+        opacity: 1;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.student-detail-card[b-o0k8r1gfjc] {
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e3e6ea;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    padding: 0;
+    margin-bottom: 1.5rem;
+}
+
+.student-detail-header[b-o0k8r1gfjc] {
+    font-weight: bold;
+    font-size: 1.15rem;
+    background: #f1f3f6;
+    border-bottom: 1px solid #e3e6ea;
+    padding: 0.75rem 1rem;
+    border-radius: 8px 8px 0 0;
+}
+
+.student-detail-body[b-o0k8r1gfjc] {
+    display: flex;
+    flex-direction: row;
+    gap: 2rem;
+    padding: 1rem;
+}
+
+.student-detail-col[b-o0k8r1gfjc] {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.student-detail-row[b-o0k8r1gfjc] {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+}
+
+.student-detail-label[b-o0k8r1gfjc] {
+    font-weight: 500;
+    min-width: 120px;
+    width: 120px;
+}
+
+.student-detail-input[b-o0k8r1gfjc] {
+    flex: 1;
+    background: #e9ecef;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    padding: 0.5rem 0.75rem;
+    font-size: 1rem;
+    color: #333;
+}
+
+@media (max-width: 850px) {
+    .student-detail-body[b-o0k8r1gfjc] {
+        flex-direction: column;
+        gap: 0.5rem;
+        padding: 0.75rem;
+    }
+
+    .student-detail-col[b-o0k8r1gfjc] {
+        gap: 0.5rem;
+    }
+
+    .student-detail-row[b-o0k8r1gfjc] {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.25rem;
+    }
+
+    .student-detail-label[b-o0k8r1gfjc] {
+        width: auto;
+        min-width: 0;
+        margin-bottom: 0.25rem;
+    }
+
+    .student-detail-input[b-o0k8r1gfjc] {
+        width: 100%;
+    }
+}
+
+.presence-radio-group .form-check-inline[b-o0k8r1gfjc] {
+    margin-right: 0.5rem;
+    margin-left: 0;
+}
+
+.my-swal-popup[b-o0k8r1gfjc] {
+    margin: 10px;
+    max-width: 400px;
+    box-sizing: border-box;
+}
 /* /Pages/Clients/ChangePassword.razor.rz.scp.css */
 .change-pass-wrapper[b-q6t73bl0a8] {
     position: relative;
@@ -218,6 +359,12 @@ main[b-is5qsu19lu] {
         transform: scale(1);
         opacity: 1;
     }
+}
+
+.my-swal-popup[b-q6t73bl0a8] {
+    margin: 10px; /* beri jarak dari tepi layar */
+    max-width: 400px; /* maksimal lebar */
+    box-sizing: border-box;
 }
 /* /Pages/Clients/History.razor.rz.scp.css */
 h5.fw-bold[b-qzfn5rw8qd] {
@@ -1400,6 +1547,12 @@ input[type="radio"].presence-radio-input[b-yabyv8rrba] {
         background: none !important;
         color: blue;
     }
+
+.my-swal-popup[b-yabyv8rrba] {
+    margin: 10px;
+    max-width: 400px;
+    box-sizing: border-box;
+}
 /* /Pages/Clients/Login.razor.rz.scp.css */
 .login-page[b-wdph3wuyzt] {
     min-height: 100vh;
@@ -1536,8 +1689,7 @@ input[type="radio"].presence-radio-input[b-yabyv8rrba] {
     flex: 1 1 auto;
     overflow-y: auto;
     padding: 2rem;
-    max-height: calc(100vh - calc(120px - 20px) - 50px); /* 120px header, 70px bottom bar, sesuaikan jika perlu */
-    /* 120px = tinggi header-section, 70px = tinggi bottom bar */
+    max-height: calc(100vh - calc(120px - 20px) - 50px);
 }
 
 .profile-photo[b-fbx4ity26e] {
@@ -1584,6 +1736,12 @@ input[type="radio"].presence-radio-input[b-yabyv8rrba] {
 
 .btn.gender-unselected[b-fbx4ity26e] {
     border: 2px solid #0d6efd !important;
+}
+
+.my-swal-popup[b-fbx4ity26e] {
+    margin: 10px;
+    max-width: 400px;
+    box-sizing: border-box;
 }
 /* /Pages/Clients/Participant.razor.rz.scp.css */
 h5.fw-bold[b-u6vybu44w0] {
@@ -2114,7 +2272,7 @@ body[b-u6vybu44w0] {
 
 .participant-modal-grid[b-u6vybu44w0] {
     display: grid;
-    grid-template-columns: 110px 18px 1fr;
+    grid-template-columns: 85px 18px 1fr;
     row-gap: 5px;
     font-size: 1rem;
     color: black;
@@ -2453,6 +2611,12 @@ body[b-u6vybu44w0] {
     text-align: center;
     margin-right: 16px;
     flex-shrink: 0;
+}
+
+.my-swal-popup[b-u6vybu44w0] {
+    margin: 10px;
+    max-width: 400px;
+    box-sizing: border-box;
 }
 /* /Pages/Clients/Presence.razor.rz.scp.css */
 h5.fw-bold[b-ku9a753df1] {
@@ -3237,6 +3401,12 @@ input:checked + .slider[b-ku9a753df1] {
         background: none !important;
         color: blue;
     }
+
+.my-swal-popup[b-ku9a753df1] {
+    margin: 10px; /* beri jarak dari tepi layar */
+    max-width: 400px; /* maksimal lebar */
+    box-sizing: border-box;
+}
 /* /Pages/Clients/Profile.razor.rz.scp.css */
 /* Container halaman */
 .profile-page[b-t1gp74n82c] {
@@ -3348,6 +3518,220 @@ input:checked + .slider[b-ku9a753df1] {
 
     .profile-page .btn.btn-secondary:hover[b-t1gp74n82c] {
         background-color: #023F73;
+    }
+
+.checkmark-animate[b-t1gp74n82c] {
+    display: inline-block;
+    animation: pop-check-b-t1gp74n82c 0.5s cubic-bezier(.17,.67,.83,.67);
+}
+
+@keyframes pop-check-b-t1gp74n82c {
+    0% {
+        transform: scale(0.2);
+        opacity: 0;
+    }
+
+    60% {
+        transform: scale(1.2);
+        opacity: 1;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.my-swal-popup[b-t1gp74n82c] {
+    margin: 10px; /* beri jarak dari tepi layar */
+    max-width: 400px; /* maksimal lebar */
+    box-sizing: border-box;
+}
+/* /Pages/Clients/Recap.razor.rz.scp.css */
+.change-pass-wrapper[b-v0zz0qva40] {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    background-color: #e1e1e1;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.header-section[b-v0zz0qva40] {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: #0476D9;
+    padding: 1.5rem;
+    height: calc(120px - 20px);
+    box-sizing: border-box;
+}
+
+.content-section[b-v0zz0qva40] {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 2rem;
+    max-height: calc(100vh - calc(120px - 20px) - 50px);
+}
+
+.checkmark-presence-animate[b-v0zz0qva40] {
+    display: inline-block;
+    animation: pop-check-b-v0zz0qva40 0.5s cubic-bezier(.17,.67,.83,.67);
+}
+
+@keyframes pop-check-b-v0zz0qva40 {
+    0% {
+        transform: scale(0.2);
+        opacity: 0;
+    }
+
+    60% {
+        transform: scale(1.2);
+        opacity: 1;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.student-detail-card[b-v0zz0qva40] {
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e3e6ea;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    padding: 0;
+    margin-bottom: 1.5rem;
+}
+
+.student-detail-header[b-v0zz0qva40] {
+    font-weight: bold;
+    font-size: 1.15rem;
+    background: #f1f3f6;
+    border-bottom: 1px solid #e3e6ea;
+    padding: 0.75rem 1rem;
+    border-radius: 8px 8px 0 0;
+}
+
+.student-detail-body[b-v0zz0qva40] {
+    display: flex;
+    flex-direction: row;
+    gap: 2rem;
+    padding: 1rem;
+}
+
+.student-detail-col[b-v0zz0qva40] {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.student-detail-row[b-v0zz0qva40] {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+}
+
+.student-detail-label[b-v0zz0qva40] {
+    font-weight: 500;
+    min-width: 120px;
+    width: 120px;
+}
+
+.student-detail-input[b-v0zz0qva40] {
+    flex: 1;
+    background: #e9ecef;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    padding: 0.5rem 0.75rem;
+    font-size: 1rem;
+    color: #333;
+}
+
+@media (max-width: 850px) {
+    .student-detail-body[b-v0zz0qva40] {
+        flex-direction: column;
+        gap: 0.5rem;
+        padding: 0.75rem;
+    }
+
+    .student-detail-col[b-v0zz0qva40] {
+        gap: 0.5rem;
+    }
+
+    .student-detail-row[b-v0zz0qva40] {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.25rem;
+    }
+
+    .student-detail-label[b-v0zz0qva40] {
+        width: auto;
+        min-width: 0;
+        margin-bottom: 0.25rem;
+    }
+
+    .student-detail-input[b-v0zz0qva40] {
+        width: 100%;
+    }
+}
+
+.presence-radio-group .form-check-inline[b-v0zz0qva40] {
+    margin-right: 0.5rem;
+    margin-left: 0;
+}
+
+.my-swal-popup[b-v0zz0qva40] {
+    margin: 10px;
+    max-width: 400px;
+    box-sizing: border-box;
+}
+/* /Pages/MenuItem.razor.rz.scp.css */
+.custom-switch[b-u2xu0xr5hw] {
+    position: relative;
+    display: inline-block;
+    width: 48px;
+    height: 28px;
+}
+
+.custom-switch-input[b-u2xu0xr5hw] {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.custom-switch-slider[b-u2xu0xr5hw] {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #e74c3c;
+    transition: .4s;
+    border-radius: 34px;
+}
+
+    .custom-switch-slider[b-u2xu0xr5hw]:before {
+        position: absolute;
+        content: "";
+        height: 22px;
+        width: 22px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: .4s;
+        border-radius: 50%;
+    }
+
+.custom-switch-input:checked + .custom-switch-slider[b-u2xu0xr5hw] {
+    background-color: #27ae60; /* hijau saat on */
+}
+
+    .custom-switch-input:checked + .custom-switch-slider[b-u2xu0xr5hw]:before {
+        transform: translateX(20px);
     }
 /* /Pages/Modal.razor.rz.scp.css */
 .modal-overlay[b-n0iq54iwvu] {

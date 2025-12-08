@@ -1,74 +1,86 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Components.WebAssembly.Http;
 using Microsoft.JSInterop;
+using PKLPresenceWeb.Model;
+using System.Net;
+using System.Net.Http.Json;
 using System.Security.Claims;
 
 public class SimpleAuthStateProvider : AuthenticationStateProvider
 {
-    private readonly IJSRuntime _js;
+    private readonly HttpClient _http;
     private readonly NavigationManager _navigation;
+    private readonly IJSRuntime _js;
 
-    public SimpleAuthStateProvider(IJSRuntime js, NavigationManager navigation)
+    private static readonly string[] PublicRoutes =
     {
-        _js = js;
+        "/lapran-pkl/approval/"
+    };
+
+    public SimpleAuthStateProvider(HttpClient http, NavigationManager navigation, IJSRuntime js)
+    {
+        _http = http;
         _navigation = navigation;
+        _js = js;
     }
 
     public override async Task<AuthenticationState> GetAuthenticationStateAsync()
     {
-        var token = await _js.InvokeAsync<string>("localStorage.getItem", "authToken");
-        var identity = new ClaimsIdentity();
+        var currentPath = new Uri(_navigation.Uri).AbsolutePath.ToLower();
+        if (PublicRoutes.Any(r => currentPath.StartsWith(r)))
+            return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
 
-        if (!string.IsNullOrWhiteSpace(token) && !IsTokenExpired(token))
+        var response = await _http.GetAsync(APIUrl.Endpoint("me"));
+        if (response.IsSuccessStatusCode)
         {
-            identity = new ClaimsIdentity(new[] { new Claim(ClaimTypes.Name, "User") }, "jwt");
+            var me = await response.Content.ReadFromJsonAsync<UserResponse>();
+            if (me != null)
+                return BuildState(me);
         }
-        else
+        else if (response.StatusCode == HttpStatusCode.Unauthorized)
         {
-            var currentUri = new Uri(_navigation.Uri).AbsolutePath.ToLower();
-            if (currentUri != "/login" && currentUri != "/")
+            var refreshResponse = await _http.PostAsync(APIUrl.Endpoint("authentication/refresh"), null);
+            if (refreshResponse.IsSuccessStatusCode)
             {
-                _navigation.NavigateTo("/login", true);
+                var meRequest = new HttpRequestMessage(HttpMethod.Get, APIUrl.Endpoint("me"));
+
+                var meResponse = await _http.SendAsync(meRequest);
+                if (meResponse.IsSuccessStatusCode)
+                {
+                    var me = await meResponse.Content.ReadFromJsonAsync<UserResponse>();
+                    if (me != null)
+                        return BuildState(me);
+                }
             }
         }
 
+        RedirectToLogin();
+        return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
+    }
+
+    private AuthenticationState BuildState(UserResponse me)
+    {
+        var claims = new List<Claim>
+        {
+            new("id", me.id.ToString()),
+            new(ClaimTypes.Name, me.fullname ?? "User"),
+            new(ClaimTypes.Role, me.role ?? "-")
+        };
+
+        var identity = new ClaimsIdentity(claims, "cookie");
         return new AuthenticationState(new ClaimsPrincipal(identity));
     }
 
-    private bool IsTokenExpired(string token)
+    private void RedirectToLogin()
     {
-        try
-        {
-            // JWT format: header.payload.signature
-            var parts = token.Split('.');
-            if (parts.Length != 3)
-                return true;
-
-            var payload = parts[1];
-            // Pad base64 string if needed
-            switch (payload.Length % 4)
-            {
-                case 2: payload += "=="; break;
-                case 3: payload += "="; break;
-            }
-            var json = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(payload));
-            var obj = System.Text.Json.JsonDocument.Parse(json);
-            if (!obj.RootElement.TryGetProperty("exp", out var expElement))
-                return true;
-
-            var exp = expElement.GetInt64();
-            var expDate = DateTimeOffset.FromUnixTimeSeconds(exp).UtcDateTime;
-            return expDate < DateTime.UtcNow;
-        }
-        catch
-        {
-            // Jika gagal parsing, anggap expired
-            return true;
-        }
+        var currentUri = new Uri(_navigation.Uri).AbsolutePath.ToLower();
+        if (currentUri != "/login")
+            _navigation.NavigateTo("/login");
     }
 
-    public async Task NotifyUserAuthenticationChanged()
+    public async Task NotifyAuthenticationStateChanged()
     {
-        NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
+        base.NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
     }
 }

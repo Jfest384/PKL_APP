@@ -88,5 +88,6 @@ namespace PKL_API.Models
         public PresencePhoto? WFHFromCompanyPhoto { get; set; }
 
         public DateOnly? update_at { get; set; }
+        public bool iscomplate { get; set; }
     }
 }

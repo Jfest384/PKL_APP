@@ -43,7 +43,6 @@ try
         jobManager.AddOrUpdate<WhatsAppJobService>(
             "wa-job-pagi",
             job => job.ExecuteAsync(),
-            //"*/1 * * * *",
             "0 10 * * 1-5",
             jakarta
         );
@@ -51,7 +50,14 @@ try
         jobManager.AddOrUpdate<WhatsAppJobService>(
             "wa-job-sore",
             job => job.ExecuteAsync(),
-            "0 16 * * 1-5",
+            "30 14 * * 1-5",
+            jakarta
+        );
+
+        jobManager.AddOrUpdate<WhatsAppJobService>(
+            "wa-job-malam",
+            job => job.ExecuteAsync(),
+            "0 19 * * 1-5",
             jakarta
         );
     }

@@ -1,0 +1,265 @@
+﻿@attribute [Authorize]
+@page "/home/profile/recap"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using PKLPresenceWeb.Model
+@inject AuthenticationStateProvider AuthStateProvider
+@inject HttpClient Http
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+<div class="change-pass-wrapper">
+    <div class="header-section d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center">
+            <button class="btn btn-link text-white fw-bold p-0 me-2" @onclick="GoBack">
+                <i class="bi-chevron-left fw-bold"></i>
+            </button>
+            <h5 class="mb-0 fw-bold text-white">Recap</h5>
+        </div>
+    </div>
+
+    <div class="content-section">
+        @if (IsLoading)
+        {
+            <div class="text-center mt-5">
+                <div class="spinner-border text-primary" role="status"></div>
+            </div>
+        }
+        else if (PresenceRecap != null && ReportRecap != null)
+        {
+            <div class="d-flex justify-content-end gap-2 mb-3 presence-radio-group">
+                <button class="btn btn-warning" @onclick="PrintRecap">
+                    <i class="bi bi-printer me-1"></i> Print Recap
+                </button>
+            </div>
+            <!-- Student Detail Card -->
+            <div class="student-detail-card mb-4">
+                <div class="student-detail-header">Student Detail</div>
+                <div class="student-detail-body">
+                    <div class="student-detail-col student-detail-col-left">
+                        <div class="student-detail-row">
+                            <label class="student-detail-label">Nama</label>
+                            <input class="student-detail-input" value="@PresenceRecap.studentName" readonly />
+                        </div>
+                        <div class="student-detail-row">
+                            <label class="student-detail-label">NIS</label>
+                            <input class="student-detail-input" value="@PresenceRecap.nis" readonly />
+                        </div>
+                        <div class="student-detail-row">
+                            <label class="student-detail-label">Kelas</label>
+                            <input class="student-detail-input" value="@PresenceRecap.kelas" readonly />
+                        </div>
+                    </div>
+                    <div class="student-detail-col student-detail-col-right">
+                        <div class="student-detail-row">
+                            <label class="student-detail-label">Walas</label>
+                            <input class="student-detail-input" value="@PresenceRecap.walasName" readonly />
+                        </div>
+                        <div class="student-detail-row">
+                            <label class="student-detail-label">Mentor</label>
+                            <input class="student-detail-input" value="@PresenceRecap.mentorName" readonly />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Presence Recap Card -->
+            <div class="student-detail-card mb-4">
+                <div class="student-detail-header">Presence Recap</div>
+                <div class="student-detail-body">
+                    <div class="student-detail-col student-detail-col-left">
+                        <div class="student-detail-row">
+                            <label class="student-detail-label">Total Hari PKL</label>
+                            <input class="student-detail-input" value="@PresenceRecap.pkl_days" readonly />
+                        </div>
+                        <div class="student-detail-row">
+                            <label class="student-detail-label">Jumlah Presensi</label>
+                            <input class="student-detail-input" value="@PresenceRecap.presence_total" readonly />
+                        </div>
+                        <div class="student-detail-row">
+                            <label class="student-detail-label">Jumlah Tidak Presensi</label>
+                            <input class="student-detail-input" value="@PresenceRecap.absen_total" readonly />
+                        </div>
+                    </div>
+                    <div class="student-detail-col student-detail-col-right">
+                        <div class="student-detail-row">
+                            <label class="student-detail-label">Laporan Lengkap</label>
+                            <input class="student-detail-input" value="@PresenceRecap.send_total" readonly />
+                        </div>
+                        <div class="student-detail-row">
+                            <label class="student-detail-label">Laporan Tidak Lengkap</label>
+                            <input class="student-detail-input" value="@PresenceRecap.not_send_total" readonly />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="student-detail-card mb-4">
+                <div class="student-detail-header">Kehadiran</div>
+                <div class="student-detail-body">
+                    <div class="student-detail-col student-detail-col-left">
+                        <div class="student-detail-row">
+                            <label class="student-detail-label">Hadir</label>
+                            <input class="student-detail-input" value="@PresenceRecap.hadir" readonly />
+                        </div>
+                        <div class="student-detail-row">
+                            <label class="student-detail-label">Sakit</label>
+                            <input class="student-detail-input" value="@PresenceRecap.sakit" readonly />
+                        </div>
+                        <div class="student-detail-row">
+                            <label class="student-detail-label">Izin</label>
+                            <input class="student-detail-input" value="@PresenceRecap.izin" readonly />
+                        </div>
+                    </div>
+                    <div class="student-detail-col student-detail-col-right">
+                        <div class="student-detail-row">
+                            <label class="student-detail-label">WFH</label>
+                            <input class="student-detail-input" value="@PresenceRecap.wfh" readonly />
+                        </div>
+                        <div class="student-detail-row">
+                            <label class="student-detail-label">Libur</label>
+                            <input class="student-detail-input" value="@PresenceRecap.libur" readonly />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Report Recap Card -->
+            <div class="student-detail-card mb-4">
+                <div class="student-detail-header">Report Recap</div>
+                <div class="student-detail-body">
+                    <div class="student-detail-col student-detail-col-left">
+                        <div class="student-detail-row">
+                            <label class="student-detail-label">Total Minggu</label>
+                            <input class="student-detail-input" value="@ReportRecap.total_weeks" readonly />
+                        </div>
+                    </div>
+                    <div class="student-detail-col student-detail-col-right">
+                        <div class="student-detail-row">
+                            <label class="student-detail-label">Total Bimbingan</label>
+                            <input class="student-detail-input" value="@ReportRecap.report_total" readonly />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-warning">Data recap tidak ditemukan.</div>
+        }
+    </div>
+</div>
+
+@code {
+    private PresenceRecap? PresenceRecap;
+    private ReportRecap? ReportRecap;
+    private bool IsLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        if (!authState.User.Identity.IsAuthenticated)
+        {
+            Navigation.NavigateTo("/login", true);
+            return;
+        }
+
+        var meJson = await JS.InvokeAsync<string>("localStorage.getItem", "meResponse");
+        if (string.IsNullOrWhiteSpace(meJson))
+        {
+            IsLoading = false;
+            return;
+        }
+
+        int studentId = 0;
+        try
+        {
+            using var doc = System.Text.Json.JsonDocument.Parse(meJson);
+            var root = doc.RootElement;
+            if (root.TryGetProperty("data", out var dataProp) && dataProp.TryGetProperty("id", out var idProp))
+                studentId = idProp.GetInt32();
+        }
+        catch
+        {
+            IsLoading = false;
+            return;
+        }
+
+        try
+        {
+            var payload = new { studentId };
+            var presenceResponse = await Http.PostAsJsonAsync(APIUrl.Endpoint("recap/presence"), payload);
+            if (presenceResponse.IsSuccessStatusCode)
+            {
+                PresenceRecap = await presenceResponse.Content.ReadFromJsonAsync<PresenceRecap>();
+            }
+        }
+        catch { }
+
+        try
+        {
+            var payload = new { studentId };
+            var reportResponse = await Http.PostAsJsonAsync(APIUrl.Endpoint("recap/report"), payload);
+            if (reportResponse.IsSuccessStatusCode)
+            {
+                ReportRecap = await reportResponse.Content.ReadFromJsonAsync<ReportRecap>();
+            }
+        }
+        catch { }
+
+        IsLoading = false;
+    }
+
+    private void GoBack() => Navigation.NavigateTo("/home/profile");
+
+    private async Task PrintRecap()
+    {
+        var meJson = await JS.InvokeAsync<string>("localStorage.getItem", "meResponse");
+        if (string.IsNullOrWhiteSpace(meJson)) return;
+
+        int studentId = 0;
+        try
+        {
+            using var doc = System.Text.Json.JsonDocument.Parse(meJson);
+            var root = doc.RootElement;
+            if (root.TryGetProperty("data", out var dataProp) && dataProp.TryGetProperty("id", out var idProp))
+                studentId = idProp.GetInt32();
+        }
+        catch
+        {
+            await JS.InvokeVoidAsync("Swal.fire", new { title = "Gagal mengambil studentId.", icon = "error", confirmButtonText = "OK" });
+        }
+
+        try
+        {
+            var request = new HttpRequestMessage(HttpMethod.Post, APIUrl.Endpoint("recap/print"));
+            request.Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(new { studentId }), System.Text.Encoding.UTF8, "application/json");
+
+            var response = await Http.SendAsync(request);
+            if (response.IsSuccessStatusCode)
+            {
+                var fileBytes = await response.Content.ReadAsByteArrayAsync();
+                var fileName = FileHelper.GetFileNameFromContentDisposition(response);
+                await JS.InvokeVoidAsync("downloadFileFromBytes", fileName, "application/pdf", fileBytes);
+
+                await JS.InvokeVoidAsync("Swal.fire", new
+                {
+                    title = "Success!",
+                    text = "Rekap Presensi dan Bimbingan Laporan berhasil diunduh.",
+                    icon = "success",
+                    timer = 3000,
+                    showConfirmButton = false,
+                    width = "90%",
+                    customClass = new
+                    {
+                        popup = "my-swal-popup"
+                    }
+                });
+            }
+        }
+        catch
+        {
+            await JS.InvokeVoidAsync("alert", "Terjadi kesalahan saat mengunduh file recap.");
+        }
+    }
+}

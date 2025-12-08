@@ -3,6 +3,7 @@
 
 @inject IJSRuntime JS
 @inject NavigationManager Navigation
+@inject HttpClient Http
 
 <div class="d-flex flex-column justify-content-center align-items-center min-vh-100">
     <h1 class="mb-3 text-center fw-bold">Welcome!</h1>
@@ -16,35 +17,20 @@
 @code {
     private async Task OnLetsGoClicked()
     {
-        var token = await JS.InvokeAsync<string>("localStorage.getItem", "authToken");
-        if (string.IsNullOrWhiteSpace(token))
-        {
-            Navigation.NavigateTo("/login");
-            return;
-        }
-
-        // Validasi token ke backend
         try
         {
-            var http = new HttpClient();
-            http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-            var response = await http.GetAsync(APIUrl.Endpoint("me"));
-
+            var response = await Http.GetAsync(APIUrl.Endpoint("me"));
             if (response.IsSuccessStatusCode)
-            {
                 Navigation.NavigateTo("/home");
-            }
             else
             {
-                // Token tidak valid/expired
-                await JS.InvokeVoidAsync("localStorage.removeItem", "authToken");
+                await JS.InvokeVoidAsync("localStorage.clear");
                 Navigation.NavigateTo("/login");
             }
         }
         catch
         {
-            // Jika error (misal network), anggap token tidak valid
-            await JS.InvokeVoidAsync("localStorage.removeItem", "authToken");
+            await JS.InvokeVoidAsync("localStorage.clear");
             Navigation.NavigateTo("/login");
         }
     }

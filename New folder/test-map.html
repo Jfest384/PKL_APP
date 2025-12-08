@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Uji Coba Map Lokasi PKL</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    #map {
+      height: 400px;
+      border-radius: 10px;
+      margin-top: 10px;
+    }
+    body {
+      font-family: sans-serif;
+      margin: 20px;
+      background-color: #f5f5f5;
+    }
+    input {
+      padding: 8px;
+      width: 300px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+  </style>
+</head>
+<body>
+  <h2>🧭 Uji Coba Peta Lokasi PKL</h2>
+  <p>Ketik nama perusahaan, lalu tekan <b>Enter</b>:</p>
+  <input type="text" id="searchBox" placeholder="Contoh: PT Satnusa Persada">
+  <div id="map"></div>
+  <p>Latitude: <span id="lat">-</span><br>Longitude: <span id="lng">-</span></p>
+
+  <script>
+    let map = L.map('map').setView([1.0371331, 103.9956383], 15);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    let marker;
+
+    // Fungsi update marker
+    function updateMarker(lat, lng) {
+      if (marker) map.removeLayer(marker);
+      marker = L.marker([lat, lng]).addTo(map);
+      document.getElementById('lat').textContent = lat;
+      document.getElementById('lng').textContent = lng;
+    }
+
+    // Klik di peta untuk set marker
+    map.on('click', (e) => {
+      const { lat, lng } = e.latlng;
+      updateMarker(lat, lng);
+    });
+
+    // Tekan Enter untuk cari lokasi via Nominatim
+    document.getElementById('searchBox').addEventListener('keyup', async (e) => {
+      if (e.key === 'Enter') {
+        const query = e.target.value;
+        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`;
+        const response = await fetch(url);
+        const results = await response.json();
+        if (results.length > 0) {
+          const { lat, lon, display_name } = results[0];
+          updateMarker(lat, lon);
+          map.setView([lat, lon], 16);
+          alert(`Lokasi ditemukan:\n${display_name}`);
+        } else {
+          alert('Lokasi tidak ditemukan.');
+        }
+      }
+    });
+  </script>
+</body>
+</html>
