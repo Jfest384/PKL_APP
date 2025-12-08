@@ -1427,7 +1427,7 @@ namespace PKL_API.Controllers
                 return NotFound("Student not found.");
 
             // Range tanggal
-            var startDate = new DateOnly(2025, 6, 30);
+            var startDate = new DateOnly(2025, 8, 11);
             var endDate = new DateOnly(2026, 1, 4);
 
             // Ambil semua presensi student di rentang tanggal

@@ -104,7 +104,6 @@ namespace PKL_API.Controllers
 
             if (company == null)
                 return NotFound("Company not found.");
-
             return Ok(company);
         }
 
@@ -112,16 +111,13 @@ namespace PKL_API.Controllers
         [HttpPost("companies/add")]
         public async Task<IActionResult> AddCompany([FromBody] CompanyDTO dto)
         {
-            // Validasi input
             if (dto == null || string.IsNullOrWhiteSpace(dto.name) || string.IsNullOrWhiteSpace(dto.address))
                 return BadRequest("Invalid request body.");
 
-            // Ambil user dari token
             var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "id");
             if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
                 return Unauthorized("User ID not found in token.");
 
-            // Ambil role user
             var user = await _db.Users
                 .Include(u => u.UserRoles)
                 .ThenInclude(ur => ur.Role)
@@ -166,16 +162,13 @@ namespace PKL_API.Controllers
         [HttpDelete("companies/delete")]
         public async Task<IActionResult> DeleteCompany([FromBody] int companyId)
         {
-            // Validasi input
             if (companyId <= 0)
                 return BadRequest("Invalid companyId.");
 
-            // Ambil user dari token
             var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "id");
             if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
                 return Unauthorized("User ID not found in token.");
 
-            // Ambil role user
             var user = await _db.Users
                 .Include(u => u.UserRoles)
                 .ThenInclude(ur => ur.Role)
@@ -188,22 +181,18 @@ namespace PKL_API.Controllers
             if (!roleIds.Contains(1) && !roleIds.Contains(4))
                 return Forbid("Hanya roleId 1/4 yang bisa melakukan aksi ini.");
 
-            // Cari company
             var company = await _db.Companies.FindAsync(companyId);
             if (company == null)
                 return NotFound("Company not found.");
 
-            // Set id_company di tabel Student menjadi null
             var students = await _db.Students.Where(s => s.Companyid == companyId).ToListAsync();
             foreach (var student in students)
             {
                 student.Companyid = null;
             }
 
-            // Hapus company
             _db.Companies.Remove(company);
             await _db.SaveChangesAsync();
-
             return Ok(new
             {
                 success = true,
@@ -215,18 +204,14 @@ namespace PKL_API.Controllers
         [HttpPut("companies/{companyId}")]
         public async Task<IActionResult> EditCompany(int companyId, [FromBody] CompanyEditDTO dto)
         {
-            // Validasi companyId
             if (companyId <= 0)
                 return BadRequest("companyId is required and must be greater than 0.");
 
-            // Ambil user id dari claims
             var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "id");
             if (userIdClaim == null)
                 return Unauthorized("User ID not found in token.");
-
             int userId = int.Parse(userIdClaim.Value);
 
-            // Ambil role user
             var userRole = await _db.Roles
                 .Where(r => _db.UserRoles.Any(ur => ur.User.id == userId && ur.Role.id == r.id))
                 .Select(r => r.id)
@@ -235,16 +220,13 @@ namespace PKL_API.Controllers
             if (userRole != 1 && userRole != 4)
                 return StatusCode(403, "Only admin and kepala jurusan can edit a company.");
 
-            // Cari company
             var company = await _db.Companies.FindAsync(companyId);
             if (company == null)
                 return NotFound("Company not found.");
 
-            // Validasi input
             if (string.IsNullOrWhiteSpace(dto.name) && string.IsNullOrWhiteSpace(dto.address))
                 return BadRequest("Company name and address is required.");
 
-            // Update data company
             company.name = dto.name;
             company.address = dto.address;
             if (dto.Lat.HasValue)
@@ -253,8 +235,31 @@ namespace PKL_API.Controllers
                 company.longitude = Math.Round(dto.Long.Value, 12, MidpointRounding.AwayFromZero);
 
             await _db.SaveChangesAsync();
-
             return Ok(new { message = "Company updated successfully." });
+        }
+
+        [Authorize]
+        [HttpDelete("location/reset")]
+        public async Task<IActionResult> ResetLocation([FromBody] int studentId)
+        {
+            if (studentId <= 0)
+                return BadRequest("Invalid studentId.");
+
+            var studentExists = await _db.Students.AnyAsync(s => s.id == studentId);
+            if (!studentExists)
+                return NotFound("Student not found.");
+
+            var lockLocations = await _db.LockLocations
+                .Where(l => l.Studentid == studentId)
+                .ToListAsync();
+
+            if (lockLocations.Count == 0)
+                return NotFound("Tidak ada data LockLocations yang dihapus.");
+
+            _db.LockLocations.RemoveRange(lockLocations);
+            await _db.SaveChangesAsync();
+
+            return Ok("Data LockLocations untuk siswa tersebut berhasil dihapus.");
         }
     }
 }

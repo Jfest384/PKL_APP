@@ -469,10 +469,10 @@
                                 <i class="bi bi-camera" style="font-size:1.2rem; color: black"></i>
                             </button>
 
-                            @* <!-- Switch Camera -->
+                            <!-- Switch Camera -->
                             <button class="btn btn-outline-secondary px-3" title="Switch Camera" @onclick="SwitchCamera">
                                 <i class="bi bi-arrow-repeat"></i>
-                            </button> *@
+                            </button>
                         </div>
                     </div>
                 </Modal>
@@ -1698,26 +1698,6 @@
         JS.InvokeVoidAsync("triggerFileInput", $"fileInput_{field}");
     }
 
-    // async Task OnPhotoChanged(InputFileChangeEventArgs e, string field)
-    // {
-    //     var file = e.File;
-    //     if (file != null)
-    //     {
-    //         PresencePhotos[field] = file;
-    //         using var stream = file.OpenReadStream(long.MaxValue);
-    //         using var ms = new MemoryStream();
-    //         await stream.CopyToAsync(ms);
-    //         var bytes = ms.ToArray();
-    //         PresencePhotoPreviews[field] = $"data:{file.ContentType};base64,{Convert.ToBase64String(bytes)}";
-    //     }
-    //     else PresencePhotoPreviews[field] = null;
-    //     ReportModalError = "";
-
-    //     if (inputFileRefs.TryGetValue(field, out var inputRef) && inputRef != null)
-    //         await JS.InvokeVoidAsync("resetInputFile", $"fileInput_{field}");
-    //     StateHasChanged();
-    // }
-
     async Task OnPhotoChanged(InputFileChangeEventArgs e, string field)
     {
         var file = e.File;
@@ -1961,24 +1941,7 @@
         ReportActivityInput = "";
         ShowReportModalFlag = true;
     }
-
-    // private async Task OnReportPhotoChanged(InputFileChangeEventArgs e, string field)
-    // {
-    //     var file = e.File;
-    //     if (file != null)
-    //     {
-    //         ReportPhotos[field] = file;
-    //         using var stream = file.OpenReadStream(long.MaxValue);
-    //         using var ms = new MemoryStream();
-    //         await stream.CopyToAsync(ms);
-    //         var bytes = ms.ToArray();
-    //         ReportPhotoPreviews[field] = $"data:{file.ContentType};base64,{Convert.ToBase64String(bytes)}";
-    //     }
-    //     else ReportPhotoPreviews[field] = null;
-    //     ReportModalError = "";
-    //     StateHasChanged();
-    // }
-
+    
     private async Task OnReportPhotoChanged(InputFileChangeEventArgs e, string field)
     {
         var file = e.File;

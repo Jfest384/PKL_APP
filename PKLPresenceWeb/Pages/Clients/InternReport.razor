@@ -442,17 +442,6 @@
                     </table>
                 </div>
 
-                <div class="row justify-content-end mb-2">
-                    <div class="mw-100 mt-3">
-                        <select id="rekapDropdown" class="form-select" @bind="selectedDropdown">
-                            <option value="" disabled selected hidden>Cetak Rekap</option>
-                            <option value="Siswa">Per Siswa</option>
-                            <option value="Pembimbing">Per Pembimbing</option>
-                            <option value="Kelas">Per Kelas</option>
-                        </select>
-                    </div>
-                </div>
-
                 <select class="form-select page-size-dropdown my-3" style="max-width:170px;" @bind="PageSize">
                     <option value="10">Show 10 Entries</option>
                     <option value="50">Show 50 Entries</option>
@@ -801,7 +790,6 @@
     private List<ClassItem> ClassList = new();
     private string searchName = "";
     private int? selectedClassId;
-    private string selectedDropdown = "";
     private bool isLoading = false;
 
     private int CurrentPage = 1;
