@@ -8,6 +8,7 @@
       "sslPort": 44337
     }
   },
+
   "profiles": {
     "http": {
       "commandName": "Project",
@@ -37,5 +38,11 @@
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
     }
+  },
+
+  "environmentVariables": {
+    "ASPNETCORE_ENVIRONMENT": "Development",
+    "BROWSER_REFRESH_ENABLED": "false",
+    "DOTNET_MODIFIABLE_ASSEMBLIES": "debug"
   }
 }

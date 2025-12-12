@@ -465,13 +465,13 @@
                             </div>
 
                             <!-- Capture -->
-                            <button class="btn-circle-capture" title="Capture" @onclick="CaptureWebRTCPhoto">
+                            <button class="btn-circle-capture" @onclick="CaptureWebRTCPhoto">
                                 <i class="bi bi-camera" style="font-size:1.2rem; color: black"></i>
                             </button>
 
                             <!-- Switch Camera -->
-                            <button class="btn btn-outline-secondary px-3" title="Switch Camera" @onclick="SwitchCamera">
-                                <i class="bi bi-arrow-repeat"></i>
+                            <button class="btn btn-primary" @onclick="SwitchCamera">
+                                <i class="bi bi-arrow-repeat" style="color: black"></i>
                             </button>
                         </div>
                     </div>
@@ -820,7 +820,7 @@
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     @if (UserRole != "Student")
                     {
-                        <button class="btn btn-link"
+                        <button class="chevron-date-btn"
                                 @onclick="ShowPrevPresence"
                                 disabled="@(SelectedPresenceIndex <= 0)">
                             <i class="bi bi-chevron-left"></i>
@@ -829,7 +829,7 @@
                     <span class="fw-bold" style="flex:1;text-align:center; font-size:20px">@ModalTitle</span>
                     @if (UserRole != "Student")
                     {
-                        <button class="btn btn-link"
+                        <button class="chevron-date-btn"
                                 @onclick="ShowNextPresence"
                                 disabled="@(SelectedPresenceIndex >= Presences?.Where(p => !string.IsNullOrWhiteSpace(p.presence_type) && p.presence_type != "-").Count() - 1)">
                             <i class="bi bi-chevron-right"></i>

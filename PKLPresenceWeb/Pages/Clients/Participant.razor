@@ -212,7 +212,7 @@
                             </div>
                             <div class="student-detail-row">
                                 <label class="student-detail-label">Status</label>
-                                <input class="student-detail-input fw-bold" style="color: forestgreen" value="@WahaSession?.status" readonly />
+                                <input class="student-detail-input fw-bold text-success" value="@WahaSession?.status" readonly />
                             </div>
                             <div class="student-detail-row">
                                 <label class="student-detail-label">Config</label>
@@ -239,7 +239,7 @@
                             </div>
                             <div class="student-detail-row">
                                 <label class="student-detail-label">Engine State</label>
-                                <input class="student-detail-input fw-bold" style="color: forestgreen" value="@WahaSession?.engine.state" readonly />
+                                <input class="student-detail-input fw-bold text-success" value="@WahaSession?.engine.state" readonly />
                             </div>
                         </div>
                     </div>
@@ -833,10 +833,9 @@
 
         @if (ShowAddMentorModal)
         {
-            <Modal IsVisible="true">
+            <Modal IsVisible="true" Title="Add Mentor">
                 <div class="modal-scrollable-content">
-                    <h5 class="mb-3 text-center fw-bold">Add Mentor</h5>
-                    <div class="mb-3 text-center">
+                    <div class="mb-3 mt-2 text-center">
                         <input class="form-control w-75 mx-auto" placeholder="Search..." @bind="TeacherSearchText" @oninput="OnMentorSearchChanged" />
                     </div>
                     <div class="mb-3" style="max-height:300px;overflow-y:auto;">
@@ -915,7 +914,26 @@
         
         @if (ShowStudentDetailModal && SelectedStudentDetail != null)
         {
-            <Modal IsVisible="true" Title="Student Detail">
+            <Modal IsVisible="true">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    @if (UserRole != "Student")
+                    {
+                        <button class="chevron-date-btn"
+                                @onclick="ShowPrevStudent" disabled="@IsPrevStudentDisabled">
+                            <i class="bi bi-chevron-left"></i>
+                        </button>
+                    }
+                    <span class="fw-bold" style="flex:1;text-align:center; font-size:20px">
+                        Student Detail
+                    </span>
+                    @if (UserRole != "Student")
+                    {
+                        <button class="chevron-date-btn"
+                                @onclick="ShowNextStudent" disabled="@IsNextStudentDisabled">
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
+                    }
+                </div>
                 <div class="modal-scrollable-content mx-1">
                     <div class="d-flex justify-content-center my-3">
                         <img src="@SelectedStudentPhotoUrl" onerror="this.src='/images/default_profile.jpg'" class="rounded-circle" style="width:120px;height:120px;object-fit:cover;" />
@@ -1135,17 +1153,19 @@
                         }
                     </select>
                     <div class="text-start fw-bold mb-1">Contact</div>
-                    <div class="d-flex align-items-center justify-content-center mb-3">
-                        <button class="btn btn-light" style="height:38px;width:38px;" @onclick="PrevReminderChat" disabled="@(CurrentReminderIndex == 0)">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <button class="chevron-date-btn"
+                                @onclick="PrevReminderChat" disabled="@(CurrentReminderIndex == 0)">
                             <i class="bi bi-chevron-left"></i>
                         </button>
-                        <textarea class="form-control mx-2 text-center" style="width:220px;" rows="1" readonly>@CurrentReminderChatName</textarea>
-                        <button class="btn btn-light" style="height:38px;width:38px;" @onclick="NextReminderChat" disabled="@(CurrentReminderIndex == ReminderChatNamesList.Count - 1)">
+                        <textarea class="form-control mx-2 text-center" style="width:270px;" rows="1" readonly>@CurrentReminderChatName</textarea>
+                        <button class="chevron-date-btn"
+                                @onclick="NextReminderChat" disabled="@(CurrentReminderIndex == ReminderChatNamesList.Count - 1)">
                             <i class="bi bi-chevron-right"></i>
                         </button>
                     </div>
                     <div class="text-start fw-bold mb-1">Message</div>
-                    <textarea class="form-control mb-1" rows="5"
+                    <textarea class="form-control mb-1" rows="6"
                               @bind="ReminderMessageRaw"
                               @bind:event="oninput"
                               @onchange="OnReminderMessageChanged"></textarea>
@@ -1170,23 +1190,23 @@
         {
             <Modal IsVisible="true" Title="@(ShowCompanyModalMode == "add" ? "Tambah Perusahaan" : "Edit Perusahaan")">
                 <div class="modal-scrollable-content">
-                    <div class="mx-1">
+                    <div class="mx-1 mt-1">
                         <div class="mb-3">
                             <label class="form-label text-start d-block">Perusahaan</label>
                             <textarea class="form-control" placeholder="Nama Perusahaan..."
                                       @bind="NewCompany.Name" rows="1"></textarea>
                         </div>
                         <div class="mb-2 d-flex justify-content-between align-items-center">
-                            <label class="form-label mb-0">Lokasi Perusahaan</label>
+                            <label class="form-label mb-0">Lokasi</label>
                             <button class="btn btn-outline-primary btn-sm" @onclick="OpenGoogleMaps">
                                 <i class="bi bi-geo-alt-fill me-1"></i> Google Maps
                             </button>
                         </div>
-                        <div id="companyMap" style="height: 150px; border-radius: 8px; border: 1px solid #ccc;"></div>
-                        <div class="text-start text-muted mt-2" style="font-size: 14px;">
+                        <div id="companyMap" style="height: 130px; border-radius: 8px; border: 1px solid #ccc;"></div>
+                        <div class="text-muted text-start mt-2" style="font-size: 14px;">
                             <div>* Lihat Koordinat Perusahaan melalui Google Maps</div>
                         </div>
-                        <div class="mb-3 mt-3">
+                        <div class="my-2">
                             <label class="form-label d-block text-start">Koordinat</label>
                             <textarea id="company-coord"
                                       class="form-control"
@@ -1307,7 +1327,13 @@
             timer = 3000,
             showConfirmButton = false,
             width = "90%",
-            customClass = new { popup = "my-swal-popup" }
+            customClass = new
+            { 
+                popup = "my-swal-popup" ,
+                title = "my-swal-title",
+                htmlContainer = "my-swal-text",
+                icon = "my-swal-icon"
+            }
         });
     }
 
@@ -3760,6 +3786,62 @@
         else
         {
             await JS.InvokeVoidAsync("alert", "Gagal mereset lokasi presensi siswa.");
+        }
+    }
+
+    private List<int> GetCurrentStudentIdsForDetail()
+    {
+        if (CurrentTab == "Siswa TKJ")
+            return GetPagedSortedData().Select(item => int.Parse(item[0])).ToList();
+        return new List<int>();
+    }
+
+    private int GetCurrentStudentDetailIndex()
+    {
+        var ids = GetCurrentStudentIdsForDetail();
+        if (SelectedStudentDetail == null)
+            return -1;
+        return ids.IndexOf(SelectedStudentDetail.id);
+    }
+
+    private void ShowPrevStudent()
+    {
+        var ids = GetCurrentStudentIdsForDetail();
+        var idx = GetCurrentStudentDetailIndex();
+        if (idx > 0)
+        {
+            var prevId = ids[idx - 1];
+            OnShowStudentDetail(prevId);
+        }
+    }
+
+    private bool IsPrevStudentDisabled
+    {
+        get
+        {
+            var idx = GetCurrentStudentDetailIndex();
+            return idx <= 0;
+        }
+    }
+
+    private void ShowNextStudent()
+    {
+        var ids = GetCurrentStudentIdsForDetail();
+        var idx = GetCurrentStudentDetailIndex();
+        if (idx >= 0 && idx < ids.Count - 1)
+        {
+            var nextId = ids[idx + 1];
+            OnShowStudentDetail(nextId);
+        }
+    }
+
+    private bool IsNextStudentDisabled
+    {
+        get
+        {
+            var ids = GetCurrentStudentIdsForDetail();
+            var idx = GetCurrentStudentDetailIndex();
+            return idx == -1 || idx >= ids.Count - 1;
         }
     }
 }

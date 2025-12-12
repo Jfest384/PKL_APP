@@ -14,13 +14,26 @@
     --student-detail-input-border: #d1d5db;
     --section-title-bg: #f3f3f3;
     --pagination-btn-bg: #fff;
+    --bottom-bar-color: #0476D9;
+    --modal-box-bg: #ffffff;
+    --modal-overlay: rgba(0, 0, 0, 0.5);
+    --upload-box-report-bg: #fafbfc;
+    --upload-icon-color: #555;
+    --uploaded-photo-text: #828487;
+    --report-modal-grid: #000;
+    --feedback-grid-bg: #F5F5F5;
+    --login-page-bg: rgba(255,255,255,0.85);
+    --nav-tabs-bg-active: #fff;
+    --nav-tabs-before: #BABABA;
+    --text-muted: #6c757d;
+    --nav-item-inner-bg: #fff;
 }
 
 .dark {
     --bg-primary: #292c2e;
     --bg-header: #035eae;
     --bg-card: #1a1c1d;
-    --border-card: #444;
+    --border-card: #696969;
     --text-primary: #fff;
     --card-bg: #1e1e1e;
     --card-text: #ffffff;
@@ -31,6 +44,19 @@
     --student-detail-input-bg: #232627;
     --student-detail-input-border: #4B5563;
     --section-title-bg: #1f2123;
+    --bottom-bar-color: #035eae;
+    --modal-box-bg: #181a1b;
+    --modal-overlay: rgba(20, 22, 23, 1);
+    --upload-box-report-bg: #1a1c1e;
+    --upload-icon-color: #A4A19D;
+    --uploaded-photo-text: #9C9995;
+    --report-modal-grid: #E8E6E3;
+    --feedback-grid-bg: #1E2021;
+    --login-page-bg: rgba(30,30,30,0.85);
+    --nav-tabs-bg-active: #181A1B;
+    --nav-tabs-before: #4D4D4D;
+    --text-muted: #9ca3af;
+    --nav-item-inner-bg: #181A1B;
 }
 
 /* Default Light Mode */
@@ -39,11 +65,31 @@ body {
     color: var(--text-primary);
 }
 
+    body .badge.bg-primary {
+        background-color: #0d6efd !important;
+    }
+
 /* Dark Mode */
 .dark body {
     background: #1e1e1e;
     color: #fff;
 }
+
+    .dark body .text-danger {
+        color: #FF0000 !important;
+    }
+
+    .dark body .text-success {
+        color: #28D768 !important;
+    }
+
+    .dark body .text-muted {
+        color: #9ca3af !important;
+    }
+
+    .dark body .badge.bg-primary {
+        background-color: var(--bottom-bar-color) !important;
+    }
 
 html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
@@ -177,10 +223,6 @@ code {
     font-weight: bold;
 }
 
-:root {
-    --bottom-bar-color: #0476D9; /* 💡 Ganti ini sesuai warna biru yang kamu mau */
-}
-
 .bottom-nav-custom {
     position: fixed;
     bottom: 0;
@@ -214,6 +256,7 @@ code {
         padding: 9px 12px;
         border-radius: 20px;
         color: var(--bottom-bar-color);
+/*        background-color: var(--nav-item-inner-bg);*/
         box-shadow: 0 0 6px rgba(0,0,0,0.2);
     }
 
@@ -350,7 +393,7 @@ body, html {
 
     .table tbody tr:nth-child(even) td,
     .table tbody tr:nth-child(even) th {
-        background-color: #fff !important; /* Atau ganti dengan warna lain jika ingin */
+        background-color: #fff !important;
     }
 
 .table-responsive::-webkit-scrollbar {
@@ -360,6 +403,49 @@ body, html {
 .table-responsive::-webkit-scrollbar-thumb {
     background: #aaa;
     border-radius: 4px;
+}
+
+.dark .table {
+    background-color: #202324 !important;
+    color: #fff !important;
+    border: 1px solid #444 !important;
+}
+
+    .dark .table thead th,
+    .dark .table thead td {
+        background-color: #0476D9 !important;
+        color: #fff !important;
+        border-color: #232627 !important;
+    }
+
+    .dark .table th,
+    .dark .table td {
+        border-color: #444 !important;
+        color: #fff !important;
+    }
+
+    .dark .table tbody tr:nth-child(odd) td,
+    .dark .table tbody tr:nth-child(odd) th {
+        background-color: #202324 !important;
+    }
+
+    .dark .table tbody tr:nth-child(even) td,
+    .dark .table tbody tr:nth-child(even) th {
+        background-color: #181a1b !important;
+    }
+
+    .dark .table td.text-danger,
+    .dark .table td .text-danger {
+        color: #FF0000 !important;
+    }
+
+    .dark .table td.text-success,
+    .dark .table td .text-success {
+        color: #28D768 !important;
+    }
+
+.dark .table-responsive::-webkit-scrollbar-thumb {
+    background: #444 !important;
 }
 
 .pagination {
@@ -479,13 +565,46 @@ body, html {
 .card {
     background-color: var(--card-bg) !important;
     color: var(--card-text) !important;
+    border-color: var(--border-card) !important;
 }
 
 .form-control {
     background-color: var(--input-bg) !important;
     color: var(--input-text) !important;
+    border-color: var(--border-card) !important;
 }
 
 .form-control::placeholder {
     color: var(--place-holder) !important;
 }
+
+.form-select {
+    background-color: var(--input-bg) !important;
+    color: var(--input-text) !important;
+    border-color: var(--border-card) !important;
+}
+
+.dropdown-menu {
+    background-color: var(--card-bg) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--border-card) !important;
+}
+
+.dropdown-item {
+    background-color: var(--card-bg) !important;
+    color: var(--text-primary) !important;
+}
+
+    .dropdown-item:hover {
+        background-color: var(--student-detail-input-bg) !important;
+    }
+
+.dropdown .form-control,
+.dropdown input {
+    background-color: var(--input-bg) !important;
+    color: var(--input-text) !important;
+}
+
+/*.text-muted {
+    color: var(--text-muted) !important;
+}*/

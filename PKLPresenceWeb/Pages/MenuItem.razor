@@ -9,16 +9,26 @@
         <span>@Text</span>
     </div>
     @if (ShowSwitch)
-    {
-        <label class="custom-switch m-0">
-            <input type="checkbox" class="custom-switch-input" checked="@SwitchValue" @onchange="OnSwitchChanged" @onclick:stopPropagation="true" disabled="@Disabled" />
-            <span class="custom-switch-slider"></span>
-        </label>
-    }
-    else
-    {
-        <i class="bi bi-chevron-right"></i>
-    }
+{
+    <label class="custom-switch m-0">
+        <input type="checkbox" class="custom-switch-input" checked="@SwitchValue"
+               @onchange="OnSwitchChanged" @onclick:stopPropagation="true" disabled="@Disabled" />
+        <span class="custom-switch-slider"></span>
+    </label>
+}
+else if (!string.IsNullOrEmpty(RightIcon))
+{
+    <i class="bi @RightIcon"></i>   <!-- ← ikon kanan custom -->
+}
+else if (OnClickAction.HasDelegate)
+{
+    <i class="bi @(Icon)"></i>
+}
+else
+{
+    <i class="bi bi-chevron-right"></i>
+}
+
 </div>
 
 @code {
@@ -29,9 +39,17 @@
     [Parameter] public bool SwitchValue { get; set; }
     [Parameter] public EventCallback<bool> SwitchValueChanged { get; set; }
     [Parameter] public bool Disabled { get; set; }
+    [Parameter] public EventCallback OnClickAction { get; set; }
+    [Parameter] public string RightIcon { get; set; }
 
-    private void HandleClick()
+    private async void HandleClick()
     {
+        if (OnClickAction.HasDelegate)
+        {
+            await OnClickAction.InvokeAsync();
+            return;
+        }
+
         if (!ShowSwitch && !Disabled && !string.IsNullOrEmpty(Link))
             Navigation.NavigateTo(Link);
     }

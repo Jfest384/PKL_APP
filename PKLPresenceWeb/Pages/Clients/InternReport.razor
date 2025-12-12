@@ -137,7 +137,7 @@
                                 }
                                 else
                                 {
-                                    <span class="text-muted d-flex flex-column align-items-center justify-content-center">
+                                    <span class="d-flex flex-column align-items-center justify-content-center">
                                         <i class="bi bi-image" style="font-size:2rem;"></i>
                                         <br />Upload Foto
                                     </span>
@@ -158,10 +158,11 @@
                     </div>
                     <div class="mb-3 text-center">
                         <label class="mb-2">File Laporan</label>
-                        <div class="file-upload-center">
+                        <div class="file-upload-center mb-2">
                             <InputFile OnChange="OnReportFileSelected" accept=".pdf"
                                     style="max-width: 300px; width: 90%;" />
                         </div>
+                        <span class="text-danger">*Size maksimal hanya 10 MB!</span>
                     </div>
                     <div class="d-flex justify-content-around mt-2">
                         <button class="btn btn-danger px-4" @onclick="CancelReport">Cancel</button>
@@ -211,14 +212,14 @@
                             </div>
 
                             <!-- Capture -->
-                            <button class="btn-circle-capture" title="Capture" @onclick="CaptureWebRTCPhoto">
+                            <button class="btn-circle-capture" @onclick="CaptureWebRTCPhoto">
                                 <i class="bi bi-camera" style="font-size:1.2rem; color: black"></i>
                             </button>
 
-                            @* <!-- Switch Camera -->
-                            <button class="btn btn-outline-secondary px-3" title="Switch Camera" @onclick="SwitchCamera">
-                                <i class="bi bi-arrow-repeat"></i>
-                            </button> *@
+                            <!-- Switch Camera -->
+                            <button class="btn btn-primary" @onclick="SwitchCamera">
+                                <i class="bi bi-arrow-repeat" style="color: black"></i>
+                            </button>
                         </div>
                     </div>
                 </Modal>
@@ -534,7 +535,8 @@
                 <div class="d-flex align-items-center justify-content-between mb-2">
                     @if (UserRole != "Student")
                     {
-                        <button class="btn btn-link" @onclick="ShowPrevReport" disabled="@IsPrevReportDisabled">
+                        <button class="chevron-date-btn"
+                                @onclick="ShowPrevReport" disabled="@IsPrevReportDisabled">
                             <i class="bi bi-chevron-left"></i>
                         </button>
                     }
@@ -543,7 +545,8 @@
                     </span>
                     @if (UserRole != "Student")
                     {
-                        <button class="btn btn-link" @onclick="ShowNextReport" disabled="@IsNextReportDisabled">
+                        <button class="chevron-date-btn"
+                                @onclick="ShowNextReport" disabled="@IsNextReportDisabled">
                             <i class="bi bi-chevron-right"></i>
                         </button>
                     }
@@ -831,6 +834,20 @@
         });
     }
 
+    private async void ShowErrorAlert()
+    {
+        await JS.InvokeVoidAsync("Swal.fire", new
+        {
+            title = "Error!",
+            text = "Ukuran File Anda terlalu besar. Size maximal hanya 10 MB.",
+            icon = "error",
+            timer = 3000,
+            showConfirmButton = false,
+            width = "90%",
+            customClass = new { popup = "my-swal-popup" }
+        });
+    }
+
     private bool HasReportToday =>
     Reports.Any(p =>
         DateTime.TryParseExact(
@@ -989,6 +1006,30 @@
             CloseDetailModal();
             return;
         }
+        long maxSize = 10 * 1024 * 1024;
+
+        if (WebRTCPhotoDataUrl != null)
+        {
+            var base64 = WebRTCPhotoDataUrl.Substring(WebRTCPhotoDataUrl.IndexOf(",") + 1);
+            var bytes = Convert.FromBase64String(base64);
+
+            if (bytes.Length > maxSize)
+            {
+                CloseDetailModal();
+                ShowErrorAlert();
+                return;
+            }
+        }
+
+        if (UploadedReportFile != null)
+        {
+            if (UploadedReportFile.Size > maxSize)
+            {
+                CloseDetailModal();
+                ShowErrorAlert();
+                return;
+            }
+        }
 
         IsSubmittingReport = true;
         var formData = new MultipartFormDataContent();
@@ -1009,15 +1050,17 @@
             };
 
             var fileContent = new ByteArrayContent(bytes);
-            fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(mimeType);
+            fileContent.Headers.ContentType =
+                new System.Net.Http.Headers.MediaTypeHeaderValue(mimeType);
             formData.Add(fileContent, "guidancePhoto", $"guidance{ext}");
         }
 
         if (UploadedReportFile != null)
         {
-            var stream = UploadedReportFile.OpenReadStream(10 * 1024 * 1024);
+            var stream = UploadedReportFile.OpenReadStream(maxSize);
             var fileContent = new StreamContent(stream);
-            fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(UploadedReportFile.ContentType);
+            fileContent.Headers.ContentType =
+                new System.Net.Http.Headers.MediaTypeHeaderValue(UploadedReportFile.ContentType);
             formData.Add(fileContent, "reportFile", UploadedReportFile.Name);
         }
 
@@ -1031,7 +1074,10 @@
             ShowSuccessAlert();
             await LoadReports();
         }
-        else await JS.InvokeVoidAsync("alert", "Gagal submit report.");
+        else
+        {
+            await JS.InvokeVoidAsync("alert", "Gagal submit report.");
+        }
     }
 
     async Task OnFeedbackButtonClick()

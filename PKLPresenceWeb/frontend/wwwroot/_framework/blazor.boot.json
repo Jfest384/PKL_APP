@@ -1,7 +1,7 @@
 {
   "mainAssemblyName": "PKLPresenceWeb",
   "resources": {
-    "hash": "sha256-kBi0Ph9Vvf6GkVxInbqu/FDSgzANAZiJStDZek9vWR0=",
+    "hash": "sha256-jZT9LY1ZTGS/H04+30gJ57X8ugMOFJrqCOG68M6nkpY=",
     "jsModuleNative": {
       "dotnet.native.js": "sha256-vtotCeXt2UD6oc459laJT32vBgigZ+eLoUmdeFkvYDk="
     },
@@ -17,7 +17,7 @@
     "coreAssembly": {},
     "assembly": {
       "Microsoft.AspNetCore.Authorization.wasm": "sha256-iSg8vKNf5QKSFjf5mM9UBKw0cOT2rC49M5WmyvF46fk=",
-      "Microsoft.AspNetCore.Components.wasm": "sha256-1iLwmiqaSbbG7g9DoNms5pGmDwlelC4bLvSqUdeCUdo=",
+      "Microsoft.AspNetCore.Components.wasm": "sha256-yQmI6XGgstlIky6OLiXtKawWxviHTNpUPQVz476ZoFU=",
       "Microsoft.AspNetCore.Components.Authorization.wasm": "sha256-qOJn7g9/rNUIcfQtSDZVYOt3bGBGMsceZXOADOUOwr0=",
       "Microsoft.AspNetCore.Components.Forms.wasm": "sha256-eLV9eJv3oidaslWh7x5fVE0NpWHcup74mfhLwQdCLzM=",
       "Microsoft.AspNetCore.Components.Web.wasm": "sha256-jg7C2sDVMqhm1CMZZL1tehePRW1CF/2RJTXNz5DRmdA=",
@@ -61,7 +61,7 @@
       "System.Text.RegularExpressions.wasm": "sha256-rqaPg+6w9RbI/4tMrxTDm1NlzquksVDbpx3fY19zNwg=",
       "System.wasm": "sha256-I4hhyMuUoHdrzDopL9tlnkL/Skg+0OO+gmkOXNT3dcg=",
       "System.Private.CoreLib.wasm": "sha256-Smb5o+yJY8K4cWV/IdWhB/gG5BPdnaEO2yN1rzDCNdI=",
-      "PKLPresenceWeb.wasm": "sha256-eNfnb1ST6wdAAb0BFpp/6Y8h5vzaQeUF4AtjrAJY7PU="
+      "PKLPresenceWeb.wasm": "sha256-hON5TYq+9W3CaX0vsEPEVyJZuxgHx7HC3jW3JgF0fB4="
     }
   },
   "cacheBootResources": true,

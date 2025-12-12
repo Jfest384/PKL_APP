@@ -47,6 +47,11 @@
                           link="/home/profile/recap"
                           Disabled="@isRekapDisabled" />
             }
+            <MenuItem icon="@(isDark ? "bi-moon" : "bi-sun")"
+                      RightIcon="@(isDark ? "bi-sun" : "bi-moon")"
+                      text="Theme"
+                      ShowSwitch="false"
+                      OnClickAction="ToggleThemeFromProfile" />
         </div>
 
         <div class="d-flex justify-content-center">
@@ -65,9 +70,13 @@
     private bool isMessageActive = false;
     private bool isLoadingSwitch = false;
     private bool isRekapDisabled = false;
+    private bool isDark = false;
 
     protected override async Task OnInitializedAsync()
     {
+        var savedTheme = await JS.InvokeAsync<string>("themeManager.getTheme");
+        isDark = savedTheme == "dark";
+
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
         if (!authState.User.Identity.IsAuthenticated)
         {
@@ -124,6 +133,7 @@
 
     private async Task Logout()
     {
+        var savedTheme = await JS.InvokeAsync<string>("localStorage.getItem", "theme");
         var response = await Http.PostAsync(APIUrl.Endpoint("authentication/logout"), null);
 
         if (response.IsSuccessStatusCode)
@@ -135,6 +145,8 @@
             if (root.TryGetProperty("message", out var msgProp) && msgProp.GetString() == "Logged out")
             {
                 await JS.InvokeVoidAsync("localStorage.clear");
+                if (!string.IsNullOrEmpty(savedTheme))
+                    await JS.InvokeVoidAsync("localStorage.setItem", "theme", savedTheme);
                 Navigation.NavigateTo("/login", true);
             }
         }
@@ -202,5 +214,11 @@
         }
         catch { }
         finally { isLoadingSwitch = false; StateHasChanged(); }
+    }
+
+    private async Task ToggleThemeFromProfile()
+    {
+        isDark = !isDark;
+        await JS.InvokeVoidAsync("themeManager.applyTheme", isDark);
     }
 }

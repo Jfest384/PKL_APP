@@ -174,9 +174,9 @@ body {
 .upload-box,
 .upload-box-report {
     display: inline-block;
-    border: 1.5px solid #e0e0e0;
+    border: 1.5px solid var(--student-detail-input-border);
     border-radius: 4px;
-    background: #fafbfc;
+    background: var(--upload-box-report-bg);
     cursor: pointer;
     width: fit-content;
     height: fit-content;
@@ -204,7 +204,7 @@ body {
     width: 100%;
     height: 150px;
     border-radius: 8px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--student-detail-input-border);
     margin-left: 0;
     margin-right: 0;
     display: block;

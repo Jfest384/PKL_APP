@@ -7,7 +7,7 @@
     position: relative;
     display: flex;
     flex-direction: column;
-    background-color: #e1e1e1;
+    background-color: var(--bg-primary);
     height: 100vh;
     overflow: hidden;
 }
@@ -16,7 +16,7 @@
     position: sticky;
     top: 0;
     z-index: 10;
-    background-color: #0476D9;
+    background-color: var(--bg-header);
     padding: 1.5rem;
     height: calc(120px - 20px);
     box-sizing: border-box;
@@ -139,34 +139,12 @@ input[type="radio"].presence-radio-input {
     overflow-y: auto;
 }
 
-.presence-modal-backdrop {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(0,0,0,0.12);
-    z-index: 1050;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.presence-modal-dialog {
-    background: #fff;
-    border-radius: 16px;
-    box-shadow: 0 2px 16px rgba(0,0,0,0.12);
-    padding: 32px 24px 16px 24px;
-    min-width: 320px;
-    max-width: 400px;
-}
-
 .report-modal-grid {
     display: grid;
     grid-template-columns: 110px 18px 1fr;
     row-gap: 5px;
     font-size: 1rem;
-    color: black;
+    color: var(--report-modal-grid);
 }
 
 .report-modal-label {
@@ -181,36 +159,6 @@ input[type="radio"].presence-radio-input {
     font-weight: 500;
     word-break: break-word;
 }
-
-.presence-modal-link {
-    color: #0d6efd; /* Bootstrap link color */
-    text-decoration: underline;
-    cursor: pointer;
-    background: none;
-    border: none;
-    padding: 0;
-    font: inherit;
-    display: inline;
-}
-
-.presence-modal-close-btn {
-    width: 100%;
-    background: #dc3545; /* Bootstrap danger color */
-    color: #fff;
-    font-weight: 500;
-    font-size: 1rem;
-    border: none;
-    border-radius: 8px;
-    padding: 8px 0; /* sedikit lebih panjang */
-    margin-top: 18px;
-    transition: background 0.2s;
-    letter-spacing: 0.5px;
-}
-
-    .presence-modal-close-btn:active {
-        background: #b52a37;
-    }
-
 
 .centered-textarea {
     width: 350px;
@@ -394,9 +342,10 @@ input[type="radio"].presence-radio-input {
 }
 
 .custom-upload-box {
-    border: 1.5px solid #e0e0e0;
+    border: 1.5px solid var(--student-detail-input-border);
     border-radius: 10px;
-    background: #fafbfc;
+    background: var(--upload-box-report-bg);
+    color: var(--upload-icon-color);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -409,25 +358,17 @@ input[type="radio"].presence-radio-input {
     max-width: 220px; /* opsional, batasi lebar maksimal */
     padding: 10px;
 }
-    /* Jika ada foto, padding dihilangkan */
+
+    .custom-upload-box * {
+        color: var(--upload-icon-color);
+    }
+
     .custom-upload-box.has-photo {
         padding: 0;
     }
 
-.custom-upload-icon {
-    font-size: 2.5rem;
-    color: #555;
-}
-
-.custom-upload-text {
-    margin-top: 10px;
-    font-size: 1rem;
-    color: #444;
-    text-align: center;
-}
-
 .uploaded-photo-preview {
-    border: 1.5px solid #e0e0e0;
+    border: 1.5px solid var(--student-detail-input-border);
     max-width: 180px;
     max-height: 240px;
     border-radius: 10px;
@@ -438,6 +379,22 @@ input[type="radio"].presence-radio-input {
     object-fit: cover;
 }
 
+.modal-title {
+    color: var(--upload-icon-color) !important;
+}
+
+.btn-close {
+    width: 1rem;
+    height: 1rem;
+    opacity: 1;
+    background: none;
+    background-image: url("data:image/svg+xml;utf8,\
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='red'>\
+<path d='M2.146 2.146a.5.5 0 0 1 .708 0L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854a.5.5 0 0 1 0-.708z'/>\
+</svg>");
+    background-size: cover;
+}
+
 .file-upload-center {
     display: flex;
     flex-direction: column;
@@ -445,35 +402,6 @@ input[type="radio"].presence-radio-input {
     justify-content: center;
     width: 100%;
 }
-
-.upload-boxs,
-.upload-box-reports {
-    position: relative;
-    width: fit-content; /* 3:4 ratio, width */
-    height: fit-content; /* 3:4 ratio, height */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 1.5px solid #e0e0e0;
-    border-radius: 8px;
-    background: #fafbfc;
-    cursor: pointer;
-    overflow: hidden;
-    text-align: center;
-    margin: auto;
-}
-
-    .upload-box img,
-    .upload-box-reports img,
-    .img-upload-previews {
-        max-width: 180px;
-        max-height: 240px;
-        width: auto;
-        height: auto;
-        object-fit: cover;
-        border-radius: 1px;
-        display: block;
-    }
 
 .webrtc-modal-videos {
     width: 340px;
@@ -573,10 +501,10 @@ input[type="radio"].presence-radio-input {
     display: grid;
     grid-template-columns: 105px 18px 1fr;
     row-gap: 5px;
-    background: #F5F5F5;
+    background: var(--feedback-grid-bg);
     padding: 8px;
     border-radius: 8px;
-    border: 1.5px solid #d1d1d1;
+    border: 1.5px solid var(--border-card);
 }
 
 .feedback-label {
@@ -659,19 +587,20 @@ input[type="radio"].presence-radio-input {
     align-items: center;
     justify-content: center;
     font-size: 1.1rem;
-    color: #444;
+    color: #828487;
 }
 
     .chevron-date-btn:disabled {
         opacity: 0.5;
         cursor: not-allowed;
+        color: #84848A;
     }
 
     .chevron-date-btn:active,
     .chevron-date-btn:focus {
         outline: none !important;
         background: none !important;
-        color: blue;
+        color: #0E64E1;
     }
 
 .my-swal-popup {

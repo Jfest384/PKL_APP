@@ -4,7 +4,7 @@
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(0,0,0,0.5);
+    background: rgba(0, 0, 0, 0.5);
     z-index: 1050;
     display: flex;
     align-items: center;
@@ -12,7 +12,7 @@
 }
 
 .modal-box {
-    background: white;
+    background: var(--modal-box-bg);
     border-radius: 12px;
     padding: 2rem;
     max-width: 90%;

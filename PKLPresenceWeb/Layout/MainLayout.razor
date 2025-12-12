@@ -25,12 +25,6 @@
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
 
-<div class="theme-toggle">
-    <button class="theme-btn" @onclick="ToggleTheme">
-        @(isDark ? "☀ Light" : "🌙 Dark")
-    </button>
-</div>
-
 <div class="main-content">
     @Body
 </div>
@@ -55,12 +49,6 @@
     {
         var saved = await JS.InvokeAsync<string>("themeManager.getTheme");
         isDark = saved == "dark";
-        await JS.InvokeVoidAsync("themeManager.applyTheme", isDark);
-    }
-
-    private async Task ToggleTheme()
-    {
-        isDark = !isDark;
         await JS.InvokeVoidAsync("themeManager.applyTheme", isDark);
     }
 }

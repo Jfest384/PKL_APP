@@ -108,7 +108,17 @@ namespace PKL_API.Controllers
                         .Where(d => presenceDetails.Contains(d.id))
                         .ToListAsync();
                     sendTotal = details.Count(d => d.iscomplate == true);
-                    notSendTotal = details.Count(d => d.iscomplate == false);
+                    notSendTotal = await _db.Presences
+                        .Where(p => p.Studentid == studentId && p.date >= startDate && p.date <= endDate)
+                        .Join(_db.PresenceDetails,
+                            p => p.PresenceDetailid,
+                            d => d.id,
+                            (p, d) => new { Presence = p, Detail = d })
+                        .CountAsync(x =>
+                            x.Detail.iscomplate == false
+                            || (x.Detail.update_at.HasValue &&
+                                x.Detail.update_at.Value != x.Presence.date)
+                        );
                 }
 
                 // Hitung jumlah presensi per tipe (id_presence 1-5)
