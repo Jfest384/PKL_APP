@@ -27,6 +27,12 @@
     --nav-tabs-before: #BABABA;
     --text-muted: #6c757d;
     --nav-item-inner-bg: #fff;
+    --table-border: #ccc;
+    --table-header-bg: #0476D9;
+    --table-header-text: #fff;
+    --table-row-odd: #f1f1f1;
+    --table-row-even: #fff;
+    --table-scrollbar: #aaa;
 }
 
 .dark {
@@ -57,6 +63,12 @@
     --nav-tabs-before: #4D4D4D;
     --text-muted: #9ca3af;
     --nav-item-inner-bg: #181A1B;
+    --table-border: #444;
+    --table-header-bg: #0476D9;
+    --table-header-text: #fff;
+    --table-row-odd: #202324;
+    --table-row-even: #181a1b;
+    --table-scrollbar: #444;
 }
 
 /* Default Light Mode */
@@ -66,13 +78,13 @@ body {
 }
 
     body .badge.bg-primary {
-        background-color: #0d6efd !important;
+        background-color: var(--bottom-bar-color) !important;
     }
 
 /* Dark Mode */
 .dark body {
-    background: #1e1e1e;
-    color: #fff;
+    background: var(--bg-primary);
+    color: var(--text-primary);
 }
 
     .dark body .text-danger {

@@ -360,7 +360,7 @@ window.webrtcPhoto = {
         // === MOBILE MODE (facingMode) ===
         if (this.isMobile()) {
             constraints.video = {
-                facingMode: preferred === "environment" ? { exact: "environment" } : "user"
+                facingMode: preferred === "environment" ? "environment" : "user"
             };
         }
         // === DESKTOP MODE (deviceId exact) ===
