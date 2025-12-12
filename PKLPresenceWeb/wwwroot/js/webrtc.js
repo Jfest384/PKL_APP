@@ -360,7 +360,7 @@ window.webrtcPhoto = {
         // === MOBILE MODE (facingMode) ===
         if (this.isMobile()) {
             constraints.video = {
-                facingMode: preferred === "environment" ? "environment" : "user"
+                facingMode: { ideal: preferred === "environment" ? "environment" : "user" }
             };
         }
         // === DESKTOP MODE (deviceId exact) ===
@@ -403,6 +403,9 @@ window.webrtcPhoto = {
 
             let nextFacing = currentFacing === "environment" ? "user" : "environment";
             console.log("🔄 Mobile switch:", currentFacing, "→", nextFacing);
+
+            this.stop(elementId);
+            await new Promise(r => setTimeout(r, 200));
 
             return await this.start(elementId, this.dotNetRefs[elementId], nextFacing);
         }
