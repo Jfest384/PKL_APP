@@ -21,7 +21,8 @@ window.renderPresenceMapWithMarker = function (elementId, lat, lng, dotnetHelper
     var map = L.map(elementId).setView([lat, lng], 16);
     window.presenceMapInstance = map;
 
-    L.tileLayer('https://api.maptiler.com/maps/satellite/{z}/{x}/{y}.jpg?key=V2NKLc84EZrQT0sfWuu5').addTo(map);
+    //L.tileLayer('https://api.maptiler.com/maps/satellite/{z}/{x}/{y}.jpg?key=V2NKLc84EZrQT0sfWuu5').addTo(map);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
 
     // Marker tidak draggable
     var marker = L.marker([lat, lng], { draggable: false }).addTo(map);
