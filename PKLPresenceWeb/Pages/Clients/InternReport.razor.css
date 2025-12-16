@@ -232,7 +232,7 @@ input[type="radio"].presence-radio-input {
 }
 
 .table.mentor-table th:nth-child(5), .table.mentor-table td:nth-child(5) {
-    width: 13%;
+    width: 12%;
 }
 
 .table.mentor-table th:nth-child(6), .table.mentor-table td:nth-child(6) {
@@ -244,7 +244,7 @@ input[type="radio"].presence-radio-input {
 }
 
 .table.mentor-table th:nth-child(8), .table.mentor-table td:nth-child(8) {
-    width: 20%;
+    width: 18%;
 }
 
 .table.mentor-table th:nth-child(9), .table.mentor-table td:nth-child(9) {
@@ -252,7 +252,7 @@ input[type="radio"].presence-radio-input {
 }
 
 .table.mentor-table th:nth-child(10), .table.mentor-table td:nth-child(10) {
-    width: 13%;
+    width: 16%;
 }
 
 /* Untuk Student */
@@ -291,6 +291,14 @@ input[type="radio"].presence-radio-input {
 
     .scrollable-x > .table.student-table {
         min-width: 900px;
+        max-width: 1900px; /* atau sesuai kebutuhan */
+        width: 100%;
+        table-layout: fixed;
+        margin: 0 auto;
+    }
+
+    .scrollable-x > .table.mentor-table {
+        min-width: 1450px;
         max-width: 1900px; /* atau sesuai kebutuhan */
         width: 100%;
         table-layout: fixed;

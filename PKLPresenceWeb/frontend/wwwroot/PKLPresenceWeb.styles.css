@@ -1014,7 +1014,7 @@ input[type="radio"].presence-radio-input[b-yabyv8rrba] {
 }
 
 .table.mentor-table th:nth-child(5)[b-yabyv8rrba], .table.mentor-table td:nth-child(5)[b-yabyv8rrba] {
-    width: 13%;
+    width: 12%;
 }
 
 .table.mentor-table th:nth-child(6)[b-yabyv8rrba], .table.mentor-table td:nth-child(6)[b-yabyv8rrba] {
@@ -1026,7 +1026,7 @@ input[type="radio"].presence-radio-input[b-yabyv8rrba] {
 }
 
 .table.mentor-table th:nth-child(8)[b-yabyv8rrba], .table.mentor-table td:nth-child(8)[b-yabyv8rrba] {
-    width: 20%;
+    width: 18%;
 }
 
 .table.mentor-table th:nth-child(9)[b-yabyv8rrba], .table.mentor-table td:nth-child(9)[b-yabyv8rrba] {
@@ -1034,7 +1034,7 @@ input[type="radio"].presence-radio-input[b-yabyv8rrba] {
 }
 
 .table.mentor-table th:nth-child(10)[b-yabyv8rrba], .table.mentor-table td:nth-child(10)[b-yabyv8rrba] {
-    width: 13%;
+    width: 16%;
 }
 
 /* Untuk Student */
@@ -1073,6 +1073,14 @@ input[type="radio"].presence-radio-input[b-yabyv8rrba] {
 
     .scrollable-x > .table.student-table[b-yabyv8rrba] {
         min-width: 900px;
+        max-width: 1900px; /* atau sesuai kebutuhan */
+        width: 100%;
+        table-layout: fixed;
+        margin: 0 auto;
+    }
+
+    .scrollable-x > .table.mentor-table[b-yabyv8rrba] {
+        min-width: 1450px;
         max-width: 1900px; /* atau sesuai kebutuhan */
         width: 100%;
         table-layout: fixed;
