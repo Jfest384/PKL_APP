@@ -188,6 +188,48 @@ namespace PKL_API.Controllers
         }
 
         [Authorize]
+        [HttpDelete("delete/{reportId}")]
+        public async Task<IActionResult> DeleteReport(int reportId)
+        {
+            var report = await _db.Reports
+                .FirstOrDefaultAsync(r => r.id == reportId);
+
+            if (report == null)
+                return NotFound("Report not found.");
+
+            if (report.ReportFeedbackid.HasValue)
+            {
+                var feedback = await _db.ReportFeedbacks
+                    .FirstOrDefaultAsync(f => f.id == report.ReportFeedbackid.Value);
+                if (feedback != null)
+                    _db.ReportFeedbacks.Remove(feedback);
+            }
+
+            // Hapus ReportFile (file utama) jika ada
+            if (report.ReportFileid.HasValue)
+            {
+                var file = await _db.ReportFiles
+                    .FirstOrDefaultAsync(f => f.id == report.ReportFileid.Value);
+                if (file != null)
+                    _db.ReportFiles.Remove(file);
+            }
+
+            // Hapus ReportPhoto jika ada
+            if (report.ReportPhotoid.HasValue)
+            {
+                var photo = await _db.ReportFiles
+                    .FirstOrDefaultAsync(f => f.id == report.ReportPhotoid.Value);
+                if (photo != null)
+                    _db.ReportFiles.Remove(photo);
+            }
+
+            _db.Reports.Remove(report);
+            await _db.SaveChangesAsync();
+
+            return Ok(new { message = "Report and related data deleted successfully." });
+        }
+
+        [Authorize]
         [HttpGet]
         public async Task<IActionResult> GetReports(
             [FromQuery] DateOnly? date = null,

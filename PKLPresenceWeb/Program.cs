@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using PKLPresenceWeb;
+using PKLPresenceWeb.Helper;
 using PKLPresenceWeb.Model;
 using System.Globalization;
 
@@ -12,6 +13,7 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 // Registrasi Authorization dan AuthenticationStateProvider
 builder.Services.AddAuthorizationCore();
 builder.Services.AddScoped<AuthenticationStateProvider, SimpleAuthStateProvider>();
+builder.Services.AddScoped<AlertService>();
 
 // Registrasi HttpClient
 builder.Services.AddScoped(sp =>

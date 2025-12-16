@@ -1,13 +1,7 @@
 ﻿@attribute [Authorize]
 @page "/home"
-@inject HttpClient Http
-@inject NavigationManager Navigation
-@inject IJSRuntime JS
-@using System.Text.Json
 @using Microsoft.AspNetCore.Authorization
-@using Microsoft.AspNetCore.Components.Authorization
-@using PKLPresenceWeb.Model
-@inject AuthenticationStateProvider AuthStateProvider
+@inherits HomeBase
 
 <div class="home-wrapper">
     <div class="header-section d-flex justify-content-between align-items-center">
@@ -95,49 +89,3 @@
 		}
     </div>
 </div>
-
-@code {
-    private string fullName = "";
-    private string secondLine = "";
-    private string userRole = "";
-    private string photoUrl = "/images/default_profile.jpg";
-
-    protected override async Task OnInitializedAsync()
-    {
-        var meJson = await JS.InvokeAsync<string>("localStorage.getItem", "meResponse");
-        if (string.IsNullOrWhiteSpace(meJson))
-            return;
-
-        var root = JsonDocument.Parse(meJson).RootElement;
-        fullName = root.TryGetProperty("fullname", out var fnProp) ? fnProp.GetString() ?? "" : "";
-        userRole = root.TryGetProperty("role", out var roleProp) ? roleProp.GetString() ?? "" : "";
-
-        // Data Student
-        if (userRole.ToLower() == "student" &&
-            root.TryGetProperty("data", out var dataProp))
-        {
-            if (dataProp.TryGetProperty("classroom", out var classroomProp))
-                secondLine = classroomProp.GetString() ?? "";
-        }
-        else secondLine = userRole;
-        
-        // Foto (juga tanpa header Authorization)
-        if (root.TryGetProperty("profile", out var profileProp) &&
-            profileProp.ValueKind != JsonValueKind.Null)
-        {
-            var request = new HttpRequestMessage(HttpMethod.Get, APIUrl.Endpoint("me/photo"));
-            var response = await Http.SendAsync(request);
-
-            if (response.IsSuccessStatusCode)
-            {
-                var bytes = await response.Content.ReadAsByteArrayAsync();
-                var contentType = response.Content.Headers.ContentType?.MediaType ?? "image/jpeg";
-                var base64 = Convert.ToBase64String(bytes);
-                photoUrl = $"data:{contentType};base64,{base64}";
-            }
-        }
-    }
-
-    private void GoToProfile() => Navigation.NavigateTo("/home/profile");
-}
-
