@@ -2,7 +2,7 @@
     position: relative;
     display: flex;
     flex-direction: column;
-    background-color: #e1e1e1;
+    background-color: var(--bg-primary);
     height: 100vh;
     overflow: hidden;
 }
@@ -11,7 +11,7 @@
     position: sticky;
     top: 0;
     z-index: 10;
-    background-color: #0476D9;
+    background-color: var(--bg-header);
     padding: 1.5rem;
     height: calc(120px - 20px);
     box-sizing: border-box;
@@ -47,9 +47,9 @@
 }
 
 .student-detail-card {
-    background: #f8f9fa;
+    background: var(--bg-card);
     border-radius: 8px;
-    border: 1px solid #e3e6ea;
+    border: 1px solid var(--border-card);
     box-shadow: 0 2px 8px rgba(0,0,0,0.03);
     padding: 0;
     margin-bottom: 1.5rem;
@@ -58,8 +58,8 @@
 .student-detail-header {
     font-weight: bold;
     font-size: 1.15rem;
-    background: #f1f3f6;
-    border-bottom: 1px solid #e3e6ea;
+    background: var(--student-detail-header-bg);
+    border-bottom: 1px solid var(--border-card);
     padding: 0.75rem 1rem;
     border-radius: 8px 8px 0 0;
 }
@@ -92,12 +92,12 @@
 
 .student-detail-input {
     flex: 1;
-    background: #e9ecef;
-    border: 1px solid #d1d5db;
+    background: var(--student-detail-input-bg);
+    border: 1px solid var(--student-detail-input-border);
     border-radius: 4px;
     padding: 0.5rem 0.75rem;
     font-size: 1rem;
-    color: #333;
+    color: var(--input-text);
 }
 
 @media (max-width: 850px) {

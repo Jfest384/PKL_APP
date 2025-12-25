@@ -149,7 +149,17 @@ namespace PKL_API.Controllers
                     var details = await _db.PresenceDetails
                         .Where(d => presenceDetails.Contains(d.id))
                         .ToListAsync();
-                    sendTotal = details.Count(d => d.iscomplate == true);
+
+                    sendTotal = await presencesQuery
+                        .Join(_db.PresenceDetails,
+                            p => p.PresenceDetailid,
+                            d => d.id,
+                            (p, d) => new { Presence = p, Detail = d })
+                        .CountAsync(x =>
+                            x.Detail.iscomplate == true &&
+                            x.Detail.update_at.HasValue &&
+                            x.Detail.update_at.Value == x.Presence.date
+                        );
 
                     notSendTotal = await presencesQuery
                         .Join(_db.PresenceDetails,
@@ -544,8 +554,8 @@ namespace PKL_API.Controllers
                             Row("Jumlah Hari PKL", $"{presenceRecap.pkl_days} hari");
                             Row("Jumlah Presensi", $"{presenceRecap.presence_total} kali");
                             Row("Jumlah Tidak Presensi", $"{presenceRecap.absen_total} kali");
-                            Row("Jumlah Report Harian Terkirim", $"{presenceRecap.send_total} kali");
-                            Row("Jumlah Report Harian Tidak Terkirim", $"{presenceRecap.not_send_total} kali");
+                            Row("Jumlah Report Harian Lengkap", $"{presenceRecap.send_total} kali");
+                            Row("Jumlah Report Harian Tidak Lengkap/Terlambat", $"{presenceRecap.not_send_total} kali");
                             Row("Hadir", $"{presenceRecap.hadir} hari");
                             Row("Sakit", $"{presenceRecap.sakit} hari");
                             Row("Izin", $"{presenceRecap.izin} hari");
