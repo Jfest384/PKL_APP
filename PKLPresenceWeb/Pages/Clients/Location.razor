@@ -1,0 +1,173 @@
+﻿@attribute [Authorize]
+@page "/participant/location"
+@inject HttpClient Http
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+@inject CompanyState CompanyState
+@inject IJSRuntime JS
+@inject AlertService AlertService
+
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using PKLPresenceWeb.Helper
+@using PKLPresenceWeb.Model
+@using System.Text.Json
+
+<div class="class-wrapper">
+    <div class="header-section d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center">
+            <button class="btn btn-link text-white fw-bold p-0 me-2" @onclick="GoBack">
+                <i class="bi-chevron-left fw-bold"></i>
+            </button>
+            <h5 class="mb-0 fw-bold text-white">Location</h5>
+        </div>
+        <div class="photo-wrapper" @onclick="GoToProfile">
+            <img src="@photoUrl" onerror="this.src='/images/default_profile.jpg'" class="profile-photo" />
+        </div>
+    </div>
+
+    <div class="content-section">
+        <div class="section-title mb-3">Lokasi Perusahaan</div>
+
+        <div class="student-detail-card mb-4">
+            <div class="student-detail-header d-flex justify-content-between align-items-center">
+                <span class="fw-bold">
+                    @CompanyDetail?.company?.name
+                </span>
+                <button class="btn btn-sm btn-success" @onclick="ShowAddCompanyModal">
+                    <i class="bi bi-plus-lg"></i> Add
+                </button>
+            </div>
+
+            <div class="student-detail-body">
+                @if (IsLoading)
+                {
+                    <div class="text-center my-3">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                }
+                else if (CompanyLocations == null || CompanyLocations.Count == 0)
+                {
+                    <div class="text-center text-muted">
+                        Tidak ada data lokasi perusahaan.
+                    </div>
+                }
+                else
+                {
+                    <div class="scrollable-x">
+                        <table class="table table-bordered message">
+                            <thead>
+                                <tr>
+                                    <th class="text-center">No</th>
+                                    <th class="text-center">Nama Lokasi</th>
+                                    <th class="text-center">Alamat</th>
+                                    <th class="text-center">Status</th>
+                                    <th class="text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (int i = 0; i < CompanyLocations.Count; i++)
+                                {
+                                    var item = CompanyLocations[i];
+                                    <tr>
+                                        <td class="text-center">@(@i + 1)</td>
+                                        <td>@item.locationName</td>
+                                        <td>@(string.IsNullOrWhiteSpace(item.address) ? "-" : item.address)</td>
+                                        <td class="text-center">
+                                            <span class="badge @(item.is_active ? "bg-success" : "bg-danger")">
+                                                @(item.is_active ? "Aktif" : "Nonaktif")
+                                            </span>
+                                        </td>
+                                        <td class="text-center">
+                                            <button class="btn btn-sm btn-warning" @onclick="() => OnEditCompanyClicked(item)">
+                                                <i class="bi bi-pencil"></i>
+                                                <span class="btn-text-sm-hide ms-1">Edit</span>
+                                            </button>
+                                            <button class="btn btn-sm btn-danger" @onclick="() => OnDeleteCompanyClicked(item)">
+                                                <i class="bi bi-trash"></i>
+                                                <span class="btn-text-sm-hide ms-1">Delete</span>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+
+        @if (ShowCompanyModal)
+        {
+            <Modal IsVisible="true" Title="@(ShowCompanyModalMode == "add" ? "Tambah Perusahaan" : "Edit Perusahaan")">
+                <div class="modal-scrollable-content">
+                    <div class="mx-1 mt-1">
+                        <div class="mb-3">
+                            <label class="form-label text-start d-block">Perusahaan</label>
+                            <textarea class="form-control" placeholder="Nama Perusahaan..."
+                                      @bind="NewCompany.Name" rows="1"></textarea>
+                        </div>
+
+                        <div class="mb-2 d-flex justify-content-between align-items-center">
+                            <label class="form-label mb-0">Lokasi</label>
+                            <button class="btn btn-outline-primary btn-sm" @onclick="OpenGoogleMaps">
+                                <i class="bi bi-geo-alt-fill me-1"></i> Google Maps
+                            </button>
+                        </div>
+                        <div id="companyMap" style="height: 130px; border-radius: 8px; border: 1px solid #ccc;"></div>
+                        <div class="text-muted text-start mt-2" style="font-size: 14px;">
+                            <div>* Lihat Koordinat Perusahaan melalui Google Maps</div>
+                        </div>
+                        <div class="my-2">
+                            <label class="form-label d-block text-start">Koordinat</label>
+                            <textarea id="company-coord"
+                                      class="form-control"
+                                      placeholder="-6.2000000, 106.8166660"
+                                      @bind-value="CoordinateInput"
+                                      @bind-value:event="oninput"
+                                      @onchange="OnCoordinateChanged"
+                                      rows="1">
+                            </textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label d-block text-start">Alamat</label>
+                            <textarea id="company-address"
+                                      class="form-control"
+                                      rows="2"
+                                      @bind="NewCompany.Address"
+                                      @onfocus="OnAddressClicked"
+                                      @onclick="OnAddressClicked">
+                            </textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-around">
+                    <button class="btn btn-danger px-4" @onclick="CancelAddCompany">Cancel</button>
+                    <button class="btn btn-success px-4" @onclick="ConfirmAddCompany" disabled="@(!IsCompanyValid)">
+                        Confirm
+                    </button>
+                </div>
+            </Modal>
+        }
+
+        @if (ShowDeleteClassModal)
+        {
+            <Modal IsVisible="true">
+                <div class="text-center">
+                    <i class="bi bi-trash fs-1 text-danger checkmark-animate"></i>
+                    <p class="fw-bold">Delete Company</p>
+                    <p>
+                        Apakah Anda yakin ingin menghapus <span class='fw-bold'>@DeleteCompanyLocationName</span> dari data Lokasi PT?
+                    </p>
+                    <div class="d-flex justify-content-center gap-3 mt-4">
+                        <button class="btn btn-danger px-4" @onclick="CancelDeleteCompany">No</button>
+                        <button class="btn btn-success px-4" @onclick="ConfirmDeleteCompany">Yes</button>
+                    </div>
+                </div>
+            </Modal>
+        }
+    </div>
+</div>

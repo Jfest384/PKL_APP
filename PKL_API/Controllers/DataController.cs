@@ -54,16 +54,48 @@ namespace PKL_API.Controllers
             var query = _db.Companies.AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(name))
-            {
                 query = query.Where(c => c.name.Contains(name));
-            }
 
             var companies = query
                 .Select(c => new
                 {
                     c.id,
-                    c.name,
-                    address = string.IsNullOrEmpty(c.address) ? "-" : c.address
+                    c.name
+                });
+
+            var totalItems = await companies.CountAsync();
+            var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+            var companiesList = await companies
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return Ok(new
+            {
+                page,
+                pageSize,
+                totalItems,
+                totalPages,
+                companies = companiesList
+            });
+        }
+
+        [HttpGet("company-locations")]
+        public async Task<IActionResult> GetAllCompanyLocation([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string? name = null)
+        {
+            if (page < 1) page = 1;
+            if (pageSize < 1) pageSize = 10;
+
+            var query = _db.CompanyLocations.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(name))
+                query = query.Where(c => c.LocationName.Contains(name));
+
+            var companies = query
+                .Select(c => new
+                {
+                    c.id,
+                    c.LocationName
                 });
 
             var totalItems = await companies.CountAsync();
@@ -94,17 +126,33 @@ namespace PKL_API.Controllers
                 .Select(c => new
                 {
                     c.id,
-                    c.name,
-                    address = c.address ?? "",
-                    phone = c.phone ?? "",
-                    lat = c.lat,
-                    lon = c.longitude
+                    c.name
                 })
                 .FirstOrDefaultAsync();
 
             if (company == null)
                 return NotFound("Company not found.");
-            return Ok(company);
+
+            var locations = await _db.CompanyLocations
+                .Where(l => l.Companyid == companyId)
+                .Select(l => new
+                {
+                    l.id,
+                    l.Companyid,
+                    l.LocationName,
+                    l.address,
+                    l.lat,
+                    l.longitude,
+                    l.radius_meter,
+                    l.is_active
+                })
+                .ToListAsync();
+
+            return Ok(new
+            {
+                company,
+                locations
+            });
         }
 
         [Authorize]
@@ -132,16 +180,27 @@ namespace PKL_API.Controllers
 
             var company = new Company
             {
-                name = dto.name,
-                address = dto.address
+                name = dto.name
+            };
+
+            _db.Companies.Add(company);
+            await _db.SaveChangesAsync();
+
+            var companyLocation = new CompanyLocation
+            {
+                Companyid = company.id,
+                LocationName = dto.name,
+                address = dto.address,
+                radius_meter = 500,
+                is_active = true
             };
 
             if (dto.Lat.HasValue)
-                company.lat = Math.Round(dto.Lat.Value, 12, MidpointRounding.AwayFromZero);
+                companyLocation.lat = Math.Round(dto.Lat.Value, 12, MidpointRounding.AwayFromZero);
             if (dto.Long.HasValue)
-                company.longitude = Math.Round(dto.Long.Value, 12, MidpointRounding.AwayFromZero);
+                companyLocation.longitude = Math.Round(dto.Long.Value, 12, MidpointRounding.AwayFromZero);
 
-            _db.Companies.Add(company);
+            _db.CompanyLocations.Add(companyLocation);
             await _db.SaveChangesAsync();
 
             return Ok(new
@@ -151,9 +210,47 @@ namespace PKL_API.Controllers
                 {
                     company.id,
                     company.name,
-                    company.address,
-                    company.lat,
-                    company.longitude
+                    companyLocation.address,
+                    companyLocation.lat,
+                    companyLocation.longitude
+                }
+            });
+        }
+
+        [Authorize]
+        [HttpPost("company-location/add")]
+        public async Task<IActionResult> AddCompanyLocation([FromBody] CompanyLocationDTO dto)
+        {
+            if (dto == null || string.IsNullOrWhiteSpace(dto.name) || string.IsNullOrWhiteSpace(dto.address))
+                return BadRequest("Invalid request body.");
+
+            var companyLocation = new CompanyLocation
+            {
+                Companyid = dto.Companyid,
+                LocationName = dto.name,
+                address = dto.address,
+                radius_meter = 500,
+                is_active = true
+            };
+
+            if (dto.Lat.HasValue)
+                companyLocation.lat = Math.Round(dto.Lat.Value, 12, MidpointRounding.AwayFromZero);
+            if (dto.Long.HasValue)
+                companyLocation.longitude = Math.Round(dto.Long.Value, 12, MidpointRounding.AwayFromZero);
+
+            _db.CompanyLocations.Add(companyLocation);
+            await _db.SaveChangesAsync();
+
+            return Ok(new
+            {
+                message = "Company berhasil ditambahkan.",
+                data = new
+                {
+                    companyLocation.id,
+                    companyLocation.LocationName,
+                    companyLocation.address,
+                    companyLocation.lat,
+                    companyLocation.longitude
                 }
             });
         }
@@ -185,18 +282,61 @@ namespace PKL_API.Controllers
             if (company == null)
                 return NotFound("Company not found.");
 
+            var companyLocations = await _db.CompanyLocations
+                .Where(cl => cl.Companyid == companyId)
+                .ToListAsync();
+            var companyLocationIds = companyLocations.Select(cl => cl.id).ToList();
+
+            var studentsWithLocation = await _db.Students
+                .Where(s => s.CompanyLocationid.HasValue && companyLocationIds.Contains(s.CompanyLocationid.Value))
+                .ToListAsync();
+
+            foreach (var student in studentsWithLocation)
+            {
+                student.CompanyLocationid = null;
+            }
+
             var students = await _db.Students.Where(s => s.Companyid == companyId).ToListAsync();
             foreach (var student in students)
             {
                 student.Companyid = null;
             }
 
+            if (companyLocations.Count > 0)
+                _db.CompanyLocations.RemoveRange(companyLocations);
             _db.Companies.Remove(company);
+
             await _db.SaveChangesAsync();
             return Ok(new
             {
                 success = true,
-                message = "Company berhasil dihapus dan relasi pada Student di-null-kan."
+                message = "Company dan semua lokasi terkait berhasil dihapus."
+            });
+        }
+
+        [Authorize]
+        [HttpDelete("company-location/delete")]
+        public async Task<IActionResult> DeleteCompanyLocation([FromBody] int companyLocationId)
+        {
+            if (companyLocationId <= 0)
+                return BadRequest("Invalid companyId.");
+
+            var companyLocation = await _db.CompanyLocations.FindAsync(companyLocationId);
+            if (companyLocation == null)
+                return NotFound("Company not found.");
+
+            var students = await _db.Students.Where(s => s.CompanyLocationid == companyLocationId).ToListAsync();
+            foreach (var student in students)
+            {
+                student.Companyid = null;
+            }
+
+            _db.CompanyLocations.Remove(companyLocation);
+            await _db.SaveChangesAsync();
+            return Ok(new
+            {
+                success = true,
+                message = "Lokasi Company berhasil dihapus."
             });
         }
 
@@ -207,35 +347,63 @@ namespace PKL_API.Controllers
             if (companyId <= 0)
                 return BadRequest("companyId is required and must be greater than 0.");
 
-            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "id");
-            if (userIdClaim == null)
-                return Unauthorized("User ID not found in token.");
-            int userId = int.Parse(userIdClaim.Value);
-
-            var userRole = await _db.Roles
-                .Where(r => _db.UserRoles.Any(ur => ur.User.id == userId && ur.Role.id == r.id))
-                .Select(r => r.id)
-                .FirstOrDefaultAsync();
-
-            if (userRole != 1 && userRole != 4)
-                return StatusCode(403, "Only admin and kepala jurusan can edit a company.");
-
             var company = await _db.Companies.FindAsync(companyId);
             if (company == null)
+                return NotFound("Company not found.");
+
+            if (string.IsNullOrWhiteSpace(dto.name))
+                return BadRequest("Company name is required.");
+
+            company.name = dto.name;
+            await _db.SaveChangesAsync();
+            return Ok(new { message = "Company updated successfully." });
+        }
+
+        [Authorize]
+        [HttpPut("company-location/{companyLocationId}")]
+        public async Task<IActionResult> EditCompanyLocation(int companyLocationId, [FromBody] CompanyLocationEditDTO dto)
+        {
+            if (companyLocationId <= 0)
+                return BadRequest("companyLocationId is required and must be greater than 0.");
+
+            var companyLocation = await _db.CompanyLocations.FindAsync(companyLocationId);
+            if (companyLocation == null)
                 return NotFound("Company not found.");
 
             if (string.IsNullOrWhiteSpace(dto.name) && string.IsNullOrWhiteSpace(dto.address))
                 return BadRequest("Company name and address is required.");
 
-            company.name = dto.name;
-            company.address = dto.address;
+            companyLocation.LocationName = dto.name;
+            companyLocation.address = dto.address;
             if (dto.Lat.HasValue)
-                company.lat = Math.Round(dto.Lat.Value, 12, MidpointRounding.AwayFromZero);
+                companyLocation.lat = Math.Round(dto.Lat.Value, 12, MidpointRounding.AwayFromZero);
             if (dto.Long.HasValue)
-                company.longitude = Math.Round(dto.Long.Value, 12, MidpointRounding.AwayFromZero);
+                companyLocation.longitude = Math.Round(dto.Long.Value, 12, MidpointRounding.AwayFromZero);
 
             await _db.SaveChangesAsync();
-            return Ok(new { message = "Company updated successfully." });
+            return Ok(new { message = "Company Location updated successfully." });
+        }
+
+        [Authorize]
+        [HttpPut("company-location/status")]
+        public async Task<IActionResult> EditStatusCompanyLocation([FromBody] CompanyLocationStatusDTO dto)
+        {
+            if (dto == null || dto.companyLocationId <= 0)
+                return BadRequest("Invalid companyLocationId.");
+
+            var companyLocation = await _db.CompanyLocations.FindAsync(dto.companyLocationId);
+            if (companyLocation == null)
+                return NotFound("CompanyLocation not found.");
+
+            companyLocation.is_active = dto.value == 1;
+            await _db.SaveChangesAsync();
+
+            return Ok(new
+            {
+                message = "Status Company Location berhasil diupdate.",
+                companyLocationId = companyLocation.id,
+                companyLocation.is_active
+            });
         }
 
         [Authorize]

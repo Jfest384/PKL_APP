@@ -35,6 +35,7 @@ namespace PKL_API
         public DbSet<PresenceRecap> PresenceRecaps { get; set; }
         public DbSet<ReportRecap> ReportRecaps { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
+        public DbSet<CompanyLocation> CompanyLocations { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

@@ -160,7 +160,7 @@ namespace PKLPresenceWeb.Pages.Clients
         {
             if (WahaStoppedModalMode == "Waha")
             {
-                await JS.InvokeVoidAsync("Swal.fire", new
+                var result = await JS.InvokeAsync<SwalResult>("Swal.fire", new
                 {
                     title = "Pesan",
                     text = "Status Message sedang tidak aktif.",
@@ -170,7 +170,11 @@ namespace PKLPresenceWeb.Pages.Clients
                     width = "90%",
                     customClass = new { popup = "my-swal-popup" }
                 });
-                ActivateMessageTab();
+
+                if (result.isConfirmed)
+                {
+                    await ActivateMessageTab();
+                }
             }
             else if (WahaStoppedModalMode == "DefaultChat")
             {
@@ -256,6 +260,7 @@ namespace PKLPresenceWeb.Pages.Clients
                             : "Data Kelas terkait berhasil diupdate.";
 
                     await AlertService.ShowSuccessAsync(SuccessModalText);
+                    await LoadData();
                 }
             }
         }
@@ -308,6 +313,7 @@ namespace PKLPresenceWeb.Pages.Clients
                 {
                     CancelAddStudent();
                     await AlertService.ShowSuccessAsync("Siswa baru berhasil ditambahkan.");
+                    await LoadData();
                 }
             }
         }
@@ -337,7 +343,7 @@ namespace PKLPresenceWeb.Pages.Clients
         }
 
         private bool IsMessageTabDisabled = false;
-        private void ActivateMessageTab()
+        private async Task ActivateMessageTab()
         {
             Navigation.NavigateTo("/home/profile", forceLoad: true);
         }
@@ -626,7 +632,7 @@ namespace PKLPresenceWeb.Pages.Clients
             else if (CurrentTab == "Daftar PT")
             {
                 var source = IsSortingAllData ? CachedAllCompanies : Companies;
-                return source.Select(t => new[] { t.id.ToString(), t.name, t.address }).ToList();
+                return source.Select(t => new[] { t.id.ToString(), t.name }).ToList();
             }
             return new();
         }
@@ -638,7 +644,7 @@ namespace PKLPresenceWeb.Pages.Clients
             if (CurrentTab == "Pembimbing PKL" && UserRole == "Student") return new() { "Nama", "Kelas Dibimbing" };
             if (CurrentTab == "Siswa PKL") return new() { "NIS", "Nama", "Kelas", "Pembimbing", "Tempat PKL" };
             if (CurrentTab == "Manajemen Kelas") return new() { "Kelas", "Total Siswa", "Wali Kelas", "Tahun", "Deskripsi" };
-            if (CurrentTab == "Daftar PT") return new() { "Nama", "Alamat" };
+            if (CurrentTab == "Daftar PT") return new() { "Nama" };
             return new();
         }
 
@@ -688,6 +694,7 @@ namespace PKLPresenceWeb.Pages.Clients
                     CancelAddStudentToMentor();
                     ShowAddStudentToMentorModal = false;
                     await AlertService.ShowSuccessAsync("Siswa telah berhasil di-assign ke pembimbing PKL yang dipilih.");
+                    await LoadData();
                 }
             }
         }
@@ -739,6 +746,7 @@ namespace PKLPresenceWeb.Pages.Clients
                     ClosePilihPTModal();
                     ShowPilihPTModal = false;
                     await AlertService.ShowSuccessAsync("Data Lokasi PKL berhasil diupdate.");
+                    await LoadData();
                 }
                 else await AlertService.ShowErrorAsync("Gagal assign tempat PKL. Coba lagi setelah beberapa saat.");
             }
@@ -1143,6 +1151,7 @@ namespace PKLPresenceWeb.Pages.Clients
                 SelectedTeacherIds.Clear();
                 SelectedTeacherUserIds.Clear();
                 await AlertService.ShowSuccessAsync("Pembimbing PKL berhasil ditambahkan.");
+                await LoadData();
             }
             else await AlertService.ShowErrorAsync("Gagal menambah mentor. Silakan coba lagi.");
         }
@@ -1257,6 +1266,7 @@ namespace PKLPresenceWeb.Pages.Clients
                     ? "Siswa berhasil ditambahkan ke data Siswa PKL."
                     : "Siswa berhasil dihapus dari data Siswa PKL.";
                 await AlertService.ShowSuccessAsync(SuccessModalText);
+                await LoadData();
             }
         }
 
@@ -1274,6 +1284,7 @@ namespace PKLPresenceWeb.Pages.Clients
             StateHasChanged();
             if (response.IsSuccessStatusCode)
                 await AlertService.ShowSuccessAsync("Rekap berhasil diterbitkan.");
+            await LoadData();
         }
 
         private void CancelAssignPKL()
@@ -1337,9 +1348,7 @@ namespace PKLPresenceWeb.Pages.Clients
         string.IsNullOrWhiteSpace(CompanySearchText)
             ? Companies
             : Companies.Where(c =>
-                (c.name?.Contains(CompanySearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                (c.address?.Contains(CompanySearchText, StringComparison.OrdinalIgnoreCase) ?? false)
-            ).ToList();
+                (c.name?.Contains(CompanySearchText, StringComparison.OrdinalIgnoreCase) ?? false)).ToList();
 
         private void OnCompanySearchChanged(ChangeEventArgs e)
         {
@@ -1507,6 +1516,7 @@ namespace PKLPresenceWeb.Pages.Clients
                 DeleteStudentTKJIds.Clear();
                 SelectedSiswaPKLIds.Clear();
                 await AlertService.ShowSuccessAsync("Siswa berhasil dihapus dari data Siswa TKJ.");
+                await LoadData();
             }
             else await AlertService.ShowErrorAsync("Gagal menghapus siswa. Silakan coba lagi.");
         }
@@ -1614,6 +1624,7 @@ namespace PKLPresenceWeb.Pages.Clients
                 using var doc = JsonDocument.Parse(json);
                 LockLocationSuccessMessage = doc.RootElement.GetProperty("message").GetString() ?? "";
                 await AlertService.ShowSuccessAsync(LockLocationSuccessMessage);
+                await LoadData();
                 StateHasChanged();
             }
             else await AlertService.ShowErrorAsync("Gagal mengubah status lock siswa.");
@@ -2166,10 +2177,12 @@ namespace PKLPresenceWeb.Pages.Clients
 
         private string CoordinateInput = "";
         private bool IsCompanyValid =>
-            !string.IsNullOrWhiteSpace(NewCompany?.Name) &&
-            !string.IsNullOrWhiteSpace(NewCompany?.Address) &&
-            !string.IsNullOrWhiteSpace(NewCompany?.Lat) &&
-            !string.IsNullOrWhiteSpace(NewCompany?.Long);
+        ShowCompanyModalMode == "edit"
+            ? !string.IsNullOrWhiteSpace(NewCompany?.Name)
+            : !string.IsNullOrWhiteSpace(NewCompany?.Name)
+                && !string.IsNullOrWhiteSpace(NewCompany?.Address)
+                && !string.IsNullOrWhiteSpace(NewCompany?.Lat)
+                && !string.IsNullOrWhiteSpace(NewCompany?.Long);
 
         private CompanyModel NewCompany = new();
         private const string LocationIQKey = "pk.e2145fd6b15e111a0fddb4586b415ed0";
@@ -2219,8 +2232,8 @@ namespace PKLPresenceWeb.Pages.Clients
                     return;
                 }
 
-                var company = await response.Content.ReadFromJsonAsync<CompanyDetail>();
-                if (company == null)
+                var result = await response.Content.ReadFromJsonAsync<CompanyDetailResponse>();
+                if (result?.company == null)
                 {
                     await AlertService.ShowErrorAsync("Response perusahaan tidak valid.");
                     return;
@@ -2228,57 +2241,15 @@ namespace PKLPresenceWeb.Pages.Clients
 
                 NewCompany = new CompanyModel
                 {
-                    Name = company.name ?? string.Empty,
-                    Address = company.address ?? string.Empty,
-                    Lat = company.lat?.ToString("F12", CultureInfo.InvariantCulture) ?? string.Empty,
-                    Long = company.lon?.ToString("F12", CultureInfo.InvariantCulture) ?? string.Empty
+                    Name = result.company.name ?? string.Empty
                 };
 
-                CoordinateInput = string.IsNullOrWhiteSpace(NewCompany.Lat) || string.IsNullOrWhiteSpace(NewCompany.Long)
-                    ? string.Empty
-                    : $"{NewCompany.Lat}, {NewCompany.Long}";
-
                 ShowCompanyModalMode = "edit";
-                EditCompanyId = company.id;
+                EditCompanyId = result.company.id;
                 ShowCompanyModal = true;
 
                 StateHasChanged();
                 await Task.Yield();
-                await WaitForElementAsync("companyMap", timeoutMs: 3000);
-
-                double lat = 0, lon = 0;
-                bool hasCoords =
-                    double.TryParse(NewCompany.Lat, NumberStyles.Any, CultureInfo.InvariantCulture, out lat) &&
-                    double.TryParse(NewCompany.Long, NumberStyles.Any, CultureInfo.InvariantCulture, out lon);
-
-                if (!hasCoords)
-                {
-                    try
-                    {
-                        var pos = await JS.InvokeAsync<GeolocationPosition>("getCurrentPosition");
-                        lat = pos.coords.latitude;
-                        lon = pos.coords.longitude;
-
-                        NewCompany.Lat = lat.ToString("F12", CultureInfo.InvariantCulture);
-                        NewCompany.Long = lon.ToString("F12", CultureInfo.InvariantCulture);
-                        CoordinateInput = $"{NewCompany.Lat}, {NewCompany.Long}";
-                    }
-                    catch
-                    {
-                        lat = 0;
-                        lon = 0;
-                    }
-                }
-
-                try
-                {
-                    await UpdateMapAndAddress(lat, lon);
-                }
-                catch
-                {
-                    await Task.Delay(120);
-                    await UpdateMapAndAddress(lat, lon);
-                }
                 StateHasChanged();
             }
             catch (Exception ex)
@@ -2316,6 +2287,7 @@ namespace PKLPresenceWeb.Pages.Clients
                 {
                     ShowCompanyModal = false;
                     await AlertService.ShowSuccessAsync("Perusahaan baru berhasil ditambahkan.");
+                    await LoadData();
                 }
             }
             else
@@ -2325,33 +2297,17 @@ namespace PKLPresenceWeb.Pages.Clients
                     await AlertService.ShowErrorAsync("Company id tidak ditemukan.");
                     return;
                 }
-
-                if (!double.TryParse(NewCompany.Lat, NumberStyles.Any, CultureInfo.InvariantCulture, out var lat))
-                {
-                    await AlertService.ShowErrorAsync("Koordinat lat tidak valid.");
-                    return;
-                }
-                if (!double.TryParse(NewCompany.Long, NumberStyles.Any, CultureInfo.InvariantCulture, out var lon))
-                {
-                    await AlertService.ShowErrorAsync("Koordinat long tidak valid.");
-                    return;
-                }
-
                 var payload = new
                 {
-                    name = NewCompany.Name,
-                    address = NewCompany.Address,
-                    lat = lat,
-                    @long = lon
+                    name = NewCompany.Name
                 };
 
                 var response = await Http.PutAsJsonAsync(APIUrl.Endpoint($"data/companies/{EditCompanyId}"), payload);
                 if (response.IsSuccessStatusCode)
                 {
-                    ShowCompanyModal = false;
+                    CancelAddCompany();
                     await AlertService.ShowSuccessAsync("Data perusahaan berhasil diubah.");
-                    EditCompanyId = null;
-                    ShowCompanyModalMode = "add";
+                    await LoadData();
                 }
                 else await AlertService.ShowErrorAsync("Gagal mengupdate perusahaan.");
             }
@@ -2490,6 +2446,7 @@ namespace PKLPresenceWeb.Pages.Clients
             if (response.IsSuccessStatusCode)
             {
                 await AlertService.ShowSuccessAsync("Data Lokasi Presensi milik siswa tersebut berhasil dihapus.");
+                await LoadData();
             }
             else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
@@ -2555,6 +2512,12 @@ namespace PKLPresenceWeb.Pages.Clients
                 var idx = GetCurrentStudentDetailIndex();
                 return idx == -1 || idx >= ids.Count - 1;
             }
+        }
+
+        private void GoToLocation(string[] item)
+        {
+            CompanyState.CompanyId = int.Parse(item[0]);
+            Navigation.NavigateTo("/participant/location");
         }
     }
 }

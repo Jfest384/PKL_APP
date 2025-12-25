@@ -25,21 +25,7 @@
             <img src="@photoUrl" onerror="this.src='/images/default_profile.jpg'" class="profile-photo" />
         </div>
     </div>
-
-    @if (ShowWarningModal)
-    {
-        <Modal IsVisible="true">
-            <div class="d-flex flex-column align-items-center p-3">
-                <i class="bi bi-exclamation-triangle-fill text-warning" style="font-size: 3rem;"></i>
-                <h5 class="fw-bold mt-3 mb-2">Peringatan!</h5>
-                <div class="mb-4 text-center">
-                    Tidak ada siswa yang dipilih untuk ditampilkan datanya.
-                </div>
-                <button class="btn btn-danger w-100" @onclick="CloseWarningModal">Close</button>
-            </div>
-        </Modal>
-    }
-
+    
     <div class="content-section">
         @if (StudentDetail != null)
         {

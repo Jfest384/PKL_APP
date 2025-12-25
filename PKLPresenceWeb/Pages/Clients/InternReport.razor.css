@@ -654,25 +654,3 @@ input[type="radio"].presence-radio-input {
         padding: 0.4rem 0.5rem;
         font-size: 0.95rem;
     }
-
-.checkmark-animate {
-    display: inline-block;
-    animation: pop-check 0.5s cubic-bezier(.17,.67,.83,.67);
-}
-
-@keyframes pop-check {
-    0% {
-        transform: scale(0.2);
-        opacity: 0;
-    }
-
-    60% {
-        transform: scale(1.2);
-        opacity: 1;
-    }
-
-    100% {
-        transform: scale(1);
-        opacity: 1;
-    }
-}

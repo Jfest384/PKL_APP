@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Globalization;
 using System.Text.Json.Serialization;
 
 namespace PKLPresenceWeb.Model
@@ -170,21 +171,70 @@ namespace PKLPresenceWeb.Model
     {
         public int id { get; set; }
         public string name { get; set; }
-        public string address { get; set; }
+        //public string address { get; set; }
     }
 
-    public class CompanyDetail
+    public class CompanyLocationListResponse
+    {
+        public int page { get; set; }
+        public int pageSize { get; set; }
+        public int totalItems { get; set; }
+        public int totalPages { get; set; }
+        public List<CompanyLocationItem> CompanyLocationItems { get; set; } = new();
+    }
+
+    public class CompanyLocationItem
+    {
+        public int id { get; set; }
+        public string LocationName { get; set; }
+    }
+
+    public class CompanyDetailResponse
+    {
+        public CompanyInfo company { get; set; }
+        public List<CompanyLocationInfo> locations { get; set; }
+    }
+
+    public class CompanyInfo
     {
         public int id { get; set; }
         public string name { get; set; }
-        public string? address { get; set; }
-        public string phone { get; set; }
-        public double? lat { get; set; }
-        public double? lon { get; set; }
     }
+
+    public class CompanyLocationInfo
+    {
+        public int id { get; set; }
+        public int companyid { get; set; }
+        public string locationName { get; set; }
+        public string address { get; set; }
+        public double lat { get; set; }
+        public double longitude { get; set; }
+        public int radius_meter { get; set; }
+        public bool is_active { get; set; }
+    }
+
+
+    //public class CompanyDetail
+    //{
+    //    public int id { get; set; }
+    //    public string name { get; set; }
+    //    public string? address { get; set; }
+    //    public string phone { get; set; }
+    //    public double? lat { get; set; }
+    //    public double? lon { get; set; }
+    //}
 
     public class CompanyModel
     {
+        public string Name { get; set; } = "";
+        public string? Address { get; set; } = "";
+        public string? Lat { get; set; }
+        public string? Long { get; set; }
+    }
+
+    public class CompanyLocationModel
+    {
+        public int Companyid { get; set; }
         public string Name { get; set; } = "";
         public string Address { get; set; } = "";
         public string Lat { get; set; }
@@ -309,4 +359,16 @@ namespace PKLPresenceWeb.Model
     {
         public string display_name { get; set; }
     }
+
+    public class CompanyState
+    {
+        public int? CompanyId { get; set; }
+    }
+
+    public class SwalResult
+    {
+        public bool isConfirmed { get; set; }
+        public bool isDismissed { get; set; }
+    }
+
 }

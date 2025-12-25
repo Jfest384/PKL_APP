@@ -26,6 +26,7 @@ builder.Services.AddScoped(sp =>
 });
 
 builder.Services.AddSingleton<HistoryState>();
+builder.Services.AddSingleton<CompanyState>();
 
 // Set default culture
 CultureInfo.DefaultThreadCurrentCulture = new CultureInfo("id-ID");

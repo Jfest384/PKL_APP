@@ -4,6 +4,7 @@
 @inject NavigationManager Navigation
 @inject AuthenticationStateProvider AuthStateProvider
 @inject HistoryState HistoryState
+@inject CompanyState CompanyState
 @inject AlertService AlertService
 @inject IJSRuntime JS
 
@@ -569,16 +570,19 @@
                                     else if (CurrentTab == "Daftar PT")
                                     {
                                         <td>@item[1]</td>
-                                        <td>@item[2]</td>
                                         <td>
                                             <div class="d-flex gap-2 justify-content-center">
-                                                <button class="btn btn-sm btn-danger" @onclick="() => OnDeleteCompanyClicked(item)">
-                                                    <i class="bi bi-trash"></i>
-                                                    <span class="btn-text-sm-hide ms-1">Delete</span>
+                                                <button class="btn btn-sm btn-success" @onclick="() => GoToLocation(item)">
+                                                    <i class="bi bi-geo-alt"></i>
+                                                    <span class="btn-text-sm-hide ms-1">Location</span>
                                                 </button>
                                                 <button class="btn btn-sm btn-warning" @onclick="() => OnEditCompanyClicked(item)">
                                                     <i class="bi bi-pencil"></i>
                                                     <span class="btn-text-sm-hide ms-1">Edit</span>
+                                                </button>
+                                                <button class="btn btn-sm btn-danger" @onclick="() => OnDeleteCompanyClicked(item)">
+                                                    <i class="bi bi-trash"></i>
+                                                    <span class="btn-text-sm-hide ms-1">Delete</span>
                                                 </button>
                                             </div>
                                         </td>
@@ -1198,37 +1202,41 @@
                             <textarea class="form-control" placeholder="Nama Perusahaan..."
                                       @bind="NewCompany.Name" rows="1"></textarea>
                         </div>
-                        <div class="mb-2 d-flex justify-content-between align-items-center">
-                            <label class="form-label mb-0">Lokasi</label>
-                            <button class="btn btn-outline-primary btn-sm" @onclick="OpenGoogleMaps">
-                                <i class="bi bi-geo-alt-fill me-1"></i> Google Maps
-                            </button>
-                        </div>
-                        <div id="companyMap" style="height: 130px; border-radius: 8px; border: 1px solid #ccc;"></div>
-                        <div class="text-muted text-start mt-2" style="font-size: 14px;">
-                            <div>* Lihat Koordinat Perusahaan melalui Google Maps</div>
-                        </div>
-                        <div class="my-2">
-                            <label class="form-label d-block text-start">Koordinat</label>
-                            <textarea id="company-coord"
-                                      class="form-control"
-                                      placeholder="-6.2000000, 106.8166660"
-                                      @bind-value="CoordinateInput"
-                                      @bind-value:event="oninput"
-                                      @onchange="OnCoordinateChanged"
-                                      rows="1">
-                                </textarea>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label d-block text-start">Alamat</label>
-                            <textarea id="company-address"
-                                      class="form-control"
-                                      rows="2"
-                                      @bind="NewCompany.Address"
-                                      @onfocus="OnAddressClicked"
-                                      @onclick="OnAddressClicked">
-                            </textarea>
-                        </div>
+
+                        @if (ShowCompanyModalMode == "add")
+                        {
+                            <div class="mb-2 d-flex justify-content-between align-items-center">
+                                <label class="form-label mb-0">Lokasi</label>
+                                <button class="btn btn-outline-primary btn-sm" @onclick="OpenGoogleMaps">
+                                    <i class="bi bi-geo-alt-fill me-1"></i> Google Maps
+                                </button>
+                            </div>
+                            <div id="companyMap" style="height: 130px; border-radius: 8px; border: 1px solid #ccc;"></div>
+                            <div class="text-muted text-start mt-2" style="font-size: 14px;">
+                                <div>* Lihat Koordinat Perusahaan melalui Google Maps</div>
+                            </div>
+                            <div class="my-2">
+                                <label class="form-label d-block text-start">Koordinat</label>
+                                <textarea id="company-coord"
+                                          class="form-control"
+                                          placeholder="-6.2000000, 106.8166660"
+                                          @bind-value="CoordinateInput"
+                                          @bind-value:event="oninput"
+                                          @onchange="OnCoordinateChanged"
+                                          rows="1">
+                                            </textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label d-block text-start">Alamat</label>
+                                <textarea id="company-address"
+                                          class="form-control"
+                                          rows="2"
+                                          @bind="NewCompany.Address"
+                                          @onfocus="OnAddressClicked"
+                                          @onclick="OnAddressClicked">
+                                        </textarea>
+                            </div>
+                        }
                     </div>
                 </div>
 

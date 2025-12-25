@@ -52,6 +52,12 @@ namespace PKL_API.Models
         public StudentValidation? StudentValidation { get; set; }
 
 
+        [Column("id_company_location")]
+        public int? CompanyLocationid { get; set; }
+        [ForeignKey(nameof(CompanyLocationid))]
+        public CompanyLocation? CompanyLocation { get; set; }
+
+
         [ForeignKey(nameof(Userid))]
         public User? User { get; set; }
 

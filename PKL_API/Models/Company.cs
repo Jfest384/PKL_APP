@@ -10,16 +10,9 @@ namespace PKL_API.Models
         [StringLength(100)]
         public required string name { get; set; }
         [DataType(DataType.MultilineText)]
-        public string? address { get; set; }
-        [StringLength(20)]
-        public string? phone { get; set; }
 
-        [Column(TypeName = "decimal(15,12)")]
-        public decimal? lat { get; set; }
-
-        [Column("long", TypeName = "decimal(15,12)")]
-        public decimal? longitude { get; set; }
 
         public ICollection<Student>? Students { get; set; }
+        public ICollection<CompanyLocation>? CompanyLocations { get; set; }
     }
 }

@@ -66,8 +66,8 @@ namespace PKLPresenceWeb.Pages.Clients
             var studentId = HistoryState.StudentId;
             if (string.IsNullOrWhiteSpace(studentId.ToString()))
             {
-                ShowWarningModal = true;
-                return;
+                await AlertService.ShowWarningAsync("Tidak ada siswa yang dipilih untuk ditampilkan datanya.");
+                CloseWarningModal();
             }
 
             var meJson = await JS.InvokeAsync<string>("localStorage.getItem", "meResponse");
@@ -103,7 +103,6 @@ namespace PKLPresenceWeb.Pages.Clients
 
         private void CloseWarningModal()
         {
-            ShowWarningModal = false;
             Navigation.NavigateTo("/participant", true);
         }
 
@@ -112,7 +111,7 @@ namespace PKLPresenceWeb.Pages.Clients
             IsLoading = true;
             StateHasChanged();
             var studentId = HistoryState.StudentId;
-            var url = PKLPresenceWeb.Model.APIUrl.Endpoint($"presence/history?studentId={studentId}&page={PresencePage}");
+            var url = APIUrl.Endpoint($"presence/history?studentId={studentId}&page={PresencePage}");
             PresenceHistory = await Http.GetFromJsonAsync<PresenceHistoryResponse>(url);
             Presences = PresenceHistory?.data?
             .Select(MapToPresenceItem)
@@ -128,7 +127,7 @@ namespace PKLPresenceWeb.Pages.Clients
             IsLoading = true;
             StateHasChanged();
             var studentId = HistoryState.StudentId;
-            var url = PKLPresenceWeb.Model.APIUrl.Endpoint($"reports/history-reports?studentId={studentId}&page={ReportPage}");
+            var url = APIUrl.Endpoint($"reports/history-reports?studentId={studentId}&page={ReportPage}");
             ReportHistory = await Http.GetFromJsonAsync<ReportHistoryResponse>(url);
             IsLoading = false;
             StateHasChanged();

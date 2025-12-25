@@ -38,6 +38,20 @@ namespace PKLPresenceWeb.Helper
             });
         }
 
+        public async Task ShowWarningAsync(string message)
+        {
+            await _js.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "Warning!",
+                text = message,
+                icon = "warning",
+                timer = 3500,
+                showConfirmButton = false,
+                width = "90%",
+                customClass = new { popup = "my-swal-popup" }
+            });
+        }
+
         public async Task ShowInfoAsync(string message)
         {
             await _js.InvokeVoidAsync("Swal.fire", new

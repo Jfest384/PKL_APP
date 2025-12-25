@@ -64,7 +64,37 @@ namespace PKL_API.Controllers
                 return BadRequest("Date is required.");
 
             var startDate = new DateOnly(2025, 8, 15);
-            var endDate = DateOnly.FromDateTime(DateTime.Now);
+
+            // Tanggal batas
+            var cutOff1 = new DateOnly(2025, 12, 19); // 19 Des 2025
+            var cutOff2 = new DateOnly(2026, 1, 12);  // 12 Jan 2026
+
+            var nowDate = DateOnly.FromDateTime(DateTime.Now);
+            DateOnly endDate;
+            Func<DateOnly, bool> dateFilter;
+
+            if (nowDate <= cutOff1)
+            {
+                // 1. <= 19 Des 2025: normal
+                endDate = nowDate;
+                dateFilter = d => d >= startDate && d <= endDate;
+            }
+            else if (nowDate > cutOff1 && nowDate < cutOff2)
+            {
+                // 2. > 19 Des 2025 && < 12 Jan 2026: endDate = 19 Des 2025
+                endDate = cutOff1;
+                dateFilter = d => d >= startDate && d <= endDate;
+            }
+            else
+            {
+                // 3. >= 12 Jan 2026: endDate = now, exclude 20 Des 2025 - 11 Jan 2026
+                endDate = nowDate;
+                var excludeStart = cutOff1.AddDays(1); // 20 Des 2025
+                var excludeEnd = cutOff2.AddDays(-1);  // 11 Jan 2026
+                dateFilter = d =>
+                    d >= startDate && d <= endDate &&
+                    (d < excludeStart || d > excludeEnd);
+            }
 
             var students = await _db.Students
                 .Where(s => request.StudentIds.Contains(s.id))
@@ -84,20 +114,32 @@ namespace PKL_API.Controllers
                 var studentId = student.id;
                 var nis = student.nis;
 
+                // Hitung hari PKL (hanya hari kerja, dan sesuai filter tanggal)
                 int pkl_days = 0;
                 for (var dt = startDate; dt <= endDate; dt = dt.AddDays(1))
                 {
+                    if (!dateFilter(dt)) continue;
                     var dayOfWeek = dt.DayOfWeek;
                     if (dayOfWeek != DayOfWeek.Saturday && dayOfWeek != DayOfWeek.Sunday)
                         pkl_days++;
                 }
 
-                var presenceTotal = await _db.Presences
-                    .CountAsync(p => p.Studentid == studentId && p.date >= startDate && p.date <= endDate);
-
-                var absenTotal = pkl_days - presenceTotal;
-                var presenceDetails = await _db.Presences
+                var presencesQuery = _db.Presences
                     .Where(p => p.Studentid == studentId && p.date >= startDate && p.date <= endDate)
+                    .AsQueryable();
+
+                if (nowDate > cutOff1 && nowDate >= cutOff2)
+                {
+                    // exclude 20 Des 2025 - 11 Jan 2026
+                    var excludeStart = cutOff1.AddDays(1);
+                    var excludeEnd = cutOff2.AddDays(-1);
+                    presencesQuery = presencesQuery.Where(p => p.date < excludeStart || p.date > excludeEnd);
+                }
+
+                var presenceTotal = await presencesQuery.CountAsync();
+                var absenTotal = pkl_days - presenceTotal;
+
+                var presenceDetails = await presencesQuery
                     .Select(p => p.PresenceDetailid)
                     .ToListAsync();
 
@@ -108,8 +150,8 @@ namespace PKL_API.Controllers
                         .Where(d => presenceDetails.Contains(d.id))
                         .ToListAsync();
                     sendTotal = details.Count(d => d.iscomplate == true);
-                    notSendTotal = await _db.Presences
-                        .Where(p => p.Studentid == studentId && p.date >= startDate && p.date <= endDate)
+
+                    notSendTotal = await presencesQuery
                         .Join(_db.PresenceDetails,
                             p => p.PresenceDetailid,
                             d => d.id,
@@ -121,9 +163,7 @@ namespace PKL_API.Controllers
                         );
                 }
 
-                // Hitung jumlah presensi per tipe (id_presence 1-5)
-                var typeCounts = await _db.Presences
-                    .Where(p => p.Studentid == studentId && p.date >= startDate && p.date <= endDate)
+                var typeCounts = await presencesQuery
                     .GroupBy(p => p.PresenceTypeid)
                     .Select(g => new { IdPresence = g.Key, Count = g.Count() })
                     .ToListAsync();
@@ -173,10 +213,33 @@ namespace PKL_API.Controllers
                     });
                 }
 
-                int totalWeeks = (int)Math.Ceiling((endDate.DayNumber - startDate.DayNumber + 1) / 7.0);
-                var reportTotal = await _db.Reports
-                    .CountAsync(r => r.Studentid == studentId && r.date >= startDate && r.date <= endDate);
+                // Report Recap
+                var reportsQuery = _db.Reports
+                    .Where(r => r.Studentid == studentId && r.date >= startDate && r.date <= endDate)
+                    .AsQueryable();
 
+                if (nowDate > cutOff1 && nowDate >= cutOff2)
+                {
+                    var excludeStart = cutOff1.AddDays(1);
+                    var excludeEnd = cutOff2.AddDays(-1);
+                    reportsQuery = reportsQuery.Where(r => r.date < excludeStart || r.date > excludeEnd);
+                }
+
+                int totalWeeks = 0;
+                var validDates = new List<DateOnly>();
+                for (var dt = startDate; dt <= endDate; dt = dt.AddDays(1))
+                {
+                    if (dateFilter(dt))
+                        validDates.Add(dt);
+                }
+                if (validDates.Count > 0)
+                {
+                    var minDate = validDates.Min();
+                    var maxDate = validDates.Max();
+                    totalWeeks = (int)Math.Ceiling((maxDate.DayNumber - minDate.DayNumber + 1) / 7.0);
+                }
+
+                var reportTotal = await reportsQuery.CountAsync();
                 var existingReportRecap = await _db.ReportRecaps
                     .FirstOrDefaultAsync(r => r.StudentId == studentId);
 
