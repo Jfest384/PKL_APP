@@ -171,7 +171,6 @@ namespace PKLPresenceWeb.Model
     {
         public int id { get; set; }
         public string name { get; set; }
-        //public string address { get; set; }
     }
 
     public class CompanyLocationListResponse
@@ -212,17 +211,6 @@ namespace PKLPresenceWeb.Model
         public int radius_meter { get; set; }
         public bool is_active { get; set; }
     }
-
-
-    //public class CompanyDetail
-    //{
-    //    public int id { get; set; }
-    //    public string name { get; set; }
-    //    public string? address { get; set; }
-    //    public string phone { get; set; }
-    //    public double? lat { get; set; }
-    //    public double? lon { get; set; }
-    //}
 
     public class CompanyModel
     {

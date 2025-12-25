@@ -25,6 +25,57 @@ namespace PKLPresenceWeb.Pages.Clients
         private bool ShowDetailModal = false;
         private bool ShowWarningModal = false;
 
+        private List<CompanyItem> AllCompanies = new();
+        private int CurrentCompanyIndex = 0;
+
+        private bool IsPrevCompanyDisabled => CurrentCompanyIndex <= 0;
+        private bool IsNextCompanyDisabled => AllCompanies == null || CurrentCompanyIndex >= AllCompanies.Count - 1;
+
+        private async Task LoadAllCompanies()
+        {
+            // Ambil semua perusahaan (tanpa paging)
+            var url = APIUrl.Endpoint("data/companies?page=1&pageSize=1000");
+            var response = await Http.GetFromJsonAsync<CompanyListResponse>(url);
+            AllCompanies = response?.companies?
+                .Select(c => new CompanyItem { id = c.id, name = c.name })
+                .ToList() ?? new List<CompanyItem>();
+
+            // Set index ke perusahaan aktif
+            var currentId = CompanyState.CompanyId;
+            CurrentCompanyIndex = AllCompanies.FindIndex(c => c.id == currentId);
+            if (CurrentCompanyIndex < 0 && AllCompanies.Count > 0)
+                CurrentCompanyIndex = 0;
+        }
+
+        private async Task ShowPrevCompany()
+        {
+            if (CurrentCompanyIndex > 0)
+            {
+                CurrentCompanyIndex--;
+                await ShowCompanyByIndex(CurrentCompanyIndex);
+            }
+        }
+
+        private async Task ShowNextCompany()
+        {
+            if (AllCompanies != null && CurrentCompanyIndex < AllCompanies.Count - 1)
+            {
+                CurrentCompanyIndex++;
+                await ShowCompanyByIndex(CurrentCompanyIndex);
+            }
+        }
+
+        private async Task ShowCompanyByIndex(int idx)
+        {
+            if (AllCompanies == null || idx < 0 || idx >= AllCompanies.Count)
+                return;
+
+            var company = AllCompanies[idx];
+            CompanyState.CompanyId = company.id;
+            await LoadCompanyDetail();
+            StateHasChanged();
+        }
+
         protected override async Task OnInitializedAsync()
         {
             var authState = await AuthStateProvider.GetAuthenticationStateAsync();
@@ -33,6 +84,7 @@ namespace PKLPresenceWeb.Pages.Clients
                 Navigation.NavigateTo("/login", true);
                 return;
             }
+            await LoadAllCompanies();
 
             var companyId = CompanyState.CompanyId;
             if (string.IsNullOrWhiteSpace(companyId.ToString()))

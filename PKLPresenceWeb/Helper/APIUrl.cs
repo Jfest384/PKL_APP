@@ -2,7 +2,7 @@
 {
     public static class APIUrl
     {
-        // Ubah base URL sesuai kebutuhan (bisa dari konfigurasi jika perlu)
+         // Ubah base URL sesuai kebutuhan (bisa dari konfigurasi jika perlu)
         public static string Base => "https://presensi.smksabdev.my.id/api/";
 
         // Fungsi untuk membangun URL endpoint
