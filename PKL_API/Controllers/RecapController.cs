@@ -156,9 +156,9 @@ namespace PKL_API.Controllers
                             d => d.id,
                             (p, d) => new { Presence = p, Detail = d })
                         .CountAsync(x =>
-                            x.Detail.iscomplate == true &&
-                            x.Detail.update_at.HasValue &&
-                            x.Detail.update_at.Value == x.Presence.date
+                            x.Detail.iscomplate == true
+                            && ((x.Detail.update_at.HasValue &&
+                                x.Detail.update_at.Value == x.Presence.date) || x.Detail.update_at == null)
                         );
 
                     notSendTotal = await presencesQuery
