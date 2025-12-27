@@ -71,7 +71,9 @@ namespace PKLPresenceWeb.Layout
                     {
                         var email = root.TryGetProperty("email", out var emailProp) ? emailProp.GetString() ?? "" : "";
                         var companyName = dataProp.TryGetProperty("company", out var companyProp) ? companyProp.GetString() ?? "" : "";
-                        isDataComplete = !string.IsNullOrWhiteSpace(email) && !string.IsNullOrWhiteSpace(companyName);
+                        isDataComplete =
+                            !string.IsNullOrWhiteSpace(email) && email != "-" &&
+                            !string.IsNullOrWhiteSpace(companyName) && companyName != "-";
                     }
                     else isDataComplete = false;
                 }

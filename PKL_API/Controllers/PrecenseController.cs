@@ -243,7 +243,7 @@ namespace PKL_API.Controllers
                 PresenceTypeid = dto.PresenceTypeid,
                 PresenceFeedbackid = null,
                 PresenceDetailid = detail.id,
-                Mentorid = student.Mentorid ?? throw new Exception("Student does not have a mentor assigned."),
+                Mentorid = student.Mentorid,
                 Classroomid = student.Classroomid ?? throw new Exception("Student does not have a classroom assigned."),
             };
 
