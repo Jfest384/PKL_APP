@@ -145,7 +145,7 @@ if (app.Environment.IsDevelopment() || app.Environment.IsProduction())
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "PKL API V1");
+        c.SwaggerEndpoint("/api/swagger/v1/swagger.json", "PKL API V1");
         c.RoutePrefix = "swagger";
     });
 }
