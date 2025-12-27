@@ -10,4 +10,16 @@
     {
         public int StudentId { get; set; }
     }
+
+    public class StudentRekapRow
+    {
+        public int No { get; set; }
+        public int StudentId { get; set; }
+        public string Name { get; set; } = "-";
+        public List<(string P, string RorT)> Data { get; set; } = new();
+        public int TotalP { get; set; }
+        public int TotalR { get; set; }
+        public int TotalT { get; set; }
+    }
+
 }

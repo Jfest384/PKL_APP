@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using OfficeOpenXml;
 using PKL_API;
 using PKL_API.Helpers;
 using Syncfusion.Licensing;
@@ -125,12 +126,13 @@ CultureInfo.DefaultThreadCurrentUICulture = cultureInfo;
 
 SyncfusionLicenseProvider.RegisterLicense("Ngo9BigBOggjHTQxAR8/V1JEaF1cWWhBYVJzWmFZfVtgdVVMZVxbRHJPIiBoS35Rc0VrWXdccnFVRmRUVkx+VEFd");
 QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
 builder.Services.AddSingleton<IIdEncryptionService, IdEncryptionService>();
 
 var app = builder.Build();
 
 app.UsePathBase("/api");
-
+app.UseStaticFiles();
 app.UseRouting();
 app.UseCors("AllowAllClients");
 app.UseAuthentication();

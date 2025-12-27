@@ -1,7 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using OfficeOpenXml;
+using OfficeOpenXml.Style;
 using PKL_API.Helpers;
 using PKL_API.Models;
 using PKL_API.Models.DTO;
@@ -892,6 +893,245 @@ namespace PKL_API.Controllers
                 recap.total_weeks,
                 recap.report_total
             });
+        }
+
+        [HttpPost("print-presence-recap")]
+        public async Task<IActionResult> PrintPresenceRecap([FromBody] int classId)
+        {
+            var startDate = new DateOnly(2025, 8, 15);
+            var endDate = new DateOnly(2025, 12, 19);
+
+            var classroom = await _db.Classrooms.FirstOrDefaultAsync(c => c.id == classId);
+            if (classroom == null)
+                return NotFound("Classroom not found.");
+            var className = classroom.name ?? "-";
+
+            var students = await _db.Students
+                .Where(s => s.Classroomid == classId)
+                .Select(s => new { s.id, s.Userid })
+                .ToListAsync();
+
+            var userIds = students.Select(s => s.Userid).ToList();
+            var users = await _db.Users
+                .Where(u => userIds.Contains(u.id))
+                .ToDictionaryAsync(u => u.id, u => u.fullname ?? "-");
+
+            // Buat list tanggal (Senin-Jumat)
+            var dateList = new List<DateOnly>();
+            for (var dt = startDate; dt <= endDate; dt = dt.AddDays(1))
+            {
+                if (dt.DayOfWeek != DayOfWeek.Saturday && dt.DayOfWeek != DayOfWeek.Sunday)
+                    dateList.Add(dt);
+            }
+            int totalHari = dateList.Count;
+
+            var studentIds = students.Select(s => s.id).ToList();
+            var presences = await _db.Presences
+                .Where(p => studentIds.Contains(p.Studentid) && p.date >= startDate && p.date <= endDate)
+                .ToListAsync();
+
+            var presenceDetailIds = presences.Select(p => p.PresenceDetailid).Distinct().ToList();
+            var presenceDetails = await _db.PresenceDetails
+                .Where(d => presenceDetailIds.Contains(d.id))
+                .ToDictionaryAsync(d => d.id, d => d);
+
+            // Siapkan struktur data untuk rekap
+            var studentRows = students.Select((s, idx) => new StudentRekapRow
+            {
+                No = idx + 1,
+                StudentId = s.id,
+                Name = users.ContainsKey(s.Userid) ? users[s.Userid] : "-"
+            }).ToList();
+
+            // Isi data per siswa per tanggal
+            foreach (var row in studentRows)
+            {
+                int totalP = 0, totalR = 0, totalT = 0;
+                var dataPerTanggal = new List<(string P, string RorT)>();
+
+                foreach (var dt in dateList)
+                {
+                    var presence = presences.FirstOrDefault(p => p.Studentid == row.StudentId && p.date == dt);
+                    if (presence != null && presenceDetails.TryGetValue(presence.PresenceDetailid, out var detail))
+                    {
+                        // Kolom P
+                        string pVal = "P";
+                        totalP++;
+
+                        // Kolom R/T
+                        string rVal = "-";
+                        if (detail.iscomplate == true)
+                        {
+                            if (!detail.update_at.HasValue || detail.update_at.Value == presence.date)
+                            {
+                                rVal = "R";
+                                totalR++;
+                            }
+                            else
+                            {
+                                rVal = "T";
+                                totalT++;
+                            }
+                        }
+                        else rVal = "-";
+                        dataPerTanggal.Add((pVal, rVal));
+                    }
+                    else dataPerTanggal.Add(("-", "-"));
+                }
+                row.Data.AddRange(dataPerTanggal);
+                row.TotalP = totalP;
+                row.TotalR = totalR;
+                row.TotalT = totalT;
+            }
+
+            // Generate Excel
+            using var package = new ExcelPackage();
+            var ws = package.Workbook.Worksheets.Add("Rekap Presensi");
+
+            int colOffset = 2; // No, Nama
+            int dateColStart = colOffset + 1;
+            int totalColStart = dateColStart + dateList.Count * 2;
+
+            ws.Row(1).Height = 30;
+            ws.Row(2).Height = 18; // header
+            ws.Row(3).Height = 18;
+
+            // Judul
+            ws.Cells[1, 1, 1, totalColStart + 3].Merge = true;
+            ws.Cells[1, 1].Value = $"Rekap Presensi PKL - {className}";
+            ws.Cells[1, 1].Style.Font.Size = 14;
+            ws.Cells[1, 1].Style.Font.Bold = true;
+            ws.Cells[1, 1].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+
+            ws.Cells[2, 1, 3, 1].Merge = true; // No
+            ws.Cells[2, 2, 3, 2].Merge = true; // Nama
+
+            ws.Cells[2, 1].Value = "No";
+            ws.Column(1).Width = 5;
+            ws.Cells[2, 2].Value = "Nama";
+            ws.Column(2).Width = 33;
+
+            // Header "Nama"
+            ws.Cells[2, 2, 3, 2].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+            ws.Cells[2, 2, 3, 2].Style.VerticalAlignment = ExcelVerticalAlignment.Center;
+            ws.Cells[2, 1, 3, 1].Style.VerticalAlignment = ExcelVerticalAlignment.Center;
+
+            for (int c = 3; c < totalColStart; c++)
+            {
+                ws.Column(c).Width = 4;
+            }
+
+            ws.Cells[2, 3, 2, dateColStart + dateList.Count * 2 - 1].Merge = true;
+            ws.Cells[2, 3].Value = "Tanggal";
+            ws.Cells[2, 3].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+            ws.Cells[2, totalColStart].Value = "Total";
+            ws.Cells[2, totalColStart, 2, totalColStart + 2].Merge = true;
+            ws.Cells[2, totalColStart].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+
+            // Header baris 3 (tanggal dan subkolom)
+            ws.Cells[3, 1].Value = "";
+            ws.Cells[3, 2].Value = "";
+            int col = 3;
+            foreach (var dt in dateList)
+            {
+                ws.Cells[3, col].Value = dt.ToString("dd-MMM");
+                ws.Cells[3, col, 3, col + 1].Merge = true;
+                ws.Cells[3, col].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+                col += 2;
+            }
+            ws.Cells[3, totalColStart].Value = "P";
+            ws.Cells[3, totalColStart + 1].Value = "R";
+            ws.Cells[3, totalColStart + 2].Value = "T";
+
+            ws.Column(totalColStart).Width = 6;
+            ws.Column(totalColStart + 1).Width = 6;
+            ws.Column(totalColStart + 2).Width = 6;
+
+            col = 3;
+            ws.Cells[4, totalColStart].Value = "";
+            ws.Cells[4, totalColStart + 1].Value = "";
+            ws.Cells[4, totalColStart + 2].Value = "";
+
+            // Data siswa
+            int rowIdx = 4;
+            foreach (var row in studentRows)
+            {
+                ws.Cells[rowIdx, 1].Value = row.No;
+                ws.Cells[rowIdx, 2].Value = row.Name;
+                col = 3;
+                foreach (var (pVal, rVal) in row.Data)
+                {
+                    ws.Cells[rowIdx, col].Value = pVal;
+                    ws.Cells[rowIdx, col + 1].Value = rVal;
+                    col += 2;
+                }
+                ws.Cells[rowIdx, totalColStart].Value =
+                    row.TotalP == 0 ? "-" : row.TotalP;
+
+                ws.Cells[rowIdx, totalColStart + 1].Value =
+                    row.TotalR == 0 ? "-" : row.TotalR;
+
+                ws.Cells[rowIdx, totalColStart + 2].Value =
+                    row.TotalT == 0 ? "-" : row.TotalT;
+                rowIdx++;
+            }
+
+            // Footer total hari
+            int totalHariRow = rowIdx;
+            ws.Cells[totalHariRow, 1, totalHariRow, totalColStart - 1].Merge = true;
+            ws.Cells[totalHariRow, 1].Value = "Total Hari : ";
+            ws.Cells[totalHariRow, 1].Style.HorizontalAlignment = ExcelHorizontalAlignment.Right;
+            ws.Cells[totalHariRow, 1].Style.Font.Bold = true;
+
+            for (int r = 4; r < totalHariRow; r++)
+            {
+                ws.Row(r).Height = 16.5;
+            }
+
+            // merge hasil total P R T
+            ws.Cells[totalHariRow, totalColStart, totalHariRow, totalColStart + 2].Merge = true;
+            ws.Cells[totalHariRow, totalColStart].Value = totalHari;
+            ws.Cells[totalHariRow, totalColStart].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+
+            // row pemisah
+            int separatorRow = totalHariRow + 1;
+
+            // Hapus border di baris pemisah
+            var sepCells = ws.Cells[separatorRow, 1, separatorRow, totalColStart + 2];
+            sepCells.Style.Border.Top.Style = ExcelBorderStyle.None;
+            sepCells.Style.Border.Bottom.Style = ExcelBorderStyle.None;
+            sepCells.Style.Border.Left.Style = ExcelBorderStyle.None;
+            sepCells.Style.Border.Right.Style = ExcelBorderStyle.None;
+
+            ws.Cells[separatorRow + 2, 1].Value = "Ket :";
+            ws.Cells[separatorRow + 2, 1].Style.Font.Bold = true;
+
+            ws.Cells[separatorRow + 3, 1].Value = "1. P = Presensi";
+            ws.Cells[separatorRow + 4, 1].Value = "2. R = Report";
+            ws.Cells[separatorRow + 5, 1].Value = "3. T = Report Telat";
+
+            // Style
+            ws.Cells[2, 1, 3, totalColStart + 2].Style.Font.Bold = true;
+            ws.Cells[2, 1, rowIdx - 1, totalColStart + 2].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+
+            // Nama
+            ws.Cells[4, 2, rowIdx - 1, 2].Style.HorizontalAlignment = ExcelHorizontalAlignment.Left;
+            ws.Cells[4, 2, rowIdx - 1, 2].Style.VerticalAlignment = ExcelVerticalAlignment.Center;
+
+            // Vertical center untuk semua cell yang terpakai
+            var usedRange = ws.Cells[1, 1, separatorRow + 4, totalColStart + 2];
+            usedRange.Style.VerticalAlignment = ExcelVerticalAlignment.Center;
+
+            var tableCells = ws.Cells[2, 1, rowIdx, totalColStart + 2];
+            tableCells.Style.Border.Top.Style = ExcelBorderStyle.Thin;
+            tableCells.Style.Border.Bottom.Style = ExcelBorderStyle.Thin;
+            tableCells.Style.Border.Left.Style = ExcelBorderStyle.Thin;
+            tableCells.Style.Border.Right.Style = ExcelBorderStyle.Thin;
+
+            var fileName = $"Rekap_Presensi_PKL_{className}_{DateTime.Now:yyyyMMddHHmmss}.xlsx";
+            var fileBytes = package.GetAsByteArray();
+            Response.Headers.Append("Access-Control-Expose-Headers", "Content-Disposition");
+            return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
         }
     }
 }
