@@ -97,6 +97,25 @@ namespace PKL_API.Controllers
                     (d < excludeStart || d > excludeEnd);
             }
 
+            bool IsValidPklDate(DateOnly d)
+            {
+                if (d < startDate || d > endDate)
+                    return false;
+
+                // exclude 20 Des 2025 - 11 Jan 2026
+                if (nowDate >= cutOff2)
+                {
+                    var excludeStart = cutOff1.AddDays(1);
+                    var excludeEnd = cutOff2.AddDays(-1);
+                    if (d >= excludeStart && d <= excludeEnd)
+                        return false;
+                }
+
+                // hanya Senin–Jumat
+                return d.DayOfWeek != DayOfWeek.Saturday &&
+                       d.DayOfWeek != DayOfWeek.Sunday;
+            }
+
             var students = await _db.Students
                 .Where(s => request.StudentIds.Contains(s.id))
                 .ToListAsync();
@@ -119,15 +138,16 @@ namespace PKL_API.Controllers
                 int pkl_days = 0;
                 for (var dt = startDate; dt <= endDate; dt = dt.AddDays(1))
                 {
-                    if (!dateFilter(dt)) continue;
-                    var dayOfWeek = dt.DayOfWeek;
-                    if (dayOfWeek != DayOfWeek.Saturday && dayOfWeek != DayOfWeek.Sunday)
+                    if (IsValidPklDate(dt))
                         pkl_days++;
                 }
 
                 var presencesQuery = _db.Presences
-                    .Where(p => p.Studentid == studentId && p.date >= startDate && p.date <= endDate)
-                    .AsQueryable();
+                    .Where(p =>
+                        p.Studentid == studentId &&
+                        p.date >= startDate &&
+                        p.date <= endDate
+                    );
 
                 if (nowDate > cutOff1 && nowDate >= cutOff2)
                 {
@@ -137,12 +157,20 @@ namespace PKL_API.Controllers
                     presencesQuery = presencesQuery.Where(p => p.date < excludeStart || p.date > excludeEnd);
                 }
 
-                var presenceTotal = await presencesQuery.CountAsync();
+                var presences = await presencesQuery.ToListAsync();
+                var weekdayPresences = presences
+                    .Where(p =>
+                        p.date.DayOfWeek != DayOfWeek.Saturday &&
+                        p.date.DayOfWeek != DayOfWeek.Sunday
+                    )
+                    .ToList();
+
+                var presenceTotal = weekdayPresences.Count;
                 var absenTotal = pkl_days - presenceTotal;
 
-                var presenceDetails = await presencesQuery
+                var presenceDetails = weekdayPresences
                     .Select(p => p.PresenceDetailid)
-                    .ToListAsync();
+                    .ToList();
 
                 int sendTotal = 0, notSendTotal = 0;
                 if (presenceDetails.Count > 0)
@@ -151,39 +179,41 @@ namespace PKL_API.Controllers
                         .Where(d => presenceDetails.Contains(d.id))
                         .ToListAsync();
 
-                    sendTotal = await presencesQuery
-                        .Join(_db.PresenceDetails,
+                    sendTotal = weekdayPresences
+                        .Join(details,
                             p => p.PresenceDetailid,
                             d => d.id,
-                            (p, d) => new { Presence = p, Detail = d })
-                        .CountAsync(x =>
-                            x.Detail.iscomplate == true
-                            && ((x.Detail.update_at.HasValue &&
-                                x.Detail.update_at.Value == x.Presence.date) || x.Detail.update_at == null)
+                            (p, d) => new { p, d })
+                        .Count(x =>
+                            x.d.iscomplate == true &&
+                            (
+                                !x.d.update_at.HasValue ||
+                                x.d.update_at.Value == x.p.date
+                            )
                         );
 
-                    notSendTotal = await presencesQuery
-                        .Join(_db.PresenceDetails,
+                    notSendTotal = weekdayPresences
+                        .Join(details,
                             p => p.PresenceDetailid,
                             d => d.id,
-                            (p, d) => new { Presence = p, Detail = d })
-                        .CountAsync(x =>
-                            x.Detail.iscomplate == false
-                            || (x.Detail.update_at.HasValue &&
-                                x.Detail.update_at.Value != x.Presence.date)
+                            (p, d) => new { p, d })
+                        .Count(x =>
+                            x.d.iscomplate == false ||
+                            (x.d.update_at.HasValue &&
+                             x.d.update_at.Value != x.p.date)
                         );
                 }
 
-                var typeCounts = await presencesQuery
+                var typeCounts = weekdayPresences
                     .GroupBy(p => p.PresenceTypeid)
-                    .Select(g => new { IdPresence = g.Key, Count = g.Count() })
-                    .ToListAsync();
+                    .Select(g => new { Id = g.Key, Count = g.Count() })
+                    .ToList();
 
-                int hadirCount = typeCounts.FirstOrDefault(x => x.IdPresence == 1)?.Count ?? 0;
-                int sakitCount = typeCounts.FirstOrDefault(x => x.IdPresence == 2)?.Count ?? 0;
-                int izinCount = typeCounts.FirstOrDefault(x => x.IdPresence == 3)?.Count ?? 0;
-                int liburCount = typeCounts.FirstOrDefault(x => x.IdPresence == 4)?.Count ?? 0;
-                int wfhCount = typeCounts.FirstOrDefault(x => x.IdPresence == 5)?.Count ?? 0;
+                int hadir = typeCounts.FirstOrDefault(x => x.Id == 1)?.Count ?? 0;
+                int sakit = typeCounts.FirstOrDefault(x => x.Id == 2)?.Count ?? 0;
+                int izin = typeCounts.FirstOrDefault(x => x.Id == 3)?.Count ?? 0;
+                int libur = typeCounts.FirstOrDefault(x => x.Id == 4)?.Count ?? 0;
+                int wfh = typeCounts.FirstOrDefault(x => x.Id == 5)?.Count ?? 0;
 
                 var existingPresenceRecap = await _db.PresenceRecaps
                     .FirstOrDefaultAsync(r => r.StudentId == studentId);
@@ -196,11 +226,11 @@ namespace PKL_API.Controllers
                     existingPresenceRecap.absen_total = absenTotal;
                     existingPresenceRecap.send_total = sendTotal;
                     existingPresenceRecap.not_send_total = notSendTotal;
-                    existingPresenceRecap.hadir = hadirCount;
-                    existingPresenceRecap.sakit = sakitCount;
-                    existingPresenceRecap.izin = izinCount;
-                    existingPresenceRecap.libur = liburCount;
-                    existingPresenceRecap.wfh = wfhCount;
+                    existingPresenceRecap.hadir = hadir;
+                    existingPresenceRecap.sakit = sakit;
+                    existingPresenceRecap.izin = izin;
+                    existingPresenceRecap.libur = libur;
+                    existingPresenceRecap.wfh = wfh;
                     existingPresenceRecap.update_at = now;
                     recapsToUpdate.Add(existingPresenceRecap);
                 }
@@ -215,11 +245,11 @@ namespace PKL_API.Controllers
                         absen_total = absenTotal,
                         send_total = sendTotal,
                         not_send_total = notSendTotal,
-                        hadir = hadirCount,
-                        sakit = sakitCount,
-                        izin = izinCount,
-                        libur = liburCount,
-                        wfh = wfhCount,
+                        hadir = hadir,
+                        sakit = sakit,
+                        izin = izin,
+                        libur = libur,
+                        wfh = wfh,
                         update_at = now
                     });
                 }
@@ -997,7 +1027,7 @@ namespace PKL_API.Controllers
             ws.Row(3).Height = 18;
 
             // Judul
-            ws.Cells[1, 1, 1, totalColStart + 3].Merge = true;
+            ws.Cells[1, 1, 1, totalColStart + 2].Merge = true;
             ws.Cells[1, 1].Value = $"Rekap Presensi PKL - {className}";
             ws.Cells[1, 1].Style.Font.Size = 14;
             ws.Cells[1, 1].Style.Font.Bold = true;
@@ -1009,7 +1039,7 @@ namespace PKL_API.Controllers
             ws.Cells[2, 1].Value = "No";
             ws.Column(1).Width = 5;
             ws.Cells[2, 2].Value = "Nama";
-            ws.Column(2).Width = 33;
+            ws.Column(2).Width = 35;
 
             // Header "Nama"
             ws.Cells[2, 2, 3, 2].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
@@ -1103,12 +1133,12 @@ namespace PKL_API.Controllers
             sepCells.Style.Border.Left.Style = ExcelBorderStyle.None;
             sepCells.Style.Border.Right.Style = ExcelBorderStyle.None;
 
-            ws.Cells[separatorRow + 2, 1].Value = "Ket :";
-            ws.Cells[separatorRow + 2, 1].Style.Font.Bold = true;
+            ws.Cells[separatorRow + 1, 1].Value = "Ket :";
+            ws.Cells[separatorRow + 1, 1].Style.Font.Bold = true;
 
-            ws.Cells[separatorRow + 3, 1].Value = "1. P = Presensi";
-            ws.Cells[separatorRow + 4, 1].Value = "2. R = Report";
-            ws.Cells[separatorRow + 5, 1].Value = "3. T = Report Telat";
+            ws.Cells[separatorRow + 2, 1].Value = "1. P = Presensi";
+            ws.Cells[separatorRow + 3, 1].Value = "2. R = Report";
+            ws.Cells[separatorRow + 4, 1].Value = "3. T = Report Telat";
 
             // Style
             ws.Cells[2, 1, 3, totalColStart + 2].Style.Font.Bold = true;
