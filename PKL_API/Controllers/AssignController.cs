@@ -66,6 +66,7 @@ namespace PKL_API.Controllers
                     {
                         student.Mentorid = null;
                         student.Companyid = null;
+                        student.CompanyLocationid = null;
                     }
                 }
             }
@@ -77,8 +78,8 @@ namespace PKL_API.Controllers
         }
 
         [Authorize]
-        [HttpPut("company/{studentId}")]
-        public async Task<IActionResult> EditStudentData(int studentId, int companyId)
+        [HttpPut("company-location/{studentId}")]
+        public async Task<IActionResult> EditStudentData(int studentId, int companyLocationId)
         {
             var user = await AuthHelper.GetCurrentUser(HttpContext, _db);
             if (user == null)
@@ -102,15 +103,16 @@ namespace PKL_API.Controllers
             if (student.StudentValidation?.isPKL == false)
                 return BadRequest("Student is not currently assigned to PKL.");
 
-            var company = await _db.Companies.FindAsync(companyId);
-            if (company == null)
-                return NotFound("Company not found.");
+            var companyLocation = await _db.CompanyLocations.FindAsync(companyLocationId);
+            if (companyLocation == null)
+                return NotFound("Company Location not found.");
 
-            student.Companyid = companyId;
+            student.CompanyLocationid = companyLocationId;
+            student.Companyid = companyLocation.Companyid;
             _db.Students.Update(student);
             await _db.SaveChangesAsync();
 
-            return Ok(new { message = "Student company updated successfully." });
+            return Ok(new { message = "Student company location updated successfully." });
         }
 
         [Authorize]
@@ -227,7 +229,17 @@ namespace PKL_API.Controllers
 
             // Set updateAt to WIB (UTC+7)
             var wibTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
-            statusEntity.updateAt = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, wibTimeZone);
+            var wibNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, wibTimeZone);
+            statusEntity.updateAt = wibNow;
+
+            // Update semua StudentValidations: set isLock dan update_daily
+            var allValidations = await _db.StudentValidations.ToListAsync();
+            foreach (var v in allValidations)
+            {
+                v.isLock = statusEntity.status;
+                v.update_daily = wibNow;
+            }
+            _db.StudentValidations.UpdateRange(allValidations);
 
             _db.StatusLockLocations.Update(statusEntity);
             await _db.SaveChangesAsync();

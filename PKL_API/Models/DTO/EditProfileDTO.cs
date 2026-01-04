@@ -13,8 +13,8 @@ namespace PKL_API.Models.DTO
         public required string fullname { get; set; }
         [Column("id_class")]
         public int Classroomid { get; set; }
-        [Column("id_company")]
-        public int Companyid { get; set; }
+        [Column("id_company_location")]
+        public int CompanyLocationId { get; set; }
         [StringLength(100)]
         public required string email { get; set; }
         public required bool gender { get; set; }

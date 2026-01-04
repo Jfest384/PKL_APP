@@ -39,8 +39,9 @@ namespace PKLPresenceWeb.Pages.Clients
         // Modal Pilih PT
         bool ShowPilihPTModal = false;
         int? SelectedStudentIdForPT = null;
-        int? SelectedCompanyId = null;
+        int? SelectedCompanyLocationId = null;
         List<CompanyItem> Companies = new();
+        List<CompanyLocationItem> CompanyLocations = new();
         bool IsLoadingCompanies = false;
 
         private WahaSession? WahaSession;
@@ -172,9 +173,7 @@ namespace PKLPresenceWeb.Pages.Clients
                 });
 
                 if (result.isConfirmed)
-                {
                     await ActivateMessageTab();
-                }
             }
             else if (WahaStoppedModalMode == "DefaultChat")
             {
@@ -711,16 +710,16 @@ namespace PKLPresenceWeb.Pages.Clients
         async void OnPilihTempatPKL(string[] studentRow)
         {
             SelectedStudentIdForPT = int.Parse(studentRow[0]);
-            SelectedCompanyId = null;
+            SelectedCompanyLocationId = null;
             ShowPilihPTModal = true;
             IsLoadingCompanies = true;
             Companies.Clear();
 
             try
             {
-                var result = await Http.GetFromJsonAsync<CompanyListResponse>(APIUrl.Endpoint("data/companies?page=1&pageSize=1000"));
+                var result = await Http.GetFromJsonAsync<CompanyLocationListResponse>(APIUrl.Endpoint("data/company-locations?page=1&pageSize=1000"));
                 if (result != null)
-                    Companies = result.companies;
+                    CompanyLocations = result.companyLocations;
             }
             finally
             {
@@ -732,14 +731,14 @@ namespace PKLPresenceWeb.Pages.Clients
         void OnCompanyRadioChanged(ChangeEventArgs e)
         {
             if (int.TryParse(e.Value?.ToString(), out var id))
-                SelectedCompanyId = id;
+                SelectedCompanyLocationId = id;
         }
 
         async Task ConfirmPilihPT()
         {
-            if (SelectedStudentIdForPT.HasValue && SelectedCompanyId.HasValue)
+            if (SelectedStudentIdForPT.HasValue && SelectedCompanyLocationId.HasValue)
             {
-                var url = APIUrl.Endpoint($"assign/company/{SelectedStudentIdForPT}?companyId={SelectedCompanyId}");
+                var url = APIUrl.Endpoint($"assign/company-location/{SelectedStudentIdForPT}?companyLocationId={SelectedCompanyLocationId}");
                 var response = await Http.PutAsync(url, null);
                 if (response.IsSuccessStatusCode)
                 {
@@ -756,7 +755,7 @@ namespace PKLPresenceWeb.Pages.Clients
         {
             ShowPilihPTModal = false;
             SelectedStudentIdForPT = null;
-            SelectedCompanyId = null;
+            SelectedCompanyLocationId = null;
             CompanySearchText = "";
             Companies.Clear();
         }
@@ -971,6 +970,7 @@ namespace PKLPresenceWeb.Pages.Clients
         private List<MentorItem> CachedAllMentors = new();
         private List<ClassItem> CachedAllClassrooms = new();
         private List<CompanyItem> CachedAllCompanies = new();
+        private List<CompanyLocationItem> CachedAllCompanyLocations = new();
 
         private string LastStudentSearchText = "";
         private int? LastStudentClassId = null;
@@ -1344,11 +1344,11 @@ namespace PKLPresenceWeb.Pages.Clients
             StateHasChanged();
         }
 
-        private List<CompanyItem> FilteredCompanies =>
+        private List<CompanyLocationItem> FilteredCompanyLocations =>
         string.IsNullOrWhiteSpace(CompanySearchText)
-            ? Companies
-            : Companies.Where(c =>
-                (c.name?.Contains(CompanySearchText, StringComparison.OrdinalIgnoreCase) ?? false)).ToList();
+            ? CompanyLocations
+            : CompanyLocations.Where(c =>
+                (c.LocationName?.Contains(CompanySearchText, StringComparison.OrdinalIgnoreCase) ?? false)).ToList();
 
         private void OnCompanySearchChanged(ChangeEventArgs e)
         {

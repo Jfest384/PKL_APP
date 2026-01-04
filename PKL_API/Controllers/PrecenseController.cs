@@ -82,115 +82,271 @@ namespace PKL_API.Controllers
                 var statusLockLocation = await _db.StatusLockLocations.FirstOrDefaultAsync();
                 if ((statusLockLocation != null && statusLockLocation.status))
                 {
-                    // Khusus studentId 53/55: support 2 lokasi
-                    if (student.id == 53 || student.id == 55)
+                    // New flow: prefer CompanyLocation (if set and has coordinates), otherwise fallback to existing LockLocations flow
+                    bool handledByCompanyLocation = false;
+
+                    if (student.CompanyLocationid.HasValue)
                     {
-                        var lockLocations = await _db.LockLocations
-                            .Where(l => l.Studentid == student.id)
-                            .ToListAsync();
-
-                        double userLat = (double)dto.Lat.Value;
-                        double userLng = (double)dto.Long.Value;
-
-                        if (lockLocations.Count == 0)
+                        var compLoc = await _db.CompanyLocations.FirstOrDefaultAsync(c => c.id == student.CompanyLocationid.Value);
+                        if (compLoc != null && compLoc.lat.HasValue && compLoc.longitude.HasValue)
                         {
-                            // Simpan lokasi pertama kali
-                            var newLock = new LockLocation
-                            {
-                                Userid = userId,
-                                Studentid = student.id,
-                                lat = dto.Lat,
-                                longitude = dto.Long
-                            };
-                            _db.LockLocations.Add(newLock);
-                            await _db.SaveChangesAsync();
+                            // Use company location as the single lock location with 500m radius
+                            double baseLat = (double)compLoc.lat.Value;
+                            double baseLng = (double)compLoc.longitude.Value;
+
+                            if (!dto.Lat.HasValue || !dto.Long.HasValue)
+                                return BadRequest("Lokasi tidak ditemukan. Pastikan geolocation diaktifkan.");
+
+                            double userLat = (double)dto.Lat.Value;
+                            double userLng = (double)dto.Long.Value;
+
+                            double distance = GetDistanceInMeters(baseLat, baseLng, userLat, userLng);
+
+                            if (distance > 500)
+                                return BadRequest("Anda berada terlalu jauh dari tempat PKL");
+
+                            handledByCompanyLocation = true;
                         }
-                        else if (lockLocations.Count == 1)
-                        {
-                            var loc = lockLocations[0];
-                            if (loc.lat.HasValue && loc.longitude.HasValue)
-                            {
-                                double baseLat = (double)loc.lat.Value;
-                                double baseLng = (double)loc.longitude.Value;
-                                double distance = GetDistanceInMeters(baseLat, baseLng, userLat, userLng);
+                    }
 
-                                if (distance <= 1000)
+                    if (!handledByCompanyLocation)
+                    {
+                        // Original LockLocations logic (unchanged)
+                        // Khusus studentId 53/55: support 2 lokasi
+                        if (student.id == 53 || student.id == 55)
+                        {
+                            var lockLocations = await _db.LockLocations
+                                .Where(l => l.Studentid == student.id)
+                                .ToListAsync();
+
+                            if (!dto.Lat.HasValue || !dto.Long.HasValue)
+                                return BadRequest("Lokasi tidak ditemukan. Pastikan geolocation diaktifkan.");
+
+                            double userLat = (double)dto.Lat.Value;
+                            double userLng = (double)dto.Long.Value;
+
+                            if (lockLocations.Count == 0)
+                            {
+                                // Simpan lokasi pertama kali
+                                var newLock = new LockLocation
                                 {
-                                    if (distance > 500)
-                                        return BadRequest("Anda berada terlalu jauh dari tempat PKL");
-                                }
-                                else
-                                {
-                                    var newLock = new LockLocation
-                                    {
-                                        Userid = userId,
-                                        Studentid = student.id,
-                                        lat = dto.Lat,
-                                        longitude = dto.Long
-                                    };
-                                    _db.LockLocations.Add(newLock);
-                                    await _db.SaveChangesAsync();
-                                }
+                                    Userid = userId,
+                                    Studentid = student.id,
+                                    lat = dto.Lat,
+                                    longitude = dto.Long
+                                };
+                                _db.LockLocations.Add(newLock);
+                                await _db.SaveChangesAsync();
                             }
-                        }
-                        else // Sudah ada 2 lokasi
-                        {
-                            bool isWithin500m = false;
-                            foreach (var loc in lockLocations)
+                            else if (lockLocations.Count == 1)
                             {
+                                var loc = lockLocations[0];
                                 if (loc.lat.HasValue && loc.longitude.HasValue)
                                 {
                                     double baseLat = (double)loc.lat.Value;
                                     double baseLng = (double)loc.longitude.Value;
                                     double distance = GetDistanceInMeters(baseLat, baseLng, userLat, userLng);
-                                    if (distance <= 500)
+
+                                    if (distance <= 1000)
                                     {
-                                        isWithin500m = true;
-                                        break;
+                                        if (distance > 500)
+                                            return BadRequest("Anda berada terlalu jauh dari tempat PKL");
+                                    }
+                                    else
+                                    {
+                                        var newLock = new LockLocation
+                                        {
+                                            Userid = userId,
+                                            Studentid = student.id,
+                                            lat = dto.Lat,
+                                            longitude = dto.Long
+                                        };
+                                        _db.LockLocations.Add(newLock);
+                                        await _db.SaveChangesAsync();
                                     }
                                 }
                             }
-                            if (!isWithin500m)
-                                return BadRequest("Anda berada terlalu jauh dari semua lokasi PKL yang terdaftar");
-                        }
-                    }
-                    else
-                    {
-                        // Default: hanya 1 lokasi per student
-                        var existingLock = await _db.LockLocations.FirstOrDefaultAsync(l => l.Studentid == student.id);
-                        if (existingLock == null)
-                        {
-                            // Simpan lokasi pertama kali
-                            var newLock = new LockLocation
+                            else // Sudah ada 2 lokasi
                             {
-                                Userid = userId,
-                                Studentid = student.id,
-                                lat = dto.Lat,
-                                longitude = dto.Long
-                            };
-                            _db.LockLocations.Add(newLock);
-                            await _db.SaveChangesAsync();
+                                bool isWithin500m = false;
+                                foreach (var loc in lockLocations)
+                                {
+                                    if (loc.lat.HasValue && loc.longitude.HasValue)
+                                    {
+                                        double baseLat = (double)loc.lat.Value;
+                                        double baseLng = (double)loc.longitude.Value;
+                                        double distance = GetDistanceInMeters(baseLat, baseLng, userLat, userLng);
+                                        if (distance <= 500)
+                                        {
+                                            isWithin500m = true;
+                                            break;
+                                        }
+                                    }
+                                }
+                                if (!isWithin500m)
+                                    return BadRequest("Anda berada terlalu jauh dari semua lokasi PKL yang terdaftar");
+                            }
                         }
                         else
                         {
-                            // Validasi radius 500 meter
-                            if (existingLock.lat.HasValue && existingLock.longitude.HasValue)
+                            // Default: hanya 1 lokasi per student
+                            var existingLock = await _db.LockLocations.FirstOrDefaultAsync(l => l.Studentid == student.id);
+                            if (existingLock == null)
                             {
-                                double baseLat = (double)existingLock.lat.Value;
-                                double baseLng = (double)existingLock.longitude.Value;
-                                double userLat = (double)dto.Lat.Value;
-                                double userLng = (double)dto.Long.Value;
+                                if (!dto.Lat.HasValue || !dto.Long.HasValue)
+                                    return BadRequest("Lokasi tidak ditemukan. Pastikan geolocation diaktifkan.");
 
-                                double distance = GetDistanceInMeters(baseLat, baseLng, userLat, userLng);
-                                if (distance > 500)
+                                // Simpan lokasi pertama kali
+                                var newLock = new LockLocation
                                 {
-                                    return BadRequest("Anda berada terlalu jauh dari tempat PKL");
+                                    Userid = userId,
+                                    Studentid = student.id,
+                                    lat = dto.Lat,
+                                    longitude = dto.Long
+                                };
+                                _db.LockLocations.Add(newLock);
+                                await _db.SaveChangesAsync();
+                            }
+                            else
+                            {
+                                // Validasi radius 500 meter
+                                if (existingLock.lat.HasValue && existingLock.longitude.HasValue)
+                                {
+                                    if (!dto.Lat.HasValue || !dto.Long.HasValue)
+                                        return BadRequest("Lokasi tidak ditemukan. Pastikan geolocation diaktifkan.");
+
+                                    double baseLat = (double)existingLock.lat.Value;
+                                    double baseLng = (double)existingLock.longitude.Value;
+                                    double userLat = (double)dto.Lat.Value;
+                                    double userLng = (double)dto.Long.Value;
+
+                                    double distance = GetDistanceInMeters(baseLat, baseLng, userLat, userLng);
+                                    if (distance > 500)
+                                    {
+                                        return BadRequest("Anda berada terlalu jauh dari tempat PKL");
+                                    }
                                 }
                             }
                         }
                     }
                 }
             }
+
+            //// --- Validasi lokasi PKL (radius 500 meter, support multi lokasi untuk studentId 53/55) ---
+            //if (dto.PresenceTypeid == 1 && student.StudentValidation.isLock)
+            //{
+            //    var statusLockLocation = await _db.StatusLockLocations.FirstOrDefaultAsync();
+            //    if ((statusLockLocation != null && statusLockLocation.status))
+            //    {
+            //        // Khusus studentId 53/55: support 2 lokasi
+            //        if (student.id == 53 || student.id == 55)
+            //        {
+            //            var lockLocations = await _db.LockLocations
+            //                .Where(l => l.Studentid == student.id)
+            //                .ToListAsync();
+
+            //            double userLat = (double)dto.Lat.Value;
+            //            double userLng = (double)dto.Long.Value;
+
+            //            if (lockLocations.Count == 0)
+            //            {
+            //                // Simpan lokasi pertama kali
+            //                var newLock = new LockLocation
+            //                {
+            //                    Userid = userId,
+            //                    Studentid = student.id,
+            //                    lat = dto.Lat,
+            //                    longitude = dto.Long
+            //                };
+            //                _db.LockLocations.Add(newLock);
+            //                await _db.SaveChangesAsync();
+            //            }
+            //            else if (lockLocations.Count == 1)
+            //            {
+            //                var loc = lockLocations[0];
+            //                if (loc.lat.HasValue && loc.longitude.HasValue)
+            //                {
+            //                    double baseLat = (double)loc.lat.Value;
+            //                    double baseLng = (double)loc.longitude.Value;
+            //                    double distance = GetDistanceInMeters(baseLat, baseLng, userLat, userLng);
+
+            //                    if (distance <= 1000)
+            //                    {
+            //                        if (distance > 500)
+            //                            return BadRequest("Anda berada terlalu jauh dari tempat PKL");
+            //                    }
+            //                    else
+            //                    {
+            //                        var newLock = new LockLocation
+            //                        {
+            //                            Userid = userId,
+            //                            Studentid = student.id,
+            //                            lat = dto.Lat,
+            //                            longitude = dto.Long
+            //                        };
+            //                        _db.LockLocations.Add(newLock);
+            //                        await _db.SaveChangesAsync();
+            //                    }
+            //                }
+            //            }
+            //            else // Sudah ada 2 lokasi
+            //            {
+            //                bool isWithin500m = false;
+            //                foreach (var loc in lockLocations)
+            //                {
+            //                    if (loc.lat.HasValue && loc.longitude.HasValue)
+            //                    {
+            //                        double baseLat = (double)loc.lat.Value;
+            //                        double baseLng = (double)loc.longitude.Value;
+            //                        double distance = GetDistanceInMeters(baseLat, baseLng, userLat, userLng);
+            //                        if (distance <= 500)
+            //                        {
+            //                            isWithin500m = true;
+            //                            break;
+            //                        }
+            //                    }
+            //                }
+            //                if (!isWithin500m)
+            //                    return BadRequest("Anda berada terlalu jauh dari semua lokasi PKL yang terdaftar");
+            //            }
+            //        }
+            //        else
+            //        {
+            //            // Default: hanya 1 lokasi per student
+            //            var existingLock = await _db.LockLocations.FirstOrDefaultAsync(l => l.Studentid == student.id);
+            //            if (existingLock == null)
+            //            {
+            //                // Simpan lokasi pertama kali
+            //                var newLock = new LockLocation
+            //                {
+            //                    Userid = userId,
+            //                    Studentid = student.id,
+            //                    lat = dto.Lat,
+            //                    longitude = dto.Long
+            //                };
+            //                _db.LockLocations.Add(newLock);
+            //                await _db.SaveChangesAsync();
+            //            }
+            //            else
+            //            {
+            //                // Validasi radius 500 meter
+            //                if (existingLock.lat.HasValue && existingLock.longitude.HasValue)
+            //                {
+            //                    double baseLat = (double)existingLock.lat.Value;
+            //                    double baseLng = (double)existingLock.longitude.Value;
+            //                    double userLat = (double)dto.Lat.Value;
+            //                    double userLng = (double)dto.Long.Value;
+
+            //                    double distance = GetDistanceInMeters(baseLat, baseLng, userLat, userLng);
+            //                    if (distance > 500)
+            //                    {
+            //                        return BadRequest("Anda berada terlalu jauh dari tempat PKL");
+            //                    }
+            //                }
+            //            }
+            //        }
+            //    }
+            //}
 
             var detail = new PresenceDetail();
 

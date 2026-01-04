@@ -497,7 +497,8 @@
                                                     </div>
                                                     <div class="d-flex d-sm-none flex-column align-items-center gap-1 mobile-pkl-action">
                                                         <div class="d-flex gap-2 justify-content-center w-100">
-                                                            <button class="btn btn-sm btn-success" title="Lokasi PKL"
+                                                            <button class="btn btn-sm @(string.IsNullOrWhiteSpace(item[5]) || item[5] == "-" ? "btn-info" : "btn-success")"
+                                                                    title="Lokasi PKL"
                                                                     @onclick="() => OnPilihTempatPKL(item)">
                                                                 <i class="bi bi-geo-alt"></i>
                                                             </button>
@@ -757,7 +758,7 @@
                         else
                         {
                             <div class="mb-3 ms-1">
-                                @foreach (var company in FilteredCompanies)
+                                @foreach (var company in FilteredCompanyLocations)
                                 {
                                     <div class="form-check text-start">
                                         <input class="form-check-input"
@@ -765,14 +766,14 @@
                                                name="companyRadio"
                                                id="company_@company.id"
                                                value="@company.id"
-                                               checked="@(SelectedCompanyId == company.id)"
+                                               checked="@(SelectedCompanyLocationId == company.id)"
                                                @onchange="OnCompanyRadioChanged" />
                                         <label class="form-check-label" for="company_@company.id">
-                                            @company.name
+                                            @company.LocationName
                                         </label>
                                     </div>
                                 }
-                                @if (FilteredCompanies.Count == 0)
+                                @if (FilteredCompanyLocations.Count == 0)
                                 {
                                     <div class="text-center text-muted">No companies found.</div>
                                 }
@@ -782,7 +783,7 @@
                 </div>
                 <div class="d-flex justify-content-center gap-3 mt-3">
                     <button class="btn btn-danger px-4" @onclick="ClosePilihPTModal">Cancel</button>
-                    <button class="btn btn-success px-4" @onclick="ConfirmPilihPT" disabled="@(SelectedCompanyId == null)">Confirm</button>
+                    <button class="btn btn-success px-4" @onclick="ConfirmPilihPT" disabled="@(SelectedCompanyLocationId == null)">Confirm</button>
                 </div>
             </Modal>
         }

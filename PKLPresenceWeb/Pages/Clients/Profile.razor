@@ -31,8 +31,16 @@
 
         <div class="card p-2 mb-4">
             <MenuItem icon="bi-person" text="My Profile" link="/home/profile/me" />
-            <MenuItem icon="bi-calendar-check" text="Presence" link="/presence" />
-            <MenuItem icon="bi-file-earmark-text" text="Intern Report" link="/report" />
+            <MenuItem icon="bi-calendar-check"
+                      RightIcon="bi-chevron-right"
+                      text="Presence"
+                      OnClickAction="@(e => HandleProtectedMenuClick("presence"))" />
+
+            <MenuItem icon="bi-file-earmark-text"
+                      RightIcon="bi-chevron-right"
+                      text="Intern Report"
+                      OnClickAction="@(e => HandleProtectedMenuClick("report"))" />
+
             <MenuItem icon="bi-info-circle" text="Change Password" link="/home/profile/change-password" />
             @if (userRole == "Admin" || userRole == "Kepala Jurusan")
             {

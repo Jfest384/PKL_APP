@@ -31,10 +31,10 @@ namespace PKL_HangfireWorker.Services
                   c.id_contact,
                   co.id_chat
                 FROM Students s
+                JOIN StudentValidations sv ON s.id_validation = sv.id AND sv.isPKL = 1
                 JOIN Users u ON s.id_user = u.id
-                JOIN Classrooms c ON s.id_class = c.id
-                JOIN ChatContacts co ON c.id_contact = co.id
-                WHERE s.id_class IN (6, 9)
+                LEFT JOIN Classrooms c ON s.id_class = c.id
+                LEFT JOIN ChatContacts co ON c.id_contact = co.id
             ")).ToList();
 
             if (!students.Any()) return;
@@ -48,6 +48,11 @@ namespace PKL_HangfireWorker.Services
 
             foreach (var group in groups)
             {
+                // Jika class tidak punya id_contact atau chatId tidak tersedia, lewati pengiriman
+                if (group.Key.id_contact == null) continue;
+                var chatIdCandidate = group.Key.id_chat ?? "-";
+                if (string.IsNullOrWhiteSpace(chatIdCandidate) || chatIdCandidate == "-") continue;
+
                 var list = new List<string>();
                 int i = 1;
 
@@ -64,6 +69,8 @@ namespace PKL_HangfireWorker.Services
                     i++;
                 }
 
+                if (list.Count == 0) continue;
+
                 string date = DateTime.Now.ToString("dddd, dd MMMM yyyy", new CultureInfo("id-ID"));
                 string time = DateTime.Now.ToString("HH.mm");
 
@@ -76,7 +83,7 @@ namespace PKL_HangfireWorker.Services
                 });
 
                 string chatId = group.Key.id_chat ?? "-";
-                if (!string.IsNullOrWhiteSpace(chatId))
+                if (!string.IsNullOrWhiteSpace(chatId) && chatId != "-")
                     await SendMessage(chatId, text);
             }
         }

@@ -23,8 +23,8 @@ namespace PKLPresenceWeb.Pages.Clients
         private int TotalPages = 1;
         private int CurrentPage = 1;
         private int? selectedClassId;
-        private List<CompanyItem> companyList = new();
-        private int? selectedCompanyId;
+        private List<CompanyLocationItem> companyLocationList = new();
+        private int? selectedCompanyLocationId;
 
         private string email = "";
         private string emailError = "";
@@ -62,21 +62,17 @@ namespace PKLPresenceWeb.Pages.Clients
                     nisnipFullname = $"{nis} - {fullname}";
 
                     await LoadClasses();
-                    var companyResp = await Http.GetFromJsonAsync<CompanyListResponse>(APIUrl.Endpoint("data/companies?page=1&pageSize=1000"));
-                    companyList = companyResp?.companies ?? new();
+                    var companyResp = await Http.GetFromJsonAsync<CompanyLocationListResponse>(APIUrl.Endpoint("data/company-locations?page=1&pageSize=1000"));
+                    companyLocationList = companyResp?.companyLocations ?? new();
 
                     selectedClassId = classList.FirstOrDefault(c => c.name == userData.classroom)?.id;
-                    selectedCompanyId = companyList.FirstOrDefault(c => c.name == userData.company)?.id;
+                    selectedCompanyLocationId = companyLocationList.FirstOrDefault(c => c.LocationName == userData.companyLocation)?.id;
                 }
                 else
                 {
                     nip = userData.nip;
                     fullname = userData.fullname;
                     nisnipFullname = $"{nip} - {fullname}";
-
-                    await LoadClasses();
-                    var companyResp = await Http.GetFromJsonAsync<CompanyListResponse>(APIUrl.Endpoint("data/companies?page=1&pageSize=1000"));
-                    companyList = companyResp?.companies ?? new();
                 }
 
                 // Ambil foto profil seperti sebelumnya
@@ -161,7 +157,7 @@ namespace PKLPresenceWeb.Pages.Clients
             !showNisNipFullnameError &&
             ((role == "Student" && !string.IsNullOrWhiteSpace(nis)) || (role != "Student" && !string.IsNullOrWhiteSpace(nip))) &&
             !string.IsNullOrWhiteSpace(fullname) &&
-            (role != "Student" || (selectedClassId.HasValue && selectedCompanyId.HasValue)) &&
+            (role != "Student" || (selectedClassId.HasValue && selectedCompanyLocationId.HasValue)) &&
             !string.IsNullOrWhiteSpace(email) &&
             string.IsNullOrEmpty(emailError) &&
             gender.HasValue;
@@ -189,15 +185,15 @@ namespace PKLPresenceWeb.Pages.Clients
 
             // 2. Update profile data
             var data = new Dictionary<string, object?>
-        {
-            { "nis", role == "Student" ? nis : null },
-            { "nip", role != "Student" ? nip : null },
-            { "fullname", fullname },
-            { "classroomid", role == "Student" ? selectedClassId : 0 },
-            { "companyid", role == "Student" ? selectedCompanyId : 0 },
-            { "email", email },
-            { "gender", gender }
-        };
+            {
+                { "nis", role == "Student" ? nis : null },
+                { "nip", role != "Student" ? nip : null },
+                { "fullname", fullname },
+                { "classroomid", role == "Student" ? selectedClassId : 0 },
+                { "companyLocationId", role == "Student" ? selectedCompanyLocationId : 0 },
+                { "email", email },
+                { "gender", gender }
+            };
 
             var json = JsonSerializer.Serialize(data);
             var req2 = new HttpRequestMessage(HttpMethod.Put, APIUrl.Endpoint("me"));
@@ -208,8 +204,12 @@ namespace PKLPresenceWeb.Pages.Clients
 
             if (success)
             {
+                var responseMe = await Http.GetAsync(APIUrl.Endpoint("me"));
+                var json2 = await responseMe.Content.ReadAsStringAsync();
+                await JS.InvokeVoidAsync("localStorage.setItem", "meResponse", json2);
                 await AlertService.ShowSuccessAsync("Data Profile berhasil diubah.");
                 StateHasChanged();
+                Navigation.NavigateTo("/home/profile/me", forceLoad: true);
             }
         }
 

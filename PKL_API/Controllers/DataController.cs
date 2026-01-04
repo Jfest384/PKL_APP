@@ -81,26 +81,30 @@ namespace PKL_API.Controllers
         }
 
         [HttpGet("company-locations")]
-        public async Task<IActionResult> GetAllCompanyLocation([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string? name = null)
+        public async Task<IActionResult> GetAllCompanyLocation(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] string? name = null)
         {
             if (page < 1) page = 1;
             if (pageSize < 1) pageSize = 10;
-
             var query = _db.CompanyLocations.AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(name))
                 query = query.Where(c => c.LocationName.Contains(name));
 
-            var companies = query
+            var companiesQuery = query
+                .OrderBy(c => c.LocationName)
                 .Select(c => new
                 {
                     c.id,
                     c.LocationName
                 });
 
-            var totalItems = await companies.CountAsync();
+            var totalItems = await companiesQuery.CountAsync();
             var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
-            var companiesList = await companies
+
+            var companiesList = await companiesQuery
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
@@ -111,7 +115,7 @@ namespace PKL_API.Controllers
                 pageSize,
                 totalItems,
                 totalPages,
-                companies = companiesList
+                companyLocations = companiesList
             });
         }
 

@@ -234,8 +234,8 @@ namespace PKLPresenceWeb.Pages.Clients
                 {
                     Name = activeLocation?.locationName ?? string.Empty,
                     Address = activeLocation?.address ?? string.Empty,
-                    Lat = activeLocation?.lat.ToString("F12", CultureInfo.InvariantCulture) ?? string.Empty,
-                    Long = activeLocation?.longitude.ToString("F12", CultureInfo.InvariantCulture) ?? string.Empty
+                    Lat = activeLocation?.lat?.ToString("F12", CultureInfo.InvariantCulture) ?? string.Empty,
+                    Long = activeLocation?.longitude?.ToString("F12", CultureInfo.InvariantCulture) ?? string.Empty
                 };
 
                 CoordinateInput = string.IsNullOrWhiteSpace(NewCompany.Lat) || string.IsNullOrWhiteSpace(NewCompany.Long)

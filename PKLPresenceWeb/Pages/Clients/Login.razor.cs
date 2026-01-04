@@ -43,7 +43,6 @@ namespace PKLPresenceWeb.Pages.Clients
                 {
                     Content = JsonContent.Create(loginDTO)
                 };
-                // request.SetBrowserRequestCredentials(BrowserRequestCredentials.Include);
                 var response = await Http.SendAsync(request);
 
                 if (response.IsSuccessStatusCode)

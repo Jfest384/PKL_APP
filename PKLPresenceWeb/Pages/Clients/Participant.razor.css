@@ -256,15 +256,15 @@ body {
 }
 
 .table.pkl-admin th:nth-child(4), .table.pkl-admin td:nth-child(4) {
-    width: 21%;
+    width: 20%;
 }
 
 .table.pkl-admin th:nth-child(5), .table.pkl-admin td:nth-child(5) {
-    width: 11%;
+    width: 9%;
 }
 
 .table.pkl-admin th:nth-child(6), .table.pkl-admin td:nth-child(6) {
-    width: 20%;
+    width: 19%;
 }
 
 .table.pkl-admin th:nth-child(7), .table.pkl-admin td:nth-child(7) {
@@ -272,7 +272,7 @@ body {
 }
 
 .table.pkl-admin th:nth-child(8), .table.pkl-admin td:nth-child(8) {
-    width: 14%;
+    width: 18%;
 }
 
 /* Untuk Admin, Kajur */
@@ -413,8 +413,8 @@ body {
         margin: 0 auto;
     }
 
-    .scrollable-x > .table.pembimbing-admin {
-        min-width: 950px;
+    .scrollable-x > .table.pkl-admin {
+        min-width: 1050px;
         max-width: 1900px; /* atau sesuai kebutuhan */
         width: 100%;
         table-layout: fixed;

@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
+using PKLPresenceWeb.Helper;
+using PKLPresenceWeb.Model;
 using System.Text.Json;
 
 namespace PKLPresenceWeb.Layout
@@ -9,8 +11,8 @@ namespace PKLPresenceWeb.Layout
         private string currentPath = "";
         private bool isStudent = false;
         private bool isDataComplete = true;
-        private bool showWarningModal = false;
         private bool isInitialized = false;
+        private bool isPKLStudent = true;
 
         private string ParticipantMenuLabel =>
             isAdminOrKepalaJurusan ? "Management" : "Participant";
@@ -69,11 +71,29 @@ namespace PKLPresenceWeb.Layout
                 {
                     if (root.TryGetProperty("data", out var dataProp))
                     {
+                        if (dataProp.TryGetProperty("isPKL", out var isPKLProp))
+                        {
+                            bool isPKL = false;
+
+                            if (isPKLProp.ValueKind == JsonValueKind.True) isPKL = true;
+                            else if (isPKLProp.ValueKind == JsonValueKind.False) isPKL = false;
+                            else if (isPKLProp.ValueKind == JsonValueKind.String)
+                                bool.TryParse(isPKLProp.GetString(), out isPKL);
+
+                            isPKLStudent = isPKL;
+                            if (!isPKL)
+                            {
+                                isDataComplete = false;
+                                isInitialized = true;
+                                return;
+                            }
+                        }
+
                         var email = root.TryGetProperty("email", out var emailProp) ? emailProp.GetString() ?? "" : "";
-                        var companyName = dataProp.TryGetProperty("company", out var companyProp) ? companyProp.GetString() ?? "" : "";
+                        var companyLocationName = dataProp.TryGetProperty("companyLocation", out var companyProp) ? companyProp.GetString() ?? "" : "";
                         isDataComplete =
                             !string.IsNullOrWhiteSpace(email) && email != "-" &&
-                            !string.IsNullOrWhiteSpace(companyName) && companyName != "-";
+                            !string.IsNullOrWhiteSpace(companyLocationName) && companyLocationName != "-";
                     }
                     else isDataComplete = false;
                 }
@@ -89,14 +109,21 @@ namespace PKLPresenceWeb.Layout
         private void HandleMenuClick(string menu)
         {
             if (!isInitialized) return;
-            if (isStudent && !isDataComplete)
-                showWarningModal = true;
-            else Navigation.NavigateTo($"/{menu}");
+            if (isStudent && !isPKLStudent)
+            {
+                ShowNotPKLAlert();
+                return;
+            }
+            else if (isStudent && !isDataComplete)
+            {
+                ShowValidationAlert();
+                return;
+            }
+            Navigation.NavigateTo($"/{menu}");
         }
 
-        private void CloseModal()
+        private async Task CompletingData()
         {
-            showWarningModal = false;
             NavigationManager.NavigateTo("/home/profile/me");
         }
 
@@ -104,5 +131,30 @@ namespace PKLPresenceWeb.Layout
         {
             Navigation.LocationChanged -= OnLocationChanged;
         }
+
+        private async void ShowValidationAlert()
+        {
+            var result = await JS.InvokeAsync<SwalResult>("Swal.fire", new
+            {
+                title = "Warning!",
+                text = "Pastikan sudah melengkapi data diri Anda.",
+                icon = "warning",
+                showConfirmButton = true,
+                confirmButtonText = "Complete",
+                width = "90%",
+                customClass = new { popup = "my-swal-popup" }
+            });
+
+            if (result.isConfirmed)
+                await CompletingData();
+        }
+
+        private async void ShowNotPKLAlert()
+        {
+            await AlertService.ShowWarningAsync(
+                "Anda tidak dapat mengakses web ini lebih lanjut, karena Anda tidak terdaftar sebagai siswa PKL."
+            );
+        }
+
     }
 }

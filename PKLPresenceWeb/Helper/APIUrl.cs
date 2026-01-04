@@ -3,7 +3,7 @@
     public static class APIUrl
     {
         // Ubah base URL sesuai kebutuhan (bisa dari konfigurasi jika perlu)
-        public static string Base => "http://localhost:5027/api/";
+        public static string Base => "https://presensi.smksabdev.my.id/api/";
 
         // Fungsi untuk membangun URL endpoint
         public static string Endpoint(string path)

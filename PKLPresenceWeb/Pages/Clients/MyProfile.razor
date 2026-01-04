@@ -57,12 +57,12 @@
                 </div>
 
                 <div class="mb-3 w-100" style="max-width:450px;">
-                    <label class="form-label fw-bold">Nama PT</label>
-                    <select class="form-select" @bind="selectedCompanyId">
+                    <label class="form-label fw-bold">Lokasi PKL</label>
+                    <select class="form-select" @bind="selectedCompanyLocationId">
                         <option value="">Pilih</option>
-                        @foreach (var comp in companyList)
+                        @foreach (var comp in companyLocationList)
                         {
-                            <option value="@comp.id">@comp.name</option>
+                            <option value="@comp.id">@comp.LocationName</option>
                         }
                     </select>
                 </div>

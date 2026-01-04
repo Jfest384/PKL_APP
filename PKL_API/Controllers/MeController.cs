@@ -54,7 +54,7 @@ namespace PKL_API.Controllers
                     .Include(s => s.User)
                     .Include(s => s.Classroom)
                     .Include(s => s.Mentor).ThenInclude(m => m.User)
-                    .Include(s => s.Company)
+                    .Include(s => s.CompanyLocation)
                     .Include(s => s.StudentValidation)
                     .Where(s => s.Userid == selectedUserId)
                     .Select(s => new
@@ -65,7 +65,8 @@ namespace PKL_API.Controllers
                         s.User.fullname,
                         classroom = s.Classroom != null ? s.Classroom.name : "-",
                         mentor = s.Mentor != null && s.Mentor.User != null ? s.Mentor.User.fullname : "-",
-                        company = s.Company != null ? s.Company.name : "-",
+                        companyLocation = s.CompanyLocation != null ? s.CompanyLocation.LocationName : "-",
+                        s.CompanyLocationid,
                         s.StudentValidation.isPKL
                     })
                     .FirstOrDefault();
@@ -181,21 +182,29 @@ namespace PKL_API.Controllers
             {
                 if (!string.IsNullOrEmpty(editProfileDTO.nis))
                     student.nis = editProfileDTO.nis;
+
                 if (editProfileDTO.Classroomid > 0)
                     student.Classroomid = editProfileDTO.Classroomid;
-                if (editProfileDTO.Companyid > 0)
-                    student.Companyid = editProfileDTO.Companyid;
+
+                if (editProfileDTO.CompanyLocationId > 0)
+                {
+                    var companyLocation = await _db.CompanyLocations
+                        .FirstOrDefaultAsync(c => c.id == editProfileDTO.CompanyLocationId);
+
+                    if (companyLocation == null)
+                        return BadRequest("Company location not found");
+
+                    student.CompanyLocationid = companyLocation.id;
+                    student.Companyid = companyLocation.Companyid;
+                }
             }
 
             // Update Teacher jika ada
             var teacher = await _db.Teachers.FirstOrDefaultAsync(t => t.User.id == selectedUserId);
             if (teacher != null && !string.IsNullOrEmpty(editProfileDTO.nip))
-            {
                 teacher.nip = editProfileDTO.nip;
-            }
 
             await _db.SaveChangesAsync();
-
             var roleName = selectedUser.UserRoles.FirstOrDefault()?.Role.name ?? "";
 
             return Ok(new

@@ -663,6 +663,10 @@ namespace PKLPresenceWeb.Pages.Clients
                         else PresenceErrorMessage = "Gagal submit presensi.";
 
                         ErrorModalText = PresenceErrorMessage;
+                        PresencePhotos.Clear();
+                        SelectedPresenceTypeId = 0;
+                        SelectedPresenceTypeName = "";
+                        LocationInput = "";
                         await AlertService.ShowErrorAsync(ErrorModalText);
                         StateHasChanged();
                     }

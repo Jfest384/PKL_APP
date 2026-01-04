@@ -2196,15 +2196,15 @@ body[b-u6vybu44w0] {
 }
 
 .table.pkl-admin th:nth-child(4)[b-u6vybu44w0], .table.pkl-admin td:nth-child(4)[b-u6vybu44w0] {
-    width: 21%;
+    width: 20%;
 }
 
 .table.pkl-admin th:nth-child(5)[b-u6vybu44w0], .table.pkl-admin td:nth-child(5)[b-u6vybu44w0] {
-    width: 11%;
+    width: 9%;
 }
 
 .table.pkl-admin th:nth-child(6)[b-u6vybu44w0], .table.pkl-admin td:nth-child(6)[b-u6vybu44w0] {
-    width: 20%;
+    width: 19%;
 }
 
 .table.pkl-admin th:nth-child(7)[b-u6vybu44w0], .table.pkl-admin td:nth-child(7)[b-u6vybu44w0] {
@@ -2212,7 +2212,7 @@ body[b-u6vybu44w0] {
 }
 
 .table.pkl-admin th:nth-child(8)[b-u6vybu44w0], .table.pkl-admin td:nth-child(8)[b-u6vybu44w0] {
-    width: 14%;
+    width: 18%;
 }
 
 /* Untuk Admin, Kajur */
@@ -2353,8 +2353,8 @@ body[b-u6vybu44w0] {
         margin: 0 auto;
     }
 
-    .scrollable-x > .table.pembimbing-admin[b-u6vybu44w0] {
-        min-width: 950px;
+    .scrollable-x > .table.pkl-admin[b-u6vybu44w0] {
+        min-width: 1050px;
         max-width: 1900px; /* atau sesuai kebutuhan */
         width: 100%;
         table-layout: fixed;

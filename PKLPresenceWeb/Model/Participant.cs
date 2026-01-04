@@ -145,9 +145,9 @@ namespace PKLPresenceWeb.Model
         public string nisn { get; set; }
         public string classroom { get; set; }
         public string mentor { get; set; }
-        public string company { get; set; }
+        public string companyLocation { get; set; }
+        public int? companyLocationid { get; set; }
         public bool isPKL { get; set; }
-
     }
 
     public class WalasItem
@@ -179,7 +179,7 @@ namespace PKLPresenceWeb.Model
         public int pageSize { get; set; }
         public int totalItems { get; set; }
         public int totalPages { get; set; }
-        public List<CompanyLocationItem> CompanyLocationItems { get; set; } = new();
+        public List<CompanyLocationItem> companyLocations { get; set; } = new();
     }
 
     public class CompanyLocationItem
@@ -206,8 +206,8 @@ namespace PKLPresenceWeb.Model
         public int companyid { get; set; }
         public string locationName { get; set; }
         public string address { get; set; }
-        public double lat { get; set; }
-        public double longitude { get; set; }
+        public double? lat { get; set; }
+        public double? longitude { get; set; }
         public int radius_meter { get; set; }
         public bool is_active { get; set; }
     }

@@ -8,7 +8,7 @@ namespace PKL_API.Models.DTO
         [StringLength(100)]
         public required string name { get; set; }
         [MaxLength]
-        public required string address { get; set; }
+        public string? address { get; set; }
         [Column(TypeName = "decimal(15,12)")]
         public decimal? Lat { get; set; }
 
@@ -22,7 +22,7 @@ namespace PKL_API.Models.DTO
         [StringLength(100)]
         public required string name { get; set; }
         [MaxLength]
-        public required string address { get; set; }
+        public string? address { get; set; }
         [Column(TypeName = "decimal(15,12)")]
         public decimal? Lat { get; set; }
 
