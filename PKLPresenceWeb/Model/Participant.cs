@@ -281,35 +281,32 @@ namespace PKLPresenceWeb.Model
         [JsonPropertyName("serviceId")]
         public int ServiceId { get; set; }
 
-        [JsonPropertyName("service_name")]
+        [JsonPropertyName("serviceName")]
         public string ServiceName { get; set; } = string.Empty;
 
         [JsonPropertyName("contactId")]
-        public List<int> ContactId { get; set; } = new();
+        public List<string> ContactId { get; set; } = new();
 
-        [JsonPropertyName("id_chat")]
-        public List<string> IdChat { get; set; } = new();
-
-        [JsonPropertyName("chat_name")]
-        public List<string> ChatName { get; set; } = new();
+        [JsonPropertyName("contactName")]
+        public List<string> ContactName { get; set; } = new();
     }
 
     public class DefaultChatDetail
     {
         [JsonPropertyName("contactId")]
-        public int ContactId { get; set; }
+        public string ContactId { get; set; } = string.Empty;
 
-        [JsonPropertyName("chat_name")]
-        public string ChatName { get; set; } = string.Empty;
-
-        [JsonPropertyName("id_chat")]
-        public string IdChat { get; set; } = string.Empty;
+        [JsonPropertyName("contactName")]
+        public string ContactName { get; set; } = string.Empty;
 
         [JsonPropertyName("serviceId")]
         public int ServiceId { get; set; }
 
-        [JsonPropertyName("service_name")]
+        [JsonPropertyName("serviceName")]
         public string ServiceName { get; set; } = string.Empty;
+
+        //[JsonPropertyName("id_chat")]
+        //public string IdChat { get; set; } = string.Empty;
 
         [JsonPropertyName("template")]
         public ChatTemplate Template { get; set; } = new();
@@ -338,9 +335,11 @@ namespace PKLPresenceWeb.Model
 
     public class ChatContactItem
     {
-        public int id { get; set; }
-        public string id_chat { get; set; }
-        public string chat_name { get; set; }
+        //public int id { get; set; }
+        public string id { get; set; }
+        public string name { get; set; }
+        public bool? statusMute { get; set; }
+        public bool isGroup { get; set; }
     }
 
     public class NominatimResult

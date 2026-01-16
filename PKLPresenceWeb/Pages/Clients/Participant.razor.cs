@@ -430,6 +430,7 @@ namespace PKLPresenceWeb.Pages.Clients
             {
                 await LoadDefaultChats();
                 await LoadDefaultChatDetails();
+                await LoadContacts();
             }
         }
 
@@ -543,6 +544,7 @@ namespace PKLPresenceWeb.Pages.Clients
 
                 await LoadDefaultChats();
                 await LoadDefaultChatDetails();
+                await LoadContacts();
             }
         }
 
@@ -1591,6 +1593,7 @@ namespace PKLPresenceWeb.Pages.Clients
                     CancelDeleteMentor();
                     ShowDeleteMentorSuccessAlert(DeleteMentorModalMode);
                     await LoadDefaultChats();
+                    await LoadContacts();
                 }
                 else await AlertService.ShowErrorAsync("Gagal menghapus Default Chat. Silakan coba lagi.");
             }
@@ -1719,6 +1722,20 @@ namespace PKLPresenceWeb.Pages.Clients
             StateHasChanged();
         }
 
+        private async Task LoadContacts()
+        {
+            IsLoadingDefaultChats = true;
+            var response = await Http.GetFromJsonAsync<List<ChatContactItem>>(APIUrl.Endpoint("waha/contacts/all?session=default")) ?? new();
+
+            ChatContacts = response
+                .Where(c =>
+                    !string.IsNullOrWhiteSpace(c.name) && (c.statusMute != null || c.isGroup)
+                ).ToList();
+
+            IsLoadingDefaultChats = false;
+            StateHasChanged();
+        }
+
         private List<DefaultChatDetail> DefaultChatDetails = new();
         private async Task LoadDefaultChatDetails()
         {
@@ -1770,7 +1787,6 @@ namespace PKLPresenceWeb.Pages.Clients
             ContactSearchText = "";
 
             ChatServices = await Http.GetFromJsonAsync<List<ChatServiceItem>>(APIUrl.Endpoint("chat/chat-services")) ?? new();
-            ChatContacts = await Http.GetFromJsonAsync<List<ChatContactItem>>(APIUrl.Endpoint("chat/chat-contacts")) ?? new();
             SelectedContacts = ChatContacts.Where(c => chat.ContactId.Contains(c.id)).ToList();
             StateHasChanged();
         }
@@ -1797,7 +1813,6 @@ namespace PKLPresenceWeb.Pages.Clients
             ContactSearchText = "";
 
             ChatServices = await Http.GetFromJsonAsync<List<ChatServiceItem>>(APIUrl.Endpoint("chat/chat-services")) ?? new();
-            ChatContacts = await Http.GetFromJsonAsync<List<ChatContactItem>>(APIUrl.Endpoint("chat/chat-contacts")) ?? new();
             StateHasChanged();
         }
 
@@ -1816,7 +1831,8 @@ namespace PKLPresenceWeb.Pages.Clients
                 var payload = new
                 {
                     chatServiceid = SelectedServiceId.Value,
-                    chatContactid = SelectedContacts.Select(c => c.id).ToList()
+                    chatContactid = SelectedContacts.Select(c => c.id).ToList(),
+                    contactName = SelectedContacts.Select(c => c.name).ToList()
                 };
 
                 HttpResponseMessage res;
@@ -1841,6 +1857,7 @@ namespace PKLPresenceWeb.Pages.Clients
                     await AlertService.ShowSuccessAsync(SuccessModalText);
                     await LoadDefaultChats();
                     await LoadDefaultChatDetails();
+                    await LoadContacts();
                 }
                 else if (res.StatusCode == System.Net.HttpStatusCode.BadRequest)
                 {
@@ -1876,8 +1893,8 @@ namespace PKLPresenceWeb.Pages.Clients
                 ? ChatContacts.Where(c => !SelectedContacts.Any(s => s.id == c.id)).ToList()
                 : ChatContacts.Where(c =>
                     !SelectedContacts.Any(s => s.id == c.id) &&
-                    (c.chat_name?.Contains(ContactSearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                    (c.id_chat?.Contains(ContactSearchText, StringComparison.OrdinalIgnoreCase) ?? false)
+                    (c.name?.Contains(ContactSearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    (c.id?.Contains(ContactSearchText, StringComparison.OrdinalIgnoreCase) ?? false)
                 ).ToList();
 
         private bool ShowContactDropdown = false;
@@ -1931,8 +1948,8 @@ namespace PKLPresenceWeb.Pages.Clients
                 return;
 
             var selectedChats = DefaultChats.Where(x => x.ServiceName == SelectedReminderServiceName).ToList();
-            ReminderChatNamesList = selectedChats.SelectMany(x => x.ChatName).Distinct().ToList();
-            ReminderChatIdsList = selectedChats.SelectMany(x => x.IdChat).Distinct().ToList();
+            ReminderChatNamesList = selectedChats.SelectMany(x => x.ContactName).Distinct().ToList();
+            ReminderChatIdsList = selectedChats.SelectMany(x => x.ContactId).Distinct().ToList();
 
             foreach (var chatId in ReminderChatIdsList)
             {
@@ -2027,7 +2044,7 @@ namespace PKLPresenceWeb.Pages.Clients
 
         private async Task SendTestTemplateAsync(DefaultChatItem chat)
         {
-            var chatIds = chat?.IdChat?.Distinct().ToList() ?? new List<string>();
+            var chatIds = chat?.ContactId?.Distinct().ToList() ?? new List<string>();
 
             if (chatIds.Count == 0)
             {
@@ -2122,7 +2139,7 @@ namespace PKLPresenceWeb.Pages.Clients
         private string GetDefaultMessage(string chatId, string? serviceName = null)
         {
             var detail = DefaultChatDetails
-                .FirstOrDefault(d => d.IdChat == chatId && (serviceName == null || d.ServiceName == serviceName));
+                .FirstOrDefault(d => d.ContactId == chatId && (serviceName == null || d.ServiceName == serviceName));
             return detail?.Template?.Content ?? "";
         }
 

@@ -28,13 +28,11 @@ namespace PKL_HangfireWorker.Services
                   s.id_validation, 
                   s.id_class, 
                   c.name AS className, 
-                  c.id_contact,
-                  co.id_chat
+                  c.id_contact
                 FROM Students s
                 JOIN StudentValidations sv ON s.id_validation = sv.id AND sv.isPKL = 1
                 JOIN Users u ON s.id_user = u.id
                 LEFT JOIN Classrooms c ON s.id_class = c.id
-                LEFT JOIN ChatContacts co ON c.id_contact = co.id
             ")).ToList();
 
             if (!students.Any()) return;
@@ -44,13 +42,13 @@ namespace PKL_HangfireWorker.Services
                 FROM StudentValidations
             ")).ToDictionary(v => (int)v.id, v => v);
 
-            var groups = students.GroupBy(s => new { s.id_class, s.className, s.id_contact, s.id_chat });
+            var groups = students.GroupBy(s => new { s.id_class, s.className, s.id_contact });
 
             foreach (var group in groups)
             {
                 // Jika class tidak punya id_contact atau chatId tidak tersedia, lewati pengiriman
                 if (group.Key.id_contact == null) continue;
-                var chatIdCandidate = group.Key.id_chat ?? "-";
+                string chatIdCandidate = group.Key.id_contact ?? "-";
                 if (string.IsNullOrWhiteSpace(chatIdCandidate) || chatIdCandidate == "-") continue;
 
                 var list = new List<string>();
@@ -82,7 +80,7 @@ namespace PKL_HangfireWorker.Services
                     { "studentList", string.Join("\n", list) }
                 });
 
-                string chatId = group.Key.id_chat ?? "-";
+                string chatId = group.Key.id_contact ?? "-";
                 if (!string.IsNullOrWhiteSpace(chatId) && chatId != "-")
                     await SendMessage(chatId, text);
             }

@@ -288,10 +288,10 @@
                                         <tr>
                                             <td class="text-center">@chat.ServiceName</td>
                                             <td>
-                                                @string.Join(", ", chat.IdChat)
+                                                @string.Join(", ", chat.ContactId)
                                             </td>
                                             <td>
-                                                @string.Join(", ", chat.ChatName)
+                                                @string.Join(", ", chat.ContactName)
                                             </td>
                                             <td class="text-center">
                                                 <button class="btn btn-sm btn-success me-1"
@@ -1100,7 +1100,7 @@
                                 @foreach (var contact in SelectedContacts)
                                 {
                                     <span class="badge bg-primary me-1 mb-1">
-                                        @contact.chat_name
+                                        @contact.name
                                         <button type="button" class="btn btn-sm btn-link text-white p-0 ms-1" @onclick:stopPropagation="true" @onclick="() => RemoveContact(contact)">
                                             <i class="bi bi-x"></i>
                                         </button>
@@ -1121,7 +1121,7 @@
                                         @foreach (var contact in FilteredContacts)
                                         {
                                             <div class="dropdown-item" style="cursor:pointer;" @onclick="() => AddContact(contact)">
-                                                <span>@contact.chat_name</span>
+                                                <span>@contact.name</span>
                                             </div>
                                         }
                                     }

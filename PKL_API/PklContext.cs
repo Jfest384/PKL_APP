@@ -31,7 +31,6 @@ namespace PKL_API
         public DbSet<StudentValidation> StudentValidations { get; set; }
         public DbSet<ChatService> ChatServices { get; set; }
         public DbSet<DefaultChat> DefaultChats { get; set; }
-        public DbSet<ChatContact> ChatContacts { get; set; }
         public DbSet<PresenceRecap> PresenceRecaps { get; set; }
         public DbSet<ReportRecap> ReportRecaps { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }

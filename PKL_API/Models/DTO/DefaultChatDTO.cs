@@ -7,7 +7,8 @@ namespace PKL_API.Models.DTO
         [Column("id_service")]
         public required int ChatServiceid { get; set; }
         [Column("id_contact")]
-        public required List<int> ChatContactid { get; set; }
+        public required List<string> ChatContactid { get; set; }
+        public required List<string> ContactName { get; set; }
     }
 
     public class DefaultChatEditDTO
@@ -15,7 +16,8 @@ namespace PKL_API.Models.DTO
         [Column("id_service")]
         public required int ChatServiceid { get; set; }
         [Column("id_contact")]
-        public required List<int> ChatContactid { get; set; }
+        public required List<string> ChatContactid { get; set; }
+        public required List<string> ContactName { get; set; }
     }
 
     public class TestSendRequest

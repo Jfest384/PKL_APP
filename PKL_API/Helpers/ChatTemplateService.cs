@@ -12,7 +12,7 @@ namespace PKL_API.Helpers
             _db = db;
         }
 
-        public async Task<string> GenerateTemplate6Async(int contactId)
+        public async Task<string> GenerateTemplate6Async(string contactId)
         {
             var classroom = await _db.Classrooms
                 .FirstOrDefaultAsync(c => c.ChatContactid == contactId);
@@ -31,7 +31,8 @@ namespace PKL_API.Helpers
             var classId = classroom.id;
             var students = await (from s in _db.Students
                                   join u in _db.Users on s.Userid equals u.id
-                                  where s.Classroomid == classId
+                                  join sv in _db.StudentValidations on s.StudentValidationid equals sv.id
+                                  where s.Classroomid == classId && sv.isPKL == true
                                   select new
                                   {
                                       s.id,

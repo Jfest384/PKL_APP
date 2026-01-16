@@ -13,9 +13,8 @@ namespace PKL_API.Helpers
 
         public WhatsAppJobService(IConfiguration config, IHttpClientFactory factory)
         {
-            _connectionString = config.GetConnectionString("DefaultConnection");
-            if (string.IsNullOrEmpty(_connectionString))
-                throw new InvalidOperationException("Connection string is null!");
+            _connectionString = config.GetConnectionString("DefaultConnection")
+                ?? throw new InvalidOperationException("Connection string is null!");
             _httpClient = factory.CreateClient("waha");
         }
 
@@ -29,13 +28,11 @@ namespace PKL_API.Helpers
                   s.id_validation, 
                   s.id_class, 
                   c.name AS className, 
-                  c.id_contact,
-                  co.id_chat
+                  c.id_contact
                 FROM Students s
+                JOIN StudentValidations sv ON s.id_validation = sv.id AND sv.isPKL = 1
                 JOIN Users u ON s.id_user = u.id
-                JOIN Classrooms c ON s.id_class = c.id
-                JOIN ChatContacts co ON c.id_contact = co.id
-                WHERE s.id_class IN (6, 9)
+                LEFT JOIN Classrooms c ON s.id_class = c.id
             ")).ToList();
 
             if (!students.Any()) return;
@@ -45,7 +42,7 @@ namespace PKL_API.Helpers
                 FROM StudentValidations
             ")).ToDictionary(v => (int)v.id, v => v);
 
-            var groups = students.GroupBy(s => new { s.id_class, s.className, s.id_contact, s.id_chat });
+            var groups = students.GroupBy(s => new { s.id_class, s.className, s.id_contact });
 
             foreach (var group in groups)
             {
@@ -77,7 +74,7 @@ namespace PKL_API.Helpers
                     { "studentList", string.Join("\n", list) }
                 });
 
-                string chatId = group.Key.id_chat ?? "-";
+                string chatId = group.Key.id_contact ?? "-";
                 if (!string.IsNullOrWhiteSpace(chatId))
                 {
                     await SendMessage(chatId, text);

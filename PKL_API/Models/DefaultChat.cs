@@ -10,9 +10,9 @@ namespace PKL_API.Models
         [Column("id_service")]
         public required int ChatServiceid { get; set; }
         [Column("id_contact")]
-        public required int ChatContactid { get; set; }
+        public required string ChatContactid { get; set; }
+        public required string contact_name { get; set; }
 
         public ChatService ChatService { get; set; }
-        public ChatContact ChatContact { get; set; }
     }
 }

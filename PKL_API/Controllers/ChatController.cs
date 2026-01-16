@@ -37,27 +37,12 @@ namespace PKL_API.Controllers
             return Ok(services);
         }
 
-        [HttpGet("chat-contacts")]
-        public IActionResult GetChatContact()
-        {
-            var contacts = _db.ChatContacts
-                .Select(c => new
-                {
-                    c.id,
-                    c.id_chat,
-                    c.chat_name
-                })
-                .ToList();
-            return Ok(contacts);
-        }
-
         [HttpGet("default-chats")]
         public IActionResult GetDefaultChat()
         {
             // Ambil semua DefaultChat beserta relasi ChatService dan ChatContact
             var chats = _db.DefaultChats
                 .Include(dc => dc.ChatService)
-                .Include(dc => dc.ChatContact)
                 .ToList();
 
             var result = chats
@@ -69,10 +54,9 @@ namespace PKL_API.Controllers
                     {
                         id = first.ChatService.id,
                         serviceId = first.ChatServiceid,
-                        service_name = first.ChatService.service_name,
+                        serviceName = first.ChatService.service_name,
                         contactId = group.Select(x => x.ChatContactid).ToList(),
-                        id_chat = group.Select(x => x.ChatContact.id_chat).ToList(),
-                        chat_name = group.Select(x => x.ChatContact.chat_name).ToList()
+                        contactName = group.Select(x => x.contact_name).ToList()
                     };
                 })
                 .ToList();
@@ -81,11 +65,10 @@ namespace PKL_API.Controllers
         }
 
         [HttpGet("detail-default-chat")]
-        public async Task<IActionResult> GetDetailDefaultChat([FromQuery] int contactId)
+        public async Task<IActionResult> GetDetailDefaultChat([FromQuery] string contactId)
         {
             var defaultChats = await _db.DefaultChats
                 .Include(dc => dc.ChatService)
-                .Include(dc => dc.ChatContact)
                 .Where(dc => dc.ChatContactid == contactId)
                 .ToListAsync();
 
@@ -109,18 +92,14 @@ namespace PKL_API.Controllers
                         content = dynamicContent
                     };
                 }
-                else
-                {
-                    templateContent = MessageTemplates.GetTemplate(templateId);
-                }
+                else templateContent = MessageTemplates.GetTemplate(templateId);
 
                 result.Add(new
                 {
                     contactId = defaultChat.ChatContactid,
-                    chat_name = defaultChat.ChatContact.chat_name,
-                    id_chat = defaultChat.ChatContact.id_chat,
+                    contactName = defaultChat.contact_name,
                     serviceId = defaultChat.ChatServiceid,
-                    service_name = defaultChat.ChatService.service_name,
+                    serviceName = defaultChat.ChatService.service_name,
                     template = templateContent
                 });
             }
@@ -178,12 +157,24 @@ namespace PKL_API.Controllers
         [HttpPost("default-chats/add")]
         public async Task<IActionResult> AddDefaultChat([FromBody] DefaultChatDTO dto)
         {
-            if (dto == null || dto.ChatServiceid <= 0 || dto.ChatContactid == null || !dto.ChatContactid.Any())
-                return BadRequest("Invalid request body.");
+            if (dto == null)
+                return BadRequest("Request body kosong.");
+
+            if (dto.ChatServiceid <= 0)
+                return BadRequest("ChatServiceid tidak valid.");
+
+            if (dto.ChatContactid == null || dto.ContactName == null)
+                return BadRequest("ChatContactid dan ContactName wajib diisi.");
+
+            if (!dto.ChatContactid.Any() || !dto.ContactName.Any())
+                return BadRequest("ChatContactid dan ContactName tidak boleh kosong.");
+
+            if (dto.ChatContactid.Count != dto.ContactName.Count)
+                return BadRequest("Jumlah ChatContactid dan ContactName harus sama.");
 
             var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "id");
             if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
-                return Unauthorized("User ID not found in token.");
+                return Unauthorized("User ID tidak ditemukan di token.");
 
             var user = await _db.Users
                 .Include(u => u.UserRoles)
@@ -191,40 +182,51 @@ namespace PKL_API.Controllers
                 .FirstOrDefaultAsync(u => u.id == userId);
 
             if (user == null)
-                return Unauthorized("User not found.");
+                return Unauthorized("User tidak ditemukan.");
 
             var roleIds = user.UserRoles.Select(ur => ur.RoleId).ToList();
             if (!roleIds.Contains(1) && !roleIds.Contains(4))
-                return Forbid("Hanya roleId 1/4 yang bisa melakukan aksi ini.");
+                return Forbid("Hanya role Admin / Kepala Jurusan yang diizinkan.");
 
-            var existing = await _db.DefaultChats
+            bool existing = await _db.DefaultChats
                 .AnyAsync(dc => dc.ChatServiceid == dto.ChatServiceid);
 
             if (existing)
-            {
-                return BadRequest("DefaultChat dengan service yang sama sudah ada.");
-            }
+                return BadRequest("DefaultChat dengan ChatService yang sama sudah ada.");
 
-            var newdchat = new List<DefaultChat>();
-            foreach (var contactId in dto.ChatContactid)
+            var newChats = new List<DefaultChat>();
+
+            for (int i = 0; i < dto.ChatContactid.Count; i++)
             {
+                var contactId = dto.ChatContactid[i];
+                var ContactName = dto.ContactName[i];
+
+                if (string.IsNullOrWhiteSpace(contactId) || string.IsNullOrWhiteSpace(ContactName))
+                    continue;
+
                 var dchat = new DefaultChat
                 {
                     ChatServiceid = dto.ChatServiceid,
-                    ChatContactid = contactId
+                    ChatContactid = contactId,
+                    contact_name = ContactName
                 };
-                _db.DefaultChats.Add(dchat);
-                newdchat.Add(dchat);
-            }
-            await _db.SaveChangesAsync();
 
+                _db.DefaultChats.Add(dchat);
+                newChats.Add(dchat);
+            }
+
+            if (!newChats.Any())
+                return BadRequest("Tidak ada data valid yang disimpan.");
+
+            await _db.SaveChangesAsync();
             return Ok(new
             {
                 message = "Default chat berhasil ditambahkan.",
-                data = newdchat.Select(dchat => new
+                data = newChats.Select(d => new
                 {
-                    dchat.ChatServiceid,
-                    dchat.ChatContactid
+                    d.ChatServiceid,
+                    d.ChatContactid,
+                    d.contact_name
                 }).ToList()
             });
         }
@@ -237,12 +239,10 @@ namespace PKL_API.Controllers
             if (dto == null || dto.ChatServiceid <= 0 || dto.ChatContactid == null || !dto.ChatContactid.Any())
                 return BadRequest("ChatServiceid dan ChatContactid wajib diisi.");
 
-            // Ambil user dari token
             var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "id");
             if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
                 return Unauthorized("User ID not found in token.");
 
-            // Ambil role user
             var user = await _db.Users
                 .Include(u => u.UserRoles)
                 .ThenInclude(ur => ur.Role)
@@ -265,13 +265,21 @@ namespace PKL_API.Controllers
 
             // Tambahkan DefaultChat baru sesuai kontak yang dipilih
             var newChats = new List<DefaultChat>();
-            foreach (var contactId in dto.ChatContactid)
+            for (int i = 0; i < dto.ChatContactid.Count; i++)
             {
+                var contactId = dto.ChatContactid[i];
+                var ContactName = dto.ContactName[i];
+
+                if (string.IsNullOrWhiteSpace(contactId) || string.IsNullOrWhiteSpace(ContactName))
+                    continue;
+
                 var dchat = new DefaultChat
                 {
                     ChatServiceid = dto.ChatServiceid,
-                    ChatContactid = contactId
+                    ChatContactid = contactId,
+                    contact_name = ContactName
                 };
+
                 _db.DefaultChats.Add(dchat);
                 newChats.Add(dchat);
             }
@@ -283,7 +291,8 @@ namespace PKL_API.Controllers
                 data = newChats.Select(dchat => new
                 {
                     dchat.ChatServiceid,
-                    dchat.ChatContactid
+                    dchat.ChatContactid,
+                    dchat.contact_name
                 }).ToList()
             });
         }
