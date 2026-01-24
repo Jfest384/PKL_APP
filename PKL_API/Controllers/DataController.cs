@@ -145,9 +145,6 @@ namespace PKL_API.Controllers
                     l.Companyid,
                     l.LocationName,
                     l.address,
-                    l.lat,
-                    l.longitude,
-                    l.radius_meter,
                     l.is_active
                 })
                 .ToListAsync();
@@ -157,6 +154,33 @@ namespace PKL_API.Controllers
                 company,
                 locations
             });
+        }
+
+        [HttpPost("company-location/details")]
+        public async Task<IActionResult> GetCompanyLocationDetails([FromBody] int companyLocationId)
+        {
+            if (companyLocationId <= 0)
+                return BadRequest("Invalid companyLocationId.");
+
+            var location = await _db.CompanyLocations
+                .Where(l => l.id == companyLocationId)
+                .Select(l => new
+                {
+                    l.id,
+                    l.Companyid,
+                    l.LocationName,
+                    l.address,
+                    l.lat,
+                    l.longitude,
+                    l.radius_meter,
+                    l.is_active
+                })
+                .FirstOrDefaultAsync();
+
+            if (location == null)
+                return NotFound("CompanyLocation not found.");
+
+            return Ok(location);
         }
 
         [Authorize]

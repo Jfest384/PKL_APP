@@ -211,31 +211,23 @@ namespace PKLPresenceWeb.Pages.Clients
         private async Task OnEditCompanyClicked(CompanyLocationInfo company)
         {
             if (company == null) return;
-            var companyId = CompanyState.CompanyId;
+            var companyLocationId = company.id;
             try
             {
-                var response = await Http.PostAsJsonAsync(APIUrl.Endpoint("data/companies/details"), companyId);
+                var response = await Http.PostAsJsonAsync(APIUrl.Endpoint("data/company-location/details"), companyLocationId);
                 if (!response.IsSuccessStatusCode)
                 {
                     await AlertService.ShowErrorAsync("Gagal mengambil data perusahaan.");
                     return;
                 }
 
-                var result = await response.Content.ReadFromJsonAsync<CompanyDetailResponse>();
-                if (result?.company == null)
-                {
-                    await AlertService.ShowErrorAsync("Response perusahaan tidak valid.");
-                    return;
-                }
-
-                var activeLocation = result.locations?.FirstOrDefault();
-
+                var result = await response.Content.ReadFromJsonAsync<CompanyLocationDetail>();
                 NewCompany = new CompanyLocationModel
                 {
-                    Name = activeLocation?.locationName ?? string.Empty,
-                    Address = activeLocation?.address ?? string.Empty,
-                    Lat = activeLocation?.lat?.ToString("F12", CultureInfo.InvariantCulture) ?? string.Empty,
-                    Long = activeLocation?.longitude?.ToString("F12", CultureInfo.InvariantCulture) ?? string.Empty
+                    Name = result?.locationName ?? string.Empty,
+                    Address = result?.address ?? string.Empty,
+                    Lat = result?.lat?.ToString("F12", CultureInfo.InvariantCulture) ?? string.Empty,
+                    Long = result?.longitude?.ToString("F12", CultureInfo.InvariantCulture) ?? string.Empty
                 };
 
                 CoordinateInput = string.IsNullOrWhiteSpace(NewCompany.Lat) || string.IsNullOrWhiteSpace(NewCompany.Long)
@@ -243,7 +235,7 @@ namespace PKLPresenceWeb.Pages.Clients
                     : $"{NewCompany.Lat}, {NewCompany.Long}";
 
                 ShowCompanyModalMode = "edit";
-                EditCompanyId = activeLocation?.id;
+                EditCompanyId = result?.id;
                 ShowCompanyModal = true;
 
                 StateHasChanged();

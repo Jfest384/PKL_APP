@@ -232,122 +232,6 @@ namespace PKL_API.Controllers
                 }
             }
 
-            //// --- Validasi lokasi PKL (radius 500 meter, support multi lokasi untuk studentId 53/55) ---
-            //if (dto.PresenceTypeid == 1 && student.StudentValidation.isLock)
-            //{
-            //    var statusLockLocation = await _db.StatusLockLocations.FirstOrDefaultAsync();
-            //    if ((statusLockLocation != null && statusLockLocation.status))
-            //    {
-            //        // Khusus studentId 53/55: support 2 lokasi
-            //        if (student.id == 53 || student.id == 55)
-            //        {
-            //            var lockLocations = await _db.LockLocations
-            //                .Where(l => l.Studentid == student.id)
-            //                .ToListAsync();
-
-            //            double userLat = (double)dto.Lat.Value;
-            //            double userLng = (double)dto.Long.Value;
-
-            //            if (lockLocations.Count == 0)
-            //            {
-            //                // Simpan lokasi pertama kali
-            //                var newLock = new LockLocation
-            //                {
-            //                    Userid = userId,
-            //                    Studentid = student.id,
-            //                    lat = dto.Lat,
-            //                    longitude = dto.Long
-            //                };
-            //                _db.LockLocations.Add(newLock);
-            //                await _db.SaveChangesAsync();
-            //            }
-            //            else if (lockLocations.Count == 1)
-            //            {
-            //                var loc = lockLocations[0];
-            //                if (loc.lat.HasValue && loc.longitude.HasValue)
-            //                {
-            //                    double baseLat = (double)loc.lat.Value;
-            //                    double baseLng = (double)loc.longitude.Value;
-            //                    double distance = GetDistanceInMeters(baseLat, baseLng, userLat, userLng);
-
-            //                    if (distance <= 1000)
-            //                    {
-            //                        if (distance > 500)
-            //                            return BadRequest("Anda berada terlalu jauh dari tempat PKL");
-            //                    }
-            //                    else
-            //                    {
-            //                        var newLock = new LockLocation
-            //                        {
-            //                            Userid = userId,
-            //                            Studentid = student.id,
-            //                            lat = dto.Lat,
-            //                            longitude = dto.Long
-            //                        };
-            //                        _db.LockLocations.Add(newLock);
-            //                        await _db.SaveChangesAsync();
-            //                    }
-            //                }
-            //            }
-            //            else // Sudah ada 2 lokasi
-            //            {
-            //                bool isWithin500m = false;
-            //                foreach (var loc in lockLocations)
-            //                {
-            //                    if (loc.lat.HasValue && loc.longitude.HasValue)
-            //                    {
-            //                        double baseLat = (double)loc.lat.Value;
-            //                        double baseLng = (double)loc.longitude.Value;
-            //                        double distance = GetDistanceInMeters(baseLat, baseLng, userLat, userLng);
-            //                        if (distance <= 500)
-            //                        {
-            //                            isWithin500m = true;
-            //                            break;
-            //                        }
-            //                    }
-            //                }
-            //                if (!isWithin500m)
-            //                    return BadRequest("Anda berada terlalu jauh dari semua lokasi PKL yang terdaftar");
-            //            }
-            //        }
-            //        else
-            //        {
-            //            // Default: hanya 1 lokasi per student
-            //            var existingLock = await _db.LockLocations.FirstOrDefaultAsync(l => l.Studentid == student.id);
-            //            if (existingLock == null)
-            //            {
-            //                // Simpan lokasi pertama kali
-            //                var newLock = new LockLocation
-            //                {
-            //                    Userid = userId,
-            //                    Studentid = student.id,
-            //                    lat = dto.Lat,
-            //                    longitude = dto.Long
-            //                };
-            //                _db.LockLocations.Add(newLock);
-            //                await _db.SaveChangesAsync();
-            //            }
-            //            else
-            //            {
-            //                // Validasi radius 500 meter
-            //                if (existingLock.lat.HasValue && existingLock.longitude.HasValue)
-            //                {
-            //                    double baseLat = (double)existingLock.lat.Value;
-            //                    double baseLng = (double)existingLock.longitude.Value;
-            //                    double userLat = (double)dto.Lat.Value;
-            //                    double userLng = (double)dto.Long.Value;
-
-            //                    double distance = GetDistanceInMeters(baseLat, baseLng, userLat, userLng);
-            //                    if (distance > 500)
-            //                    {
-            //                        return BadRequest("Anda berada terlalu jauh dari tempat PKL");
-            //                    }
-            //                }
-            //            }
-            //        }
-            //    }
-            //}
-
             var detail = new PresenceDetail();
 
             async Task<Guid?> SavePhotoAsync(IFormFile? file)
@@ -742,6 +626,7 @@ namespace PKL_API.Controllers
                 var mentorStudentsQuery = _db.Students
                     .Include(s => s.User)
                     .Include(s => s.Classroom)
+                    .Include(s => s.Company)
                     .Include(s => s.StudentValidation)
                     .Where(s => s.Mentorid == mentor.id && s.StudentValidation.isPKL == true);
 
@@ -784,6 +669,7 @@ namespace PKL_API.Controllers
                         nis = s.nis ?? "-",
                         name = s.User.fullname ?? "-",
                         classroom_name = s.Classroom?.name ?? "-",
+                        company_name = s?.Company?.name ?? "-",
                         date = date.HasValue ? ToIndonesianLongDate(date.Value) : "-",
                         time = presence != null ? presence.time.ToString("HH:mm:ss") : "-",
                         presence_type = presence?.PresenceType?.name ?? "-",
@@ -816,7 +702,8 @@ namespace PKL_API.Controllers
                     result = result.Where(r =>
                         (r.name.ToLower().Contains(searchLower)) ||
                         (r.nis.ToLower().Contains(searchLower)) ||
-                        (r.presence_type.ToLower().Contains(searchLower))
+                        (r.presence_type.ToLower().Contains(searchLower)) ||
+                        (r.company_name.ToLower().Contains(searchLower))
                     );
                 }
 
@@ -854,6 +741,7 @@ namespace PKL_API.Controllers
                 var studentsQuery = _db.Students
                     .Include(s => s.User)
                     .Include(s => s.Classroom)
+                    .Include(s => s.Company)
                     .Include(s => s.StudentValidation)
                     .Where(s => s.Mentorid == mentor.id && s.StudentValidation.isPKL == true);
 
@@ -888,6 +776,7 @@ namespace PKL_API.Controllers
                         nis = s.nis ?? "-",
                         name = s.User.fullname ?? "-",
                         classroom_name = s.Classroom?.name ?? "-",
+                        company_name = s?.Company?.name ?? "-",
                         date = ToIndonesianLongDate(filterDate),
                         time = presence != null ? presence.time.ToString("HH:mm:ss") : "-",
                         presence_type = presence?.PresenceType?.name ?? "-",
@@ -920,7 +809,8 @@ namespace PKL_API.Controllers
                     result = result.Where(r =>
                         (r.name.ToLower().Contains(searchLower)) ||
                         (r.nis.ToLower().Contains(searchLower)) ||
-                        (r.presence_type.ToLower().Contains(searchLower))
+                        (r.presence_type.ToLower().Contains(searchLower)) ||
+                        (r.company_name.ToLower().Contains(searchLower))
                     );
                 }
 
@@ -961,6 +851,7 @@ namespace PKL_API.Controllers
                 var studentsQuery = _db.Students
                     .Include(s => s.User)
                     .Include(s => s.Classroom)
+                    .Include(s => s.Company)
                     .Include(s => s.StudentValidation)
                     .Where(s => s.Classroomid == classroom.id && s.StudentValidation.isPKL == true);
 
@@ -993,6 +884,7 @@ namespace PKL_API.Controllers
                         nis = s.nis ?? "-",
                         name = s.User.fullname ?? "-",
                         classroom_name = s.Classroom?.name ?? "-",
+                        company_name = s?.Company?.name ?? "-",
                         date = ToIndonesianLongDate(filterDate),
                         time = presence != null ? presence.time.ToString("HH:mm:ss") : "-",
                         presence_type = presence?.PresenceType?.name ?? "-",
@@ -1024,7 +916,8 @@ namespace PKL_API.Controllers
                     result = result.Where(r =>
                         (r.name.ToLower().Contains(searchLower)) ||
                         (r.nis.ToLower().Contains(searchLower)) ||
-                        (r.presence_type.ToLower().Contains(searchLower))
+                        (r.presence_type.ToLower().Contains(searchLower)) ||
+                        (r.company_name.ToLower().Contains(searchLower))
                     );
                 }
 
@@ -1057,6 +950,7 @@ namespace PKL_API.Controllers
                 var studentsQuery = _db.Students
                     .Include(s => s.User)
                     .Include(s => s.Classroom)
+                    .Include(s => s.Company)
                     .Include(s => s.StudentValidation)
                     .Where(s => s.StudentValidation.isPKL == true);
 
@@ -1090,6 +984,7 @@ namespace PKL_API.Controllers
                         name = s.User?.fullname ?? "-",
                         classId = s.Classroomid,
                         classroom_name = s.Classroom?.name ?? "-",
+                        company_name = s?.Company?.name ?? "-",
                         date = ToIndonesianLongDate(filterDate),
                         time = presence?.time.ToString("HH:mm:ss") ?? "-",
                         presence_type = presence?.PresenceType?.name ?? "-",
@@ -1121,7 +1016,8 @@ namespace PKL_API.Controllers
                     result = result.Where(r =>
                         (r.name.ToLower().Contains(searchLower)) ||
                         (r.nis.ToLower().Contains(searchLower)) ||
-                        (r.presence_type.ToLower().Contains(searchLower))
+                        (r.presence_type.ToLower().Contains(searchLower)) ||
+                        (r.company_name.ToLower().Contains(searchLower))
                     );
                 }
 

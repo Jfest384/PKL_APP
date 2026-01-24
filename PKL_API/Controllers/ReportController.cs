@@ -94,7 +94,7 @@ namespace PKL_API.Controllers
                 Studentid = student.id,
                 date = DateOnly.FromDateTime(now),
                 time = TimeOnly.FromDateTime(now),
-                Mentorid = student.Mentorid ?? throw new Exception("No mentor assigned."),
+                Mentorid = student.Mentorid,
                 Classroomid = student.Classroomid ?? throw new Exception("No classroom assigned."),
                 description = dto.description,
                 ReportPhotoid = photoEntity?.id,
@@ -113,7 +113,7 @@ namespace PKL_API.Controllers
             _db.WeeklyGuidances.Add(new WeeklyGuidance
             {
                 Studentid = student.id,
-                Mentorid = student.Mentorid.Value,
+                Mentorid = student.Mentorid,
                 WeekStartDate = weekStartDate,
                 CreatedAt = now
             });

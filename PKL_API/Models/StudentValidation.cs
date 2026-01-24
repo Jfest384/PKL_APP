@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace PKL_API.Models
 {
@@ -16,9 +17,13 @@ namespace PKL_API.Models
         public bool isDailyReport { get; set; }
         public bool isReport { get; set; }
 
+        [Column("id_period")]
+        public int? Periodid { get; set; }
         public DateTime? update_daily { get; set; }
         public DateTime? update_weekly { get; set; }
+        public DateOnly? start_pkl { get; set; }
 
+        public Period? Period { get; set; }
         public ICollection<Student>? Students { get; set; }
     }
 }

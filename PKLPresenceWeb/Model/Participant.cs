@@ -206,6 +206,15 @@ namespace PKLPresenceWeb.Model
         public int companyid { get; set; }
         public string locationName { get; set; }
         public string address { get; set; }
+        public bool is_active { get; set; }
+    }
+
+    public class CompanyLocationDetail
+    {
+        public int id { get; set; }
+        public int companyid { get; set; }
+        public string locationName { get; set; }
+        public string address { get; set; }
         public double? lat { get; set; }
         public double? longitude { get; set; }
         public int radius_meter { get; set; }
