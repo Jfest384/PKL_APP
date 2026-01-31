@@ -758,22 +758,29 @@
                         else
                         {
                             <div class="mb-3 ms-1">
-                                @foreach (var company in FilteredCompanyLocations)
+
+                                @foreach (var group in FilteredGroupedLocations)
                                 {
-                                    <div class="form-check text-start">
-                                        <input class="form-check-input"
-                                               type="radio"
-                                               name="companyRadio"
-                                               id="company_@company.id"
-                                               value="@company.id"
-                                               checked="@(SelectedCompanyLocationId == company.id)"
-                                               @onchange="OnCompanyRadioChanged" />
-                                        <label class="form-check-label" for="company_@company.id">
-                                            @company.LocationName
-                                        </label>
-                                    </div>
+                                    <div class="fw-semibold text-start mt-2 mb-1">@group.CompanyName</div>
+                                    @foreach (var loc in group.Locations)
+                                    {
+                                        <div class="form-check text-start ms-2">
+                                            <input class="form-check-input"
+                                                   type="radio"
+                                                   name="companyRadio"
+                                                   id="company_@loc.id"
+                                                   value="@loc.id"
+                                                   checked="@(SelectedCompanyLocationId == loc.id)"
+                                                   @onchange="OnCompanyRadioChanged" />
+
+                                            <label class="form-check-label" for="company_@loc.id">
+                                                @loc.LocationName
+                                            </label>
+                                        </div>
+                                    }
                                 }
-                                @if (FilteredCompanyLocations.Count == 0)
+
+                                @if (!FilteredGroupedLocations.Any())
                                 {
                                     <div class="text-center text-muted">No companies found.</div>
                                 }

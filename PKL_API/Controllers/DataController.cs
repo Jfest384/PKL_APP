@@ -98,6 +98,7 @@ namespace PKL_API.Controllers
                 .Select(c => new
                 {
                     c.id,
+                    c.Companyid,
                     c.LocationName
                 });
 

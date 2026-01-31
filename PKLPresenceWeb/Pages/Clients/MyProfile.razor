@@ -56,13 +56,30 @@
                     </select>
                 </div>
 
-                <div class="mb-3 w-100" style="max-width:450px;">
+                @* <div class="mb-3 w-100" style="max-width:450px;">
                     <label class="form-label fw-bold">Lokasi PKL</label>
                     <select class="form-select" @bind="selectedCompanyLocationId">
                         <option value="">Pilih</option>
                         @foreach (var comp in companyLocationList)
                         {
                             <option value="@comp.id">@comp.LocationName</option>
+                        }
+                    </select>
+                </div> *@
+
+                <div class="mb-3 w-100" style="max-width:450px;">
+                    <label class="form-label fw-bold">Lokasi PKL</label>
+                    <select class="form-select" @bind="selectedCompanyLocationId">
+                        <option value="">Pilih</option>
+
+                        @foreach (var group in groupedLocations)
+                        {
+                            <optgroup label="@group.CompanyName">
+                                @foreach (var loc in group.Locations)
+                                {
+                                    <option value="@loc.id">@loc.LocationName</option>
+                                }
+                            </optgroup>
                         }
                     </select>
                 </div>

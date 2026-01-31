@@ -25,6 +25,8 @@ namespace PKLPresenceWeb.Pages.Clients
         private int? selectedClassId;
         private List<CompanyLocationItem> companyLocationList = new();
         private int? selectedCompanyLocationId;
+        private List<CompanyItem> companies = new();
+        private List<CompanyLocationGroup> groupedLocations = new();
 
         private string email = "";
         private string emailError = "";
@@ -62,11 +64,31 @@ namespace PKLPresenceWeb.Pages.Clients
                     nisnipFullname = $"{nis} - {fullname}";
 
                     await LoadClasses();
-                    var companyResp = await Http.GetFromJsonAsync<CompanyLocationListResponse>(APIUrl.Endpoint("data/company-locations?page=1&pageSize=1000"));
-                    companyLocationList = companyResp?.companyLocations ?? new();
+                    //var companyResp = await Http.GetFromJsonAsync<CompanyLocationListResponse>(APIUrl.Endpoint("data/company-locations?page=1&pageSize=1000"));
+                    //companyLocationList = companyResp?.companyLocations ?? new();
+
+                    var companiesResp = await Http.GetFromJsonAsync<CompanyListResponse>(
+                        APIUrl.Endpoint("data/companies?page=1&pageSize=1000"));
+
+                    var companyLocResp = await Http.GetFromJsonAsync<CompanyLocationListResponse>(
+                        APIUrl.Endpoint("data/company-locations?page=1&pageSize=1000"));
+
+                    companies = companiesResp?.companies ?? new();
+                    companyLocationList = companyLocResp?.companyLocations ?? new();
+
+                    // ---- GROUPING ----
+                    groupedLocations = companies
+                        .Select(c => new CompanyLocationGroup
+                        {
+                            CompanyId = c.id,
+                            CompanyName = c.name,
+                            Locations = companyLocationList.Where(l => l.companyid == c.id).ToList()
+                        })
+                        .Where(g => g.Locations.Count > 0) // hanya company yg punya lokasi
+                        .ToList();
 
                     selectedClassId = classList.FirstOrDefault(c => c.name == userData.classroom)?.id;
-                    selectedCompanyLocationId = companyLocationList.FirstOrDefault(c => c.LocationName == userData.companyLocation)?.id;
+                    selectedCompanyLocationId = companyLocationList.FirstOrDefault(l => l.LocationName == userData.companyLocation)?.id;
                 }
                 else
                 {

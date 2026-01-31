@@ -42,6 +42,7 @@ namespace PKLPresenceWeb.Pages.Clients
         int? SelectedCompanyLocationId = null;
         List<CompanyItem> Companies = new();
         List<CompanyLocationItem> CompanyLocations = new();
+        List<CompanyLocationGroup> GroupedCompanyLocations = new();
         bool IsLoadingCompanies = false;
 
         private WahaSession? WahaSession;
@@ -719,9 +720,28 @@ namespace PKLPresenceWeb.Pages.Clients
 
             try
             {
-                var result = await Http.GetFromJsonAsync<CompanyLocationListResponse>(APIUrl.Endpoint("data/company-locations?page=1&pageSize=1000"));
-                if (result != null)
-                    CompanyLocations = result.companyLocations;
+                //var result = await Http.GetFromJsonAsync<CompanyLocationListResponse>(APIUrl.Endpoint("data/company-locations?page=1&pageSize=1000"));
+                //if (result != null)
+                //    CompanyLocations = result.companyLocations;
+
+                var compResp = await Http.GetFromJsonAsync<CompanyListResponse>(APIUrl.Endpoint("data/companies?page=1&pageSize=1000"));
+                if (compResp != null)
+                    Companies = compResp.companies;
+
+                var locResp = await Http.GetFromJsonAsync<CompanyLocationListResponse>(
+                    APIUrl.Endpoint("data/company-locations?page=1&pageSize=1000"));
+
+                if (locResp != null)
+                    CompanyLocations = locResp.companyLocations;
+
+                GroupedCompanyLocations = Companies
+                    .Select(c => new CompanyLocationGroup
+                    {
+                        CompanyId = c.id,
+                        CompanyName = c.name,
+                        Locations = CompanyLocations.Where(l => l.companyid == c.id).ToList()
+                    })
+                    .Where(g => g.Locations.Any()).ToList();
             }
             finally
             {
@@ -1346,11 +1366,35 @@ namespace PKLPresenceWeb.Pages.Clients
             StateHasChanged();
         }
 
-        private List<CompanyLocationItem> FilteredCompanyLocations =>
+        //private List<CompanyLocationItem> FilteredCompanyLocations =>
+        //string.IsNullOrWhiteSpace(CompanySearchText)
+        //    ? CompanyLocations
+        //    : CompanyLocations.Where(c =>
+        //        (c.LocationName?.Contains(CompanySearchText, StringComparison.OrdinalIgnoreCase) ?? false)).ToList();
+
+        //private List<CompanyLocationGroup> FilteredGroupedLocations =>
+        //string.IsNullOrWhiteSpace(CompanySearchText)
+        //    ? GroupedCompanyLocations
+        //    : GroupedCompanyLocations
+        //        .Select(g => new CompanyLocationGroup
+        //        {
+        //            CompanyId = g.CompanyId,
+        //            CompanyName = g.CompanyName,
+        //            Locations = g.Locations
+        //                .Where(l => l.LocationName.Contains(CompanySearchText, StringComparison.OrdinalIgnoreCase))
+        //                .ToList()
+        //        })
+        //        .Where(g => g.Locations.Any())
+        //        .ToList();
+
+        private List<CompanyLocationGroup> FilteredGroupedLocations =>
         string.IsNullOrWhiteSpace(CompanySearchText)
-            ? CompanyLocations
-            : CompanyLocations.Where(c =>
-                (c.LocationName?.Contains(CompanySearchText, StringComparison.OrdinalIgnoreCase) ?? false)).ToList();
+            ? GroupedCompanyLocations
+            : GroupedCompanyLocations
+                .Where(g =>
+                    g.CompanyName.Contains(CompanySearchText, StringComparison.OrdinalIgnoreCase)
+                )
+                .ToList();
 
         private void OnCompanySearchChanged(ChangeEventArgs e)
         {

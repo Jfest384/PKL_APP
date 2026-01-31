@@ -185,6 +185,7 @@ namespace PKLPresenceWeb.Model
     public class CompanyLocationItem
     {
         public int id { get; set; }
+        public int companyid { get; set; }
         public string LocationName { get; set; }
     }
 
@@ -236,6 +237,13 @@ namespace PKLPresenceWeb.Model
         public string Address { get; set; } = "";
         public string Lat { get; set; }
         public string Long { get; set; }
+    }
+
+    public class CompanyLocationGroup
+    {
+        public int CompanyId { get; set; }
+        public string CompanyName { get; set; } = "";
+        public List<CompanyLocationItem> Locations { get; set; } = new();
     }
 
     public class TeacherItem
