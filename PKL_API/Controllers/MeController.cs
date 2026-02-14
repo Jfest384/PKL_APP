@@ -76,7 +76,7 @@ namespace PKL_API.Controllers
             {
                 // Cari classId dari Classroom yang diampu oleh WaliKelas (user ini)
                 var classId = _db.Classrooms
-                    .Where(c => c.WaliKelas != null && c.WaliKelas.User.id == selectedUserId)
+                    .Where(c => c.Teachers != null && c.Teachers.User.id == selectedUserId)
                     .Select(c => c.id)
                     .FirstOrDefault();
 
@@ -97,7 +97,7 @@ namespace PKL_API.Controllers
             {
                 // Cari classId dari Classroom yang diampu oleh WaliKelas (user ini)
                 var classId = _db.Classrooms
-                    .Where(c => c.WaliKelas != null && c.WaliKelas.User.id == selectedUserId)
+                    .Where(c => c.Teachers != null && c.Teachers.User.id == selectedUserId)
                     .Select(c => c.id)
                     .FirstOrDefault();
 

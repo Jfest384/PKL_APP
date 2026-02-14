@@ -13,9 +13,7 @@ namespace PKL_API.Models
         public required string nip { get; set; }
 
         public required User User { get; set; }
-        //public required ICollection<Department> Departments { get; set; }
         public required ICollection<Mentor> Mentors { get; set; }
         public required ICollection<WaliKelas> WaliKelas { get; set; }
-
     }
 }

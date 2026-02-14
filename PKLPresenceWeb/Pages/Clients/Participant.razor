@@ -803,18 +803,11 @@
                         <label class="form-label text-start d-block text-start">Kelas</label>
                         <input class="form-control" placeholder="Nama kelas..." @bind="NewClass.name" />
                     </div>
-                    @if (AddEditClassMode == "add")
-                    {
-                        <div class="mb-3 ms-1 me-1">
-                            <label class="form-label d-block text-start">Total Siswa</label>
-                            <input class="form-control" type="number" min="1" @bind="NewClass.total_students" />
-                        </div>
-                    }
                     <div class="mb-3 ms-1 me-1">
                         <label class="form-label d-block text-start">Wali Kelas</label>
                         <select class="form-select" @bind="SelectedWalasId">
                             <option value="">Pilih</option>
-                            @foreach (var walas in WalasList)
+                            @foreach (var walas in TeacherList)
                             {
                                 <option value="@walas.id">@walas.fullname</option>
                             }
@@ -824,7 +817,7 @@
                         <label class="form-label d-block text-start">Tahun</label>
                         <input class="form-control" type="number" min="1" @bind="NewClass.year" />
                     </div>
-                    <div class="mb-3 ms-1 me-1">
+                    <div class="ms-1 me-1">
                         <label class="form-label d-block text-start">Deskripsi</label>
                         <textarea class="form-control"
                                   placeholder="Deskripsi..."
@@ -832,8 +825,12 @@
                                   @oninput="OnContentInput"
                                   maxlength="200"
                                   rows="2">
-                    </textarea>
+                        </textarea>
                         <div class="char-counter-outer text-end" style="font-size: 15px">@NewClass.description.Length/200</div>
+                    </div>
+                    <div class="mb-3 ms-1 me-1">
+                        <label class="form-label text-start d-block text-start">Kontak</label>
+                        <input class="form-control" placeholder="Opsional" @bind="NewClass.contactId" />
                     </div>
                 </div>
                 <div class="d-flex justify-content-around">

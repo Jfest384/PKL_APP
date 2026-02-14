@@ -13,13 +13,26 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 // Registrasi Authorization dan AuthenticationStateProvider
 builder.Services.AddAuthorizationCore();
 builder.Services.AddScoped<AuthenticationStateProvider, SimpleAuthStateProvider>();
+builder.Services.AddScoped<UnauthorizedHandler>();
 builder.Services.AddScoped<AlertService>();
 
 // Registrasi HttpClient
+//builder.Services.AddScoped(sp =>
+//{
+//    var handler = new BrowserCredentialsHandler(new HttpClientHandler());
+//    return new HttpClient(handler)
+//    {
+//        BaseAddress = new Uri(builder.HostEnvironment.BaseAddress)
+//    };
+//});
+
 builder.Services.AddScoped(sp =>
 {
-    var handler = new BrowserCredentialsHandler(new HttpClientHandler());
-    return new HttpClient(handler)
+    var unauthorizedHandler = sp.GetRequiredService<UnauthorizedHandler>();
+    var browserHandler = new BrowserCredentialsHandler(new HttpClientHandler());
+    unauthorizedHandler.InnerHandler = browserHandler;
+
+    return new HttpClient(unauthorizedHandler)
     {
         BaseAddress = new Uri(builder.HostEnvironment.BaseAddress)
     };

@@ -29,7 +29,7 @@ namespace PKL_API.Controllers
             if (pageSize < 1) pageSize = 10;
 
             var query = _db.Classrooms
-                .Include(q => q.WaliKelas)
+                .Include(q => q.Teachers)
                 .ThenInclude(wk => wk.User)
                 .AsQueryable();
 
@@ -44,7 +44,7 @@ namespace PKL_API.Controllers
                 query = query.Where(q =>
                     q.name.ToLower().Contains(lowered)
                     || (parsedTotal && q.total_students == total)
-                    || (q.WaliKelas != null && q.WaliKelas.User.fullname.ToLower().Contains(lowered))
+                    || (q.Teachers != null && q.Teachers.User.fullname.ToLower().Contains(lowered))
                     || (parsedYear && q.year == yearVal)
                 );
             }
@@ -61,10 +61,11 @@ namespace PKL_API.Controllers
                     q.id,
                     q.name,
                     students = q.total_students,
-                    id_walas = q.WaliKelasid,
-                    walas = q.WaliKelas != null ? q.WaliKelas.User.fullname : null,
+                    id_walas = q.Teacherid,
+                    walas = q.Teachers != null ? q.Teachers.User.fullname : null,
                     q.year,
-                    q.description
+                    q.description,
+                    q.ChatContactid
                 })
                 .ToList();
 
@@ -104,21 +105,17 @@ namespace PKL_API.Controllers
             if (string.IsNullOrWhiteSpace(dto.name))
                 return BadRequest("Class name is required.");
 
-            var waliKelas = await _db.WaliKelas.FindAsync(dto.WaliKelasid);
+            var waliKelas = await _db.Teachers.FindAsync(dto.WaliKelasid);
             if (waliKelas == null)
                 return BadRequest("Wali Kelas not found.");
 
-            // Optionally: check if teacher exists for wali kelas
-            var teacher = await _db.Teachers.FirstOrDefaultAsync(t => t.WaliKelas.Any(wk => wk.id == dto.WaliKelasid));
-            if (teacher == null)
-                return BadRequest("Teacher not found for the given Wali Kelas.");
             var classroom = new Classroom
             {
                 name = dto.name,
-                WaliKelasid = waliKelas.id,
+                Teacherid = waliKelas.id,
                 year = dto.year,
                 description = dto.description,
-                total_students = dto.total_students
+                ChatContactid = dto.contactId
             };
 
             _db.Classrooms.Add(classroom);
@@ -160,15 +157,16 @@ namespace PKL_API.Controllers
             if (string.IsNullOrWhiteSpace(dto.name))
                 return BadRequest("Class name is required.");
 
-            var waliKelas = await _db.WaliKelas.FindAsync(dto.WaliKelasid);
+            var waliKelas = await _db.Teachers.FindAsync(dto.WaliKelasid);
             if (waliKelas == null)
                 return BadRequest("Wali Kelas not found.");
 
             // Update data classroom
             classroom.name = dto.name;
-            classroom.WaliKelasid = dto.WaliKelasid;
+            classroom.Teacherid = dto.WaliKelasid;
             classroom.year = dto.year;
             classroom.description = dto.description;
+            classroom.ChatContactid = dto.contactId;
 
             await _db.SaveChangesAsync();
 
@@ -230,9 +228,10 @@ namespace PKL_API.Controllers
                 {
                     q.id,
                     q.name,
-                    walas = q.WaliKelas != null ? q.WaliKelas.User.fullname : null,
+                    walas = q.Teachers != null ? q.Teachers.User.fullname : null,
                     q.total_students,
                     q.description,
+                    q.ChatContactid,
                     students = q.Students.Select(s => new
                     {
                         s.id,
@@ -253,7 +252,7 @@ namespace PKL_API.Controllers
         public async Task<IActionResult> PrintAllClass()
         {
             var classrooms = await _db.Classrooms
-                .Include(s => s.WaliKelas)
+                .Include(s => s.Teachers)
                 .ToListAsync();
 
             if (classrooms == null || classrooms.Count == 0)
@@ -299,7 +298,7 @@ namespace PKL_API.Controllers
                         //int no = 1;
                         foreach (var classroom in classrooms)
                         {
-                            table.Cell().Element(CellStyle).Text(classroom.WaliKelas?.User.fullname ?? "-");
+                            table.Cell().Element(CellStyle).Text(classroom.Teachers?.User.fullname ?? "-");
                             table.Cell().Element(CellStyle).Text(classroom.name ?? "-");
                         }
 

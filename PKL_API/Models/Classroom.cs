@@ -10,7 +10,7 @@ namespace PKL_API.Models
         [StringLength(50)]
         public required string name { get; set; }
         [Column("id_walas")]
-        public int WaliKelasid { get; set; }
+        public int Teacherid { get; set; }
         public int? total_students { get; set; }
         [StringLength(255)]
         public string? description { get; set; }
@@ -21,6 +21,6 @@ namespace PKL_API.Models
         public ICollection<Student> Students { get; set; }
         public ICollection<Presence> Presences { get; set; }
         public ICollection<Report> Reports { get; set; }
-        public WaliKelas WaliKelas { get; set; }
+        public Teacher Teachers { get; set; }
     }
 }

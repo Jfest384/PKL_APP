@@ -44,7 +44,7 @@ namespace PKL_API.Controllers
             string walasName = "-";
             if (classroom != null)
             {
-                var walas = await _db.WaliKelas.FirstOrDefaultAsync(w => w.id == classroom.WaliKelasid);
+                var walas = await _db.WaliKelas.FirstOrDefaultAsync(w => w.id == classroom.Teacherid);
                 if (walas != null)
                 {
                     var walasUser = await _db.Users.FirstOrDefaultAsync(u => u.id == walas.Userid);

@@ -324,7 +324,7 @@ namespace PKL_API.Controllers
                 var mentor = await _db.Mentors.FirstOrDefaultAsync(m => m.Userid == userId);
                 var waliKelas = await _db.WaliKelas.FirstOrDefaultAsync(wk => wk.Userid == userId);
                 var classroom = waliKelas != null
-                    ? await _db.Classrooms.FirstOrDefaultAsync(c => c.WaliKelasid == waliKelas.id) : null;
+                    ? await _db.Classrooms.FirstOrDefaultAsync(c => c.Teacherid == waliKelas.id) : null;
 
                 var mentorStudentsQuery = _db.Students
                     .Include(s => s.User)
@@ -540,7 +540,7 @@ namespace PKL_API.Controllers
                 if (waliKelas == null)
                     return BadRequest("Homeroom teacher data not found.");
 
-                var classroom = await _db.Classrooms.FirstOrDefaultAsync(c => c.WaliKelasid == waliKelas.id);
+                var classroom = await _db.Classrooms.FirstOrDefaultAsync(c => c.Teacherid == waliKelas.id);
                 if (classroom == null)
                     return BadRequest("Classroom for this homeroom teacher not found.");
 
@@ -1069,7 +1069,7 @@ namespace PKL_API.Controllers
             // Ambil kelas yang diampu wali kelas
             var classroom = waliKelas != null
                 ? await _db.Classrooms.Include(c => c.Students).ThenInclude(s => s.User)
-                    .FirstOrDefaultAsync(c => c.WaliKelasid == waliKelas.id)
+                    .FirstOrDefaultAsync(c => c.Teacherid == waliKelas.id)
                 : null;
 
             // Ambil semua siswa yang dimentori

@@ -95,23 +95,24 @@ namespace PKLPresenceWeb.Model
     {
         public int id { get; set; }
         public string name { get; set; }
-        public int students { get; set; }
+        public int? students { get; set; }
         public int id_walas { get; set; }
         public string walas { get; set; }
         public int year { get; set; }
         public string description { get; set; }
+        public string? chatContactid { get; set; }
     }
 
     public class NewClass
     {
         [StringLength(50)]
         public required string name { get; set; }
-        public required int total_students { get; set; }
         [Column("id_walas")]
         public required int WaliKelasid { get; set; }
         public required int year { get; set; }
         [StringLength(200)]
         public required string description { get; set; }
+        public string? contactId { get; set; }
     }
 
     public class NewStudent
@@ -150,12 +151,13 @@ namespace PKLPresenceWeb.Model
         public bool isPKL { get; set; }
     }
 
-    public class WalasItem
+    public class TeacherItem
     {
         public int id { get; set; }
-        public string fullname { get; set; }
         public int userid { get; set; }
-        public int teacherid { get; set; }
+        public string fullname { get; set; }
+        public string nip { get; set; }
+        public string roles { get; set; }
     }
 
     public class CompanyListResponse
@@ -244,15 +246,6 @@ namespace PKLPresenceWeb.Model
         public int CompanyId { get; set; }
         public string CompanyName { get; set; } = "";
         public List<CompanyLocationItem> Locations { get; set; } = new();
-    }
-
-    public class TeacherItem
-    {
-        public int id { get; set; }
-        public int userid { get; set; }
-        public string fullname { get; set; }
-        public string nip { get; set; }
-        public string roles { get; set; }
     }
 
     public class MentorDTO

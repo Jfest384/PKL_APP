@@ -54,16 +54,15 @@ namespace PKLPresenceWeb.Pages.Clients
         private NewClass NewClass = new()
         {
             name = string.Empty,
-            total_students = 0,
             WaliKelasid = 0,
             year = DateTime.Now.Year,
-            description = string.Empty
+            description = string.Empty,
+            contactId = string.Empty
         };
         private int? SelectedWalasId;
-        private List<WalasItem> WalasList = new();
+        private List<TeacherItem> TeacherList = new();
         private bool IsAddClassValid =>
             !string.IsNullOrWhiteSpace(NewClass.name)
-            && (AddEditClassMode == "edit" || NewClass.total_students > 0)
             && SelectedWalasId.HasValue
             && NewClass.year > 0
             && !string.IsNullOrWhiteSpace(NewClass.description);
@@ -198,10 +197,10 @@ namespace PKLPresenceWeb.Pages.Clients
             NewClass = new()
             {
                 name = string.Empty,
-                total_students = 0,
                 WaliKelasid = 0,
                 year = DateTime.Now.Year,
-                description = string.Empty
+                description = string.Empty,
+                contactId = string.Empty
             };
             SelectedWalasId = null;
         }
@@ -214,10 +213,10 @@ namespace PKLPresenceWeb.Pages.Clients
             NewClass = new()
             {
                 name = kelas.name,
-                total_students = kelas.students,
                 WaliKelasid = kelas.id_walas,
                 year = kelas.year,
-                description = kelas.description
+                description = kelas.description,
+                contactId = kelas.chatContactid
             };
             SelectedWalasId = kelas.id_walas;
         }
@@ -235,10 +234,11 @@ namespace PKLPresenceWeb.Pages.Clients
                 {
                     var editDto = new
                     {
-                        name = NewClass.name,
-                        WaliKelasid = NewClass.WaliKelasid,
-                        year = NewClass.year,
-                        description = NewClass.description
+                        NewClass.name,
+                        NewClass.WaliKelasid,
+                        NewClass.year,
+                        NewClass.description,
+                        NewClass.contactId
                     };
                     res = await Http.PutAsJsonAsync(APIUrl.Endpoint($"classes/{EditClassId}"), editDto);
                 }
@@ -247,10 +247,10 @@ namespace PKLPresenceWeb.Pages.Clients
                     NewClass = new()
                     {
                         name = string.Empty,
-                        total_students = 0,
                         WaliKelasid = 0,
                         year = DateTime.Now.Year,
-                        description = string.Empty
+                        description = string.Empty,
+                        contactId = string.Empty
                     };
 
                     SelectedWalasId = null;
@@ -270,10 +270,10 @@ namespace PKLPresenceWeb.Pages.Clients
             NewClass = new()
             {
                 name = string.Empty,
-                total_students = 0,
                 WaliKelasid = 0,
                 year = DateTime.Now.Year,
-                description = string.Empty
+                description = string.Empty,
+                contactId = string.Empty
             };
             SelectedWalasId = null;
             ShowAddModal = false;
@@ -339,7 +339,7 @@ namespace PKLPresenceWeb.Pages.Clients
 
         private async Task LoadWalas()
         {
-            WalasList = await Http.GetFromJsonAsync<List<WalasItem>>(APIUrl.Endpoint("data/walas"));
+            TeacherList = await Http.GetFromJsonAsync<List<TeacherItem>>(APIUrl.Endpoint("teachers"));
         }
 
         private bool IsMessageTabDisabled = false;
@@ -655,9 +655,6 @@ namespace PKLPresenceWeb.Pages.Clients
         private string? SelectedIsPKLForClassManagement = null;
 
         bool ShowConfirmationModal = false;
-        string ConfirmationText = "Apakah Anda yakin ingin menambahkan Siswa ini ke daftar Siswa PKL?";
-        string ConfirmButtonText = "Confirm";
-        int? SelectedStudentId;
 
         async void OnAddStudentToMentor(string[] mentorRow)
         {
@@ -1073,7 +1070,6 @@ namespace PKLPresenceWeb.Pages.Clients
         private string MentorSearchText = "";
         private string TeacherSearchText = "";
         private bool IsLoadingTeachers = false;
-        private List<TeacherItem> TeacherList = new();
         private HashSet<int> SelectedTeacherIds = new();
         private Dictionary<int, int> SelectedTeacherUserIds = new();
         private CancellationTokenSource? mentorSearchDebounceCts;
